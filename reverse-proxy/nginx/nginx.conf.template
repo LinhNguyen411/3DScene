@@ -1,0 +1,129 @@
+events {
+}
+
+http {
+    # transfer data between two descriptors bypassing user-space
+    sendfile           on;
+    sendfile_max_chunk 1m;
+
+    # support bigg client body sizes
+    client_max_body_size 256M;
+
+    # send HTTP response headers in one packet
+    tcp_nopush on;
+
+    # override of Nagle’s algorithm
+    tcp_nodelay on;
+    keepalive_timeout 65;
+
+    types_hash_max_size 2048;
+
+    include /etc/nginx/mime.types;
+
+    default_type application/octet-stream;
+    access_log /dev/stdout;
+    error_log /dev/stdout;
+
+    gzip on;
+    gzip_disable "msie6";
+
+    # @see https://github.com/nginx-proxy/nginx-proxy/issues/697
+    # If we receive X-Forwarded-Proto, pass it through; otherwise, pass along the
+    # scheme used to connect to this server
+    map $http_x_forwarded_proto $proxy_x_forwarded_proto {
+        default $http_x_forwarded_proto;
+        ''      $scheme;
+    }
+    # If we receive X-Forwarded-Port, pass it through; otherwise, pass along the
+    # server port the client connected to
+    map $http_x_forwarded_port $proxy_x_forwarded_port {
+        default $http_x_forwarded_port;
+        ''      $server_port;
+    }
+    # If we receive Upgrade, set Connection to "upgrade"; otherwise, delete any
+    # Connection header that may have been passed to this server
+    map $http_upgrade $proxy_connection {
+        default upgrade;
+        '' close;
+    }
+    # Set appropriate X-Forwarded-Ssl header
+    map $scheme $proxy_x_forwarded_ssl {
+        default off;
+        https on;
+    }
+
+    # TODO: pass X-Real-IP to avoid having phony nginx log entries like
+    # 192.168.160.1 - demo [08/Sep/2020:00:04:19 +0000] "GET / HTTP/1.0" 200 1114
+
+    server {
+        listen 80;
+        server_name _ default_server;
+
+        location / {
+            proxy_pass_header Server;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Scheme $scheme;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_redirect off;
+            proxy_connect_timeout 60;
+            proxy_read_timeout 60;
+            proxy_pass http://todo-frontend:${FRONTEND_PORT_INTERNAL}/;
+        }
+
+        # @see https://docs.humio.com/integrations/proxies/nginx/
+        # @see https://github.com/python-restx/flask-restx/issues/58
+        location /api/ {
+            proxy_pass http://todo-api:${API_PORT_INTERNAL}/;
+            proxy_redirect off;
+
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Scheme $scheme;
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
+            proxy_set_header X-Forwarded-Prefix /api/;
+
+            proxy_connect_timeout 600;
+            proxy_send_timeout 600;
+            proxy_read_timeout 600;
+            send_timeout 600;
+        }
+
+        # @see https://docs.humio.com/integrations/proxies/nginx/
+        # @see https://github.com/python-restx/flask-restx/issues/58
+        location /mailhog/ {
+            proxy_pass http://todo-mailhog:${MAILHOG_PORT_INTERNAL}/;
+            proxy_redirect off;
+
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Scheme $scheme;
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
+            # proxy_set_header X-Forwarded-Prefix /mailhog/;
+
+            proxy_connect_timeout 600;
+            proxy_send_timeout 600;
+            proxy_read_timeout 600;
+            send_timeout 600;
+        }
+        
+        location /flower/ {
+            rewrite ^/flower/(.*)$ /$1 break;
+            proxy_pass http://todo-flower:${FLOWER_PORT_INTERNAL}/;
+            proxy_set_header Host $http_host;
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
+
+            proxy_connect_timeout 600;
+            proxy_send_timeout 600;
+            proxy_read_timeout 600;
+            send_timeout 600;
+        }
+    }
+}
+

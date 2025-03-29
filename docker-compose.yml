@@ -1,0 +1,162 @@
+# @see https://medium.com/@xiaolishen/develop-in-docker-a-node-backend-and-a-react-front-end-talking-to-each-other-5c522156f634
+version: "3.8"
+
+x-linux-container-environment:
+  &common-linux-container-environment-variables
+  TZ: ${TZ}
+  # 1000 is the default main user uid/gid, using it as a sane default value
+  APP_UID: ${APP_UID:-1000}
+  APP_GID: ${APP_GID:-1000}
+
+x-fastapi-app-environment:
+
+  &common-fastapi-app-environment-variables
+  TZ: ${TZ}
+  # 1000 is the default main user uid/gid, using it as a sane default value
+  APP_UID: ${APP_UID:-1000}
+  APP_GID: ${APP_GID:-1000}
+  API_PORT: ${API_PORT}
+  API_PORT_INTERNAL: ${API_PORT_INTERNAL}
+  POSTGRES_HOST: ${POSTGRES_HOST}
+  POSTGRES_PORT: ${POSTGRES_PORT}
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  POSTGRES_DB: ${POSTGRES_DB}
+  SECRET_KEY: ${SECRET_KEY}
+  PROJECT_NAME: ${PROJECT_NAME}
+  SERVER_HOST_FRONT: ${SERVER_HOST_FRONT}
+  FIRST_SUPERUSER_EMAIL: ${FIRST_SUPERUSER_EMAIL}
+  FIRST_SUPERUSER_FIRST_NAME: ${FIRST_SUPERUSER_FIRST_NAME}
+  FIRST_SUPERUSER_LAST_NAME: ${FIRST_SUPERUSER_LAST_NAME}
+  FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD}
+  # Email configuration
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
+  SMTP_PORT: ${SMTP_PORT}
+  SMTP_HOST: ${SMTP_HOST}
+  EMAILS_FROM_NAME: ${EMAILS_FROM_NAME}
+  MAIL_TLS: ${MAIL_TLS}
+  # Celery worker configuration
+  CELERY_BROKER_URL: redis://todo-redis:6379/0
+  CELERY_RESULT_BACKEND: redis://todo-redis:6379/0
+  GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+  GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
+
+services:
+  # react application
+  todo-frontend:
+    image: "todo-frontend:latest"
+    depends_on:
+      - todo-api
+    ports:
+      - ${FRONTEND_PORT}:${FRONTEND_PORT_INTERNAL}
+    environment:
+      <<: *common-linux-container-environment-variables
+      CHOKIDAR_USEPOLLING: "true"
+      REACT_APP_ENVIRONMENT: ${REACT_APP_ENVIRONMENT}
+      REACT_APP_GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+      FRONTEND_PORT_INTERNAL: ${FRONTEND_PORT_INTERNAL}
+    stdin_open: true
+    restart: unless-stopped
+
+  # fastapi application
+  todo-api:
+    image: "todo-api:latest"
+    ports:
+      - ${API_PORT}:${API_PORT_INTERNAL}
+    environment:
+      <<: *common-fastapi-app-environment-variables
+    command: uvicorn main:app --reload --proxy-headers --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  # nginx reverse proxy for frontend/backend/mailhog
+  todo-reverse-proxy:
+    image: "todo-reverse-proxy:latest"
+    depends_on:
+      - todo-api
+      - todo-frontend
+    ports:
+      - ${REVERSE_PROXY_PORT}:80
+    environment:
+      <<: *common-linux-container-environment-variables
+      API_PORT_INTERNAL: ${API_PORT_INTERNAL}
+      FRONTEND_PORT_INTERNAL: ${FRONTEND_PORT_INTERNAL}
+      MAILHOG_PORT_INTERNAL: ${MAILHOG_PORT_INTERNAL}
+      FLOWER_PORT_INTERNAL: ${FLOWER_PORT_INTERNAL}
+    restart: unless-stopped
+
+  # fake smtp server to intercept and view sent emails
+  todo-mailhog:
+    image: "mailhog/mailhog:v1.0.1"
+    ports:
+      - ${MAILHOG_PORT}:${MAILHOG_PORT_INTERNAL}
+    environment:
+      <<: *common-linux-container-environment-variables
+    restart: unless-stopped
+
+  # Backend Celery workers for long-running processes
+  todo-worker:
+    image: "todo-api:latest"
+    environment:
+      <<: *common-fastapi-app-environment-variables
+    restart: unless-stopped
+    command: >-
+      celery --app core.celery_app.celery_app worker --loglevel=info --uid=nobody  --gid=nogroup
+    depends_on:
+      - todo-api
+      - todo-redis
+
+  # Message broker Redis
+  todo-redis:
+    image: redis:6-alpine
+    #ports:
+    #  - 6379:6379
+
+  # Web-based monitoring tool for Celery
+  todo-flower:
+    ports:
+      - ${FLOWER_PORT}:${FLOWER_PORT_INTERNAL}
+    environment:
+      - CELERY_BROKER_URL=redis://todo-redis:${REDIS_PORT_INTERNAL}/0
+      - CELERY_RESULT_BACKEND=redis://todo-redis:${REDIS_PORT_INTERNAL}/0
+    depends_on:
+      - todo-api
+      - todo-redis
+      - todo-worker
+    command: celery --broker=redis://todo-redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url_prefix=flower
+    restart: unless-stopped
+
+  # postgres database, data is persisted in a volume
+  todo-postgres:
+    image: "postgres:14.5-alpine"
+    environment:
+      <<: *common-linux-container-environment-variables
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - todo-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # pgadmin to view and control the database
+  todo-pgadmin:
+    image: "dpage/pgadmin4:5.3"
+    depends_on:
+      - todo-postgres
+    ports:
+      - ${PGADMIN_PORT}:80
+    environment:
+      <<: *common-linux-container-environment-variables
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DEFAULT_PASSWORD_FILE: ${PGADMIN_DEFAULT_PASSWORD_FILE}
+      # disable spamming all the screen with logs
+      GUNICORN_ACCESS_LOGFILE: /dev/null
+    restart: unless-stopped
+
+volumes:
+  todo-postgres-data:
+    name: ${POSTGRES_STORAGE_VOLUME_NAME}

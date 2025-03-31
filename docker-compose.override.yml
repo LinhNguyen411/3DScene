@@ -7,7 +7,7 @@
 version: '3.8'
 services:
   # react application
-  todo-frontend:
+  3dscene-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -15,7 +15,7 @@ services:
       - ./frontend:/app
 
   # FastApi application
-  todo-api:
+  3dscene-api:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -23,21 +23,11 @@ services:
       - ./backend/:/code
 
   # reverse proxy for frontend/backend (fixes problems with CORS and simpler to deploy)
-  todo-reverse-proxy:
+  3dscene-reverse-proxy:
     build:
       context: ./reverse-proxy
       dockerfile: Dockerfile
 
-  # fake smtp server to intercept and view sent emails
-  # todo-mailhog:
-  #   ~
 
-
-  # todo-worker:
-  #   ~
-
-  # todo-redis:
-  #   ~
-
-  todo-flower:
+  3dscene-flower:
     image: mher/flower:0.9.4

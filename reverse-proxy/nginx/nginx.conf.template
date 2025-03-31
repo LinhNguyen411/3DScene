@@ -68,13 +68,13 @@ http {
             proxy_redirect off;
             proxy_connect_timeout 60;
             proxy_read_timeout 60;
-            proxy_pass http://todo-frontend:${FRONTEND_PORT_INTERNAL}/;
+            proxy_pass http://3dscene-frontend:${FRONTEND_PORT_INTERNAL}/;
         }
 
         # @see https://docs.humio.com/integrations/proxies/nginx/
         # @see https://github.com/python-restx/flask-restx/issues/58
         location /api/ {
-            proxy_pass http://todo-api:${API_PORT_INTERNAL}/;
+            proxy_pass http://3dscene-api:${API_PORT_INTERNAL}/;
             proxy_redirect off;
 
             proxy_set_header Host $http_host;
@@ -94,7 +94,7 @@ http {
         # @see https://docs.humio.com/integrations/proxies/nginx/
         # @see https://github.com/python-restx/flask-restx/issues/58
         location /mailhog/ {
-            proxy_pass http://todo-mailhog:${MAILHOG_PORT_INTERNAL}/;
+            proxy_pass http://3dscene-mailhog:${MAILHOG_PORT_INTERNAL}/;
             proxy_redirect off;
 
             proxy_set_header Host $http_host;
@@ -113,7 +113,7 @@ http {
         
         location /flower/ {
             rewrite ^/flower/(.*)$ /$1 break;
-            proxy_pass http://todo-flower:${FLOWER_PORT_INTERNAL}/;
+            proxy_pass http://3dscene-flower:${FLOWER_PORT_INTERNAL}/;
             proxy_set_header Host $http_host;
 
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

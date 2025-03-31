@@ -1,113 +1,134 @@
-import { Container, Row, Col, Card, Accordion } from "react-bootstrap";
-import { RouterPath } from "../../assets/dictionary/RouterPath"
+import { Container, Row, Col, Card, Button } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { RouterPath } from "../../assets/dictionary/RouterPath";
 import myAppConfig from "../../config";
 
 export default function HomePage(props) {
+  const isAuthenticated = localStorage.getItem("token") ? true : false;
+  
   return (
     <>
-      <Container>
-        <Row className="justify-content-center pt-5 ">
-          <Col xs={12} sm={12} md={10} lg={8} xl={6} >
-            <Card>
-            <Card.Header as="h5">Welcome to EnvCap!</Card.Header>
-              <Card.Body>
-                <Card.Title as="h6" className="mb-3">Tech stack </Card.Title>
-                <Accordion alwaysOpen>
-                <Accordion.Item eventKey="0">
-                    <Accordion.Header>FastAPI (Python)</Accordion.Header>
-                    <Accordion.Body>
-                    <span className="fw-bold">FastAPI</span> is a Web framework for developing RESTful APIs in Python.
-                    <ul className="mt-2">
-                      <li>FastAPI v0.73</li>
-                      <li>SQLAlchemy (SQL toolkit and Object Relational Mapper)</li>
-                      <li>Pydantic (Python data validation)</li>
-                      <li>REST API</li>
-                      <li>Swagger (API documentation)</li>
-                      <li>Uvicorn (ASGI server)</li>
-                      <li>Bcrypt</li>
-                      <li>Alembic</li>
-                      <li>Pytest</li>
-                      <li>Logger</li>
-                      </ul>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="1">
-                    <Accordion.Header>Celery, Redis and Flower</Accordion.Header>
-                    <Accordion.Body>
-                    <p><span className="fw-bold">Celery</span> is a task queue with focus on real-time processing, while also supporting task scheduling.</p>
-                    <p><span className="fw-bold">Redis</span> is a performant, in memory, key-value data store used to store messages produced by the application code describing the work to be done in the Celery task queue.</p>
-                    <p><span className="fw-bold">Flower</span> is a web based tool for monitoring and administrating Celery clusters.</p>
-                    <a href={myAppConfig.frontend.FRONTEND_DOMAIN + RouterPath.FLOWER} target="_blank" rel="noreferrer" className="mt-2">Click here to open Flower!</a>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="2">
-                    <Accordion.Header>ReactJS (JavaScript)</Accordion.Header>
-                    <Accordion.Body>
-                    <span className="fw-bold">React</span> (also known as React.js or ReactJS) is a free and open-source front-end JavaScript library.
-                      <ul className="mt-2">
-                      <li>React v17 (using Reactjs hooks)</li>
-                      <li>React-router-dom v6 (dynamic routing)</li>
-                      <li>Axios</li>
-                      <li>React-bootstrap v2 (Bootstrap v5)</li>
-                      <li>React-bootstrap-table-next</li>
-                      <li>React-paginate</li>
-                      </ul>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="3">
-                    <Accordion.Header>Figma (UI/UX design)</Accordion.Header>
-                    <Accordion.Body>
-                    <span className="fw-bold">Figma</span> is a vector graphics editor and web applications prototyping tool. The Figma allow viewing and interacting with Figma prototypes in real-time. The feature set of Figma focuses on use in user interface and user experience design, with an emphasis on real-time collaboration.
-                    <ul className="mt-2">
-                    <li>Bootstrap components and grid</li>
-                    <li>Auto-layout components</li>
-                    </ul>
-                    <a href="https://www.figma.com/file/dDITdZCtk8jSuA27AkuwPj/Awesome-Todo?node-id=1%3A3" target="_blank" rel="noreferrer" className="mt-2">Click here to see the app prototype!</a>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="4">
-                    <Accordion.Header>PostgreSQL and PGAdmin</Accordion.Header>
-                    <Accordion.Body>
-                    <p><span className="fw-bold">PostgreSQL</span> is a free and open-source relational database management system.</p>
-                    <p><span className="fw-bold">PGAdmin</span> is a web-based Graphical User Interface (GUI) management application used to communicate with Postgres and derivative relational databases.</p>
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="5">
-                    <Accordion.Header>Docker and Docker-compose</Accordion.Header>
-                    <Accordion.Body>
-                    <span className="fw-bold">Docker</span> is an open platform for developing, shipping, and running applications. Docker let to separate applications from infrastructure for quick software delivery software. 
-                    Docker’s methodologies for shipping, testing, and deploying code quickly allow significantly reduce the delay between writing code and running it in production.
-                    <br/><br/>
-                    <span className="fw-bold">Docker Compose</span> is a tool that was developed to help define and share multi-container applications. With Compose, we can create a YAML file to define the services and with a single command, can spin everything up or tear it all down.
+      {/* Hero Section */}
+      <div 
+        className="position-relative" 
+        style={{
+          backgroundImage: "url('https://images.unsplash.com/photo-1513002749550-c59d786b8e6c?q=80&w=1374&auto=format&fit=crop')", 
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          height: "500px",
+          color: "white"
+        }}
+      >
+        <div className="position-absolute w-100 h-100" style={{ backgroundColor: "rgba(0,0,0,0.4)" }}></div>
+        <Container className="position-relative h-100">
+          <Row className="h-100 align-items-center text-center">
+            <Col xs={12} md={8} lg={6} className="mx-auto">
+              <h1 className="mb-2">EnvCap <span className="bg-info rounded px-2 py-1" style={{ fontSize: "1rem" }}>BETA</span></h1>
+              <p className="mb-4">3D Scan Online</p>
+              
+              {!isAuthenticated ? (
+                <>
+                  <Link to={RouterPath.SIGNUP}>
+                    <Button variant="info" size="lg" className="text-white px-4 mb-2">Join Now</Button>
+                  </Link>
+                  <div className="mt-2">
+                    Already have an account? <Link to={RouterPath.LOGIN} className="text-info">Log in</Link>
+                  </div>
+                </>
+              ) : (
+                <Link to={RouterPath.LIST_TODOS}>
+                  <Button variant="info" size="lg" className="text-white px-4">My Tasks</Button>
+                </Link>
+              )}
+            </Col>
+          </Row>
+        </Container>
+      </div>
 
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="6">
-                    <Accordion.Header>GitLab</Accordion.Header>
-                    <Accordion.Body>
-                    <span className="fw-bold">GitLab</span> is a web-based Git repository that provides free open and private repositories, issue-following capabilities, and wikis. 
-
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="7">
-                    <Accordion.Header>Nginx</Accordion.Header>
-                    <Accordion.Body>
-                    <span className="fw-bold">NGINX</span> is open source software for web serving, reverse proxying, caching, load balancing, media streaming, and more. 
-                    </Accordion.Body>
-                  </Accordion.Item>
-                  <Accordion.Item eventKey="8">
-                    <Accordion.Header>MailHog</Accordion.Header>
-                    <Accordion.Body>
-                    <p><span className="fw-bold">MailHog</span> is an email-testing tool with a fake SMTP server underneath.</p>
-                    <a href={myAppConfig.frontend.FRONTEND_DOMAIN + RouterPath.MAILHOG} target="_blank" rel="noreferrer" className="mt-2">Click here to open MailHog!</a>
-                    </Accordion.Body>
-                  </Accordion.Item>
-
-                </Accordion>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+      {/* What's EnvCap Section */}
+      <Container className="py-5">
+        <Card className="border-0 mb-5">
+          <Card.Body className="text-center p-4">
+            <h2 className="text-info mb-4">What's EnvCap?</h2>
+            <Row className="justify-content-center">
+              <Col md={10} lg={8}>
+                <p>EnvCap is a central platform of task lightweight management where you can upload tasks quickly and easily.</p>
+                <p>We use state-of-art productivity algorithms on the cloud to deliver professional task management to users</p>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+        
+        {/* How to get started */}
+        <Card className="border-0 mb-5">
+          <Card.Body className="text-center p-4">
+            <h2 className="text-info mb-4">How to get started with EnvCap</h2>
+            <Row className="justify-content-center gx-5 gy-4 mt-3">
+              <Col xs={12} md={4}>
+                <Card className="h-100 shadow-sm">
+                  <Card.Body>
+                    <h5>Create Account</h5>
+                    <p>Sign up and set up your personal or team profile</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col xs={12} md={4}>
+                <Card className="h-100 shadow-sm">
+                  <Card.Body>
+                    <h5>Add Tasks</h5>
+                    <p>Create and organize your tasks with priorities</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col xs={12} md={4}>
+                <Card className="h-100 shadow-sm">
+                  <Card.Body>
+                    <h5>Track Progress</h5>
+                    <p>Monitor completion and get insights on productivity</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+          </Card.Body>
+        </Card>
+        
+        {/* Tech Stack Section (Preserved from original) */}
+        <Card>
+          <Card.Header as="h5">Tech stack</Card.Header>
+          <Card.Body>
+            <Row className="g-4">
+              <Col md={4}>
+                <Card className="h-100">
+                  <Card.Body>
+                    <h5>FastAPI (Python)</h5>
+                    <p>Web framework for developing RESTful APIs in Python</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={4}>
+                <Card className="h-100">
+                  <Card.Body>
+                    <h5>ReactJS</h5>
+                    <p>Free and open-source front-end JavaScript library</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={4}>
+                <Card className="h-100">
+                  <Card.Body>
+                    <h5>Docker</h5>
+                    <p>Open platform for developing, shipping, and running applications</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
+            <div className="text-center mt-4">
+              <Link to={RouterPath.HOME}>
+                <Button variant="outline-secondary">Learn More</Button>
+              </Link>
+            </div>
+          </Card.Body>
+        </Card>
       </Container>
     </>
   );

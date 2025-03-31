@@ -1,59 +1,56 @@
-import { Button, Container, Row, Col, Card, Form, Alert } from "react-bootstrap";
+import { Button, Container, Row, Col, Card, Form } from "react-bootstrap";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LinkContainer } from "react-router-bootstrap";
+import { Link } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google';
-
-import DataService from "./LoginService";
 import { RouterPath } from "../../assets/dictionary/RouterPath";
+import DataService from "./LoginService";
 
-
-export default function HomePage(props) {
-  const [isShowValidationError, setisShowValidationError] = useState(false);
-  const [isSendingRequest, setisSendingRequest] = useState(false);
-  const [isSendingRequestLoginGoogle, setisSendingRequestLoginGoogle] = useState(false);
-  const [EmailForm, setEmailForm] = useState("");
-  const [PasswordForm, setPasswordForm] = useState("");
+export default function Login(props) {
+  const [isShowValidationError, setIsShowValidationError] = useState(false);
+  const [isSendingRequest, setIsSendingRequest] = useState(false);
+  const [isSendingRequestLoginGoogle, setIsSendingRequestLoginGoogle] = useState(false);
+  const [emailForm, setEmailForm] = useState("");
+  const [passwordForm, setPasswordForm] = useState("");
 
   let navigate = useNavigate();
 
-
   const handleClick = (e) => {
-    setisSendingRequest(true);
+    setIsSendingRequest(true);
     e.preventDefault();
     if (
-      !PasswordForm ||
-      !String(EmailForm)
+      !passwordForm ||
+      !String(emailForm)
         .toLowerCase()
         .match(
           /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
         )
     ) {
-      setisShowValidationError(true);
-      setisSendingRequest(false);
+      setIsShowValidationError(true);
+      setIsSendingRequest(false);
     } else {
       var bodyFormData = new FormData();
-      bodyFormData.append("username", EmailForm.toLowerCase());
-      bodyFormData.append("password", PasswordForm);
+      bodyFormData.append("username", emailForm.toLowerCase());
+      bodyFormData.append("password", passwordForm);
       DataService.postLogin(bodyFormData)
         .then((response) => {
           if (response.status === 200) {
             localStorage.setItem("token", response.data.access_token);
             navigate(RouterPath.LIST_TODOS);
           } else {
-            setisSendingRequest(false);
-            setisShowValidationError(true);
+            setIsSendingRequest(false);
+            setIsShowValidationError(true);
           }
         })
         .catch((error) => {
-          setisSendingRequest(false);
-          setisShowValidationError(true);
+          setIsSendingRequest(false);
+          setIsShowValidationError(true);
         });
     }
   };
 
-  const handleSuccesGoogleLogin = (credentials) => {
-    setisSendingRequestLoginGoogle(true);
+  const handleSuccessGoogleLogin = (credentials) => {
+    setIsSendingRequestLoginGoogle(true);
     DataService.postLoginGoogle({
       "credentials": credentials
     })
@@ -62,88 +59,112 @@ export default function HomePage(props) {
           localStorage.setItem("token", response.data.access_token);
           navigate(RouterPath.LIST_TODOS);
         } else {
-          setisSendingRequestLoginGoogle(false);
+          setIsSendingRequestLoginGoogle(false);
         }
       })
       .catch((error) => {
-        setisSendingRequestLoginGoogle(false);
+        setIsSendingRequestLoginGoogle(false);
       });
   }
 
   return (
-    <>
-      <Container>
-        <Row className="justify-content-center pt-5 ">
-          <Col xs={12} sm={10} md={8} lg={6} xl={4} >
-            <Card>
-              <Card.Body>
-                <Card.Title>Login</Card.Title>
+    <div className="bg-light min-vh-100 d-flex flex-column">
+      {/* Header */}
+
+      {/* Main Content */}
+      <Container className="flex-grow-1 d-flex align-items-center justify-content-center">
+        <Row className="justify-content-center my-4 w-100">
+          <Col xs={12} sm={10} md={8} lg={6} xl={5}>
+            <div className="d-flex align-items-center mb-2">
+              <Button variant="link" className="text-secondary p-0" onClick={() => navigate(-1)}>
+                <i className="bi bi-arrow-left"></i>
+              </Button>
+            </div>
+            
+            <Card className="border-0 shadow-sm">
+              <Card.Body className="p-4 p-md-5">
+                <div className="text-center mb-4">
+                  <Card.Title className="fs-2 fw-bold mb-3">Log In</Card.Title>
+                  <Card.Text className="text-secondary mb-4">
+                    Welcome back! You can use the same login info in both the app and web.
+                  </Card.Text>
+                </div>
+
                 <Form>
-                  <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>
-                      Email<span className="text-danger">*</span>
-                    </Form.Label>
+                  <Form.Group className="mb-4">
                     <Form.Control
                       type="email"
-                      placeholder="Enter email"
+                      placeholder="Email Address"
+                      className="form-control-lg rounded-pill"
                       onChange={(event) => setEmailForm(event.target.value)}
-                      value={EmailForm}
+                      value={emailForm}
                     />
                   </Form.Group>
 
-                  <Form.Group className="mb-3" controlId="formBasicPassword">
-                    <Form.Label>
-                      Password<span className="text-danger">*</span>
-                    </Form.Label>
+                  <Form.Group className="mb-4">
                     <Form.Control
                       type="password"
                       placeholder="Password"
+                      className="form-control-lg rounded-pill"
                       onChange={(event) => setPasswordForm(event.target.value)}
-                      value={PasswordForm}
+                      value={passwordForm}
                     />
                   </Form.Group>
+
+                  {isShowValidationError && (
+                    <div className="mb-3 text-danger text-center">
+                      Email or password not valid
+                    </div>
+                  )}
+
                   <Button
                     variant="primary"
                     type="submit"
-                    className="w-100 mb-2"
+                    className="bg-info text-white border-0 w-100 py-3 rounded-pill"
                     onClick={(e) => handleClick(e)}
                     disabled={isSendingRequest}
                   >
-                    Login
+                    {isSendingRequest ? "Logging in..." : "Log In"}
                   </Button>
-                  <Form.Text
-                    className={
-                      "text-danger " + (isShowValidationError ? "" : "d-none")
-                    }
-                  >
-                    Email or password not valid
-                  </Form.Text>
                 </Form>
 
-                <LinkContainer to={RouterPath.FORGOT_PASSWORD}>
-                  <Card.Link>Forgot password?</Card.Link>
-                </LinkContainer>
-                <div className="pt-2 pb-2">
-                  <GoogleLogin
+                <div className="d-flex justify-content-between my-4">
+                  <Link to={RouterPath.SIGNUP} className="text-info">
+                    Sign Up
+                  </Link>
+                  <Link to={RouterPath.FORGOT_PASSWORD} className="text-info">
+                    Forgot Password?
+                  </Link>
+                </div>
 
+                <div className="position-relative text-center my-4">
+                  <hr />
+                  <div className="divider-text bg-white px-3 text-secondary">or</div>
+                </div>
+
+                <div className="d-flex justify-content-center my-4">
+                  <GoogleLogin
                     onSuccess={credentialResponse => {
-                      handleSuccesGoogleLogin(credentialResponse["credential"]);
+                      handleSuccessGoogleLogin(credentialResponse["credential"]);
                     }}
                     onError={() => {
                       console.log('Login Failed');
                     }}
                   />
                 </div>
-                <Alert variant="success" className="mt-2">
-                  <p className="mb-0"><span className="fw-bold"><i class="bi bi-info-circle-fill"></i> Test account</span><br />
+
+                <div className="mt-4 p-3 bg-light rounded border">
+                  <p className="mb-0 small">
+                    <span className="fw-bold"><i className="bi bi-info-circle-fill me-1"></i>Test account</span><br />
                     Login: test@test.com<br />
-                    Password: 123123</p>
-                </Alert>
+                    Password: 123123
+                  </p>
+                </div>
               </Card.Body>
             </Card>
           </Col>
         </Row>
       </Container>
-    </>
+    </div>
   );
 }

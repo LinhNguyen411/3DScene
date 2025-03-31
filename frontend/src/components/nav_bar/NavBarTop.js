@@ -19,63 +19,65 @@ export default function NavBarTop(props) {
       <Container fluid>
         <Row>
           <Col className="p-0">
-            <Navbar bg="dark" variant="dark"  expand="md">
-              <Container className="pe-0">
-                <Row className="w-100 justify-content-between">
-                  <Col xs={8} md={9} className="d-flex">
+            <Navbar bg="light" variant="light" expand="md" className="py-2">
+              <Container>
+                <LinkContainer to={RouterPath.HOME}>
+                  <Navbar.Brand className="d-flex align-items-center">
+                    <span className="fw-bold me-2">EnvCap</span>
+                    <span className="text-white bg-info rounded px-2 py-1" style={{ fontSize: "0.8rem" }}>BETA</span>
+                  </Navbar.Brand>
+                </LinkContainer>
+                
+                <Nav className="mx-auto d-none d-md-flex">
+                  <LinkContainer to={RouterPath.HOME}>
+                    <Nav.Link>Community</Nav.Link>
+                  </LinkContainer>
+                  <LinkContainer to={RouterPath.HOME}>
+                    <Nav.Link>Tutorial</Nav.Link>
+                  </LinkContainer>
+                  <LinkContainer to={RouterPath.HOME}>
+                    <Nav.Link>EnvCap Pro</Nav.Link>
+                  </LinkContainer>
+                </Nav>
 
-                    <LinkContainer className="brand" to={RouterPath.HOME}>
-                      <Navbar.Brand>EnvCap</Navbar.Brand>
-                    </LinkContainer>
-                  {isAuthenticated && (
-                          <>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav" className="me-3"/>
-                    
-                    <Navbar.Collapse id="basic-navbar-nav">
-                    
-                      <Nav className="me-auto" activeKey={location.pathname}>
-                        
-                            <LinkContainer to={RouterPath.LIST_TODOS}>
-                              <Nav.Link>List To do</Nav.Link>
-                            </LinkContainer>
-                            <LinkContainer to={RouterPath.LIST_DONE}>
-                              <Nav.Link>List done</Nav.Link>
-                            </LinkContainer>
-                            <LinkContainer to={RouterPath.MY_INFORMATION}>
-                              <Nav.Link>My information</Nav.Link>
-                            </LinkContainer>
-                          
-                      </Nav>
-                    </Navbar.Collapse>
+                <Nav className="ms-auto">
+                  {!isAuthenticated && (
+                    <>
+                      <LinkContainer to={RouterPath.LOGIN}>
+                        <Nav.Link>Log In</Nav.Link>
+                      </LinkContainer>
+                      <Link to={RouterPath.SIGNUP}>
+                        <Button variant="info" className="text-white">Sign Up</Button>
+                      </Link>
                     </>
-                        )}
-                  </Col>
-                  <Col
-                    xs={3}
-                    className="align-items-end d-flex flex-row-reverse gap-2"
-                  >
-                    {!isAuthenticated && (
-                      <>
-                        <Link to={RouterPath.SIGNUP}>
-                          <Button className="text-nowrap">Sign up</Button>
-                        </Link>
-                        <Link className="ml-1" to={RouterPath.LOGIN}>
-                          <Button variant="success">Login</Button>
-                        </Link>
-                      </>
-                    )}
-                    {isAuthenticated && (
-                      <>
-                        <Button className="text-nowrap"
-                          variant="info"
-                          onClick={(e) => handleClickLogOut(e)}
-                        >
-                          Log out
-                        </Button>
-                      </>
-                    )}
-                  </Col>
-                </Row>
+                  )}
+                  
+                  {isAuthenticated && (
+                    <>
+                      <Navbar.Toggle aria-controls="basic-navbar-nav" className="me-3"/>
+                      <Navbar.Collapse id="basic-navbar-nav">
+                        <Nav activeKey={location.pathname}>
+                          <LinkContainer to={RouterPath.LIST_TODOS}>
+                            <Nav.Link>List To do</Nav.Link>
+                          </LinkContainer>
+                          <LinkContainer to={RouterPath.LIST_DONE}>
+                            <Nav.Link>List done</Nav.Link>
+                          </LinkContainer>
+                          <LinkContainer to={RouterPath.MY_INFORMATION}>
+                            <Nav.Link>My information</Nav.Link>
+                          </LinkContainer>
+                        </Nav>
+                      </Navbar.Collapse>
+                      <Button
+                        variant="outline-info"
+                        onClick={(e) => handleClickLogOut(e)}
+                        className="ms-3"
+                      >
+                        Log out
+                      </Button>
+                    </>
+                  )}
+                </Nav>
               </Container>
             </Navbar>
           </Col>

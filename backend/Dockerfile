@@ -8,6 +8,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies and Python
 RUN apt-get update && apt-get install -y \
+    libpq-dev \
     wget \
     python3 \
     python3-pip \
@@ -54,37 +55,34 @@ RUN git clone https://github.com/colmap/colmap.git && \
     mkdir build && \
     cd build && \
     cmake .. -GNinja && \
-    ninja && \
+    ninja -j2 && \
     ninja install
 
 # Install OpenSplat
 RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat && \
     cd OpenSplat && \
-    wget "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip" && \
+    wget "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcpu.zip" && \
     unzip libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip -d /usr/local/ && \
     mkdir build && \
     cd build && \
     cmake -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ .. -GNinja && \
-    ninja && \
+    ninja -j2 && \
     ninja install
 
 # Update LD_LIBRARY_PATH for libtorch
 ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:$LD_LIBRARY_PATH
 
-WORKDIR /app
+WORKDIR /code/app
 
-COPY ./requirements.txt /app/requirements.txt
+COPY ./requirements.txt /code/requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-ENV PYTHONPATH="${PYTHONPATH}:/app"
-ARG PYTHONPATH=/app
+COPY ./app /code/app
+ARG PYTHONPATH=/code/app/
 
-COPY ./app /app
-
-RUN mkdir -p /app/uploads /app/results
+ENV PYTHONPATH "${PYTHONPATH}:/code"
 
 EXPOSE 8000
 
-# Default command to run the application with uvicorn
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+#CMD ["uvicorn", "main:app", "--reload", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]

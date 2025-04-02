@@ -42,8 +42,15 @@ class Settings(BaseSettings):
 
     # SQLALCHEMY_DATABASE_URI: str = "sqlite:///./sql_app.db"
     POSTGRESQL_DATABASE_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
+            POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
     )
+
+    POSTGRESQL_DATABASE_CELERY_URI: Optional[str] = (
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
+            POSTGRES_HOST}:{POSTGRES_PORT}/celery_db"
+    )
+
     PostgresDsn.build(
         scheme="postgresql",
         user=POSTGRES_USER,
@@ -53,10 +60,12 @@ class Settings(BaseSettings):
     )
     POSTGRES_TEST_DB: str = POSTGRES_DB + "_test"
     POSTGRESQL_TEST_DATABASE_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_TEST_DB}"
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
+            POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_TEST_DB}"
     )
     POSTGRESQL_ADMIN_DATABASE_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/postgres"
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
+            POSTGRES_HOST}:{POSTGRES_PORT}/postgres"
     )
     # PostgresDsn.build(
     #     scheme="postgresql",
@@ -66,7 +75,8 @@ class Settings(BaseSettings):
     #     path=f"/{POSTGRES_TEST_DB or ''}",
     # )
 
-    SMTP_TLS: bool = True if os.environ["MAIL_TLS"].upper() == "TRUE" else False
+    SMTP_TLS: bool = True if os.environ["MAIL_TLS"].upper(
+    ) == "TRUE" else False
     SMTP_PORT: int = int(os.environ["SMTP_PORT"])
     SMTP_HOST: str = os.environ["SMTP_HOST"]
     SMTP_USER: str = os.environ["SMTP_USER"]
@@ -99,6 +109,9 @@ class Settings(BaseSettings):
     # Google OAuth2 authentication
     GOOGLE_AUTH_CLIENT_ID: str = os.environ["GOOGLE_AUTH_CLIENT_ID"]
     GOOGLE_AUTH_CLIENT_SECRET: str = os.environ["GOOGLE_AUTH_CLIENT_SECRET"]
+
+    UPLOAD_VIDEO_DIR: str = "uploads"
+    RESULT_DIR: str = "results"
 
 
 settings: Settings = Settings()

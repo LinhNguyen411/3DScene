@@ -13,8 +13,8 @@ x-fastapi-app-environment:
   APP_GID: ${APP_GID:-1000}
   API_PORT: ${API_PORT}
   API_PORT_INTERNAL: ${API_PORT_INTERNAL}
-  POSTGRES_HOST: ${POSTGRES_HOST}
-  POSTGRES_PORT: ${POSTGRES_PORT}
+  POSTGRES_HOST: 3dscene-postgres  # Ensure this is explicitly set
+  POSTGRES_PORT: 5432  # Default PostgreSQL port
   POSTGRES_USER: ${POSTGRES_USER}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   POSTGRES_DB: ${POSTGRES_DB}
@@ -59,7 +59,10 @@ services:
       - ${API_PORT}:${API_PORT_INTERNAL}
     environment:
       <<: *common-fastapi-app-environment-variables
-    command: uvicorn app:app --reload --proxy-headers --host 0.0.0.0 --port 8000
+    command: uvicorn main:app --reload --proxy-headers --host 0.0.0.0 --port 8000
+    depends_on:
+      3dscene-postgres:
+        condition: service_healthy  # Wait for PostgreSQL to be ready
     restart: unless-stopped
 
   3dscene-reverse-proxy:
@@ -91,10 +94,11 @@ services:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped
     command: >-
-      celery --app core.celery_app.celery_app worker --loglevel=info --uid=nobody  --gid=nogroup
+      celery --app core.celery_app.celery_app worker --loglevel=info --uid=nobody --gid=nogroup
     depends_on:
       - 3dscene-api
       - 3dscene-redis
+      - 3dscene-postgres  # Add this if the worker also needs the DB
 
   3dscene-redis:
     image: redis:6-alpine
@@ -123,6 +127,11 @@ services:
       - ${POSTGRES_PORT}:5432
     volumes:
       - 3dscene-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   3dscene-pgadmin:
@@ -142,4 +151,3 @@ services:
 volumes:
   3dscene-postgres-data:
     name: ${POSTGRES_STORAGE_VOLUME_NAME}
-

@@ -42,21 +42,26 @@ export default function ForgotPasswordForm(props) {
   };
 
   return (
-    <>
-      <Container>
-        <Row className="justify-content-center pt-5 ">
-          <Col xs={12} sm={10} md={8} lg={6} xl={4} >
-            <Card>
-              <Card.Body>
-                <Card.Title>Forgot password?</Card.Title>
+    <div className="bg-light d-flex flex-column">
+      <Container className="flex-grow-1 d-flex align-items-center justify-content-center">
+        <Row className="justify-content-center my-4 w-100">
+          <Col xs={12} sm={10} md={8} lg={6} xl={5} >
+            <div className="d-flex align-items-center mb-2">
+              <Button variant="link" className="text-secondary p-0" onClick={() => navigate(-1)}>
+                <i className="bi bi-arrow-left"></i>
+              </Button>
+            </div>
+            <Card className="border-0 shadow-sm">
+              <Card.Body className="p-4 p-md-5">
+                <div className="text-center mb-4">
+                  <Card.Title className="fs-2 fw-bold mb-3">Forgot Password</Card.Title>
+                </div>
                 <Form>
-                  <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>
-                      Email<span className="text-danger">*</span>
-                    </Form.Label>
+                  <Form.Group className="mb-4" controlId="formBasicEmail">
                     <Form.Control
                       type="email"
-                      placeholder="Enter email"
+                      placeholder="Email Address"
+                      className="form-control-lg rounded-pill"
                       onChange={(event) => setEmailForm(event.target.value)}
                       value={EmailForm}
                     />
@@ -72,7 +77,7 @@ export default function ForgotPasswordForm(props) {
                   <Button
                     variant="primary"
                     type="submit"
-                    className="w-100"
+                    className="bg-info text-white border-0 w-100 py-3 rounded-pill"
                     onClick={(e) => handleClick(e)}
                     disabled={isSendingRequest}
                   >
@@ -84,6 +89,6 @@ export default function ForgotPasswordForm(props) {
           </Col>
         </Row>
       </Container>
-    </>
+    </div>
   );
 }

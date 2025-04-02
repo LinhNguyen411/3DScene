@@ -68,7 +68,7 @@ export default function Login(props) {
   }
 
   return (
-    <div className="bg-light min-vh-100 d-flex flex-column">
+    <div className="bg-light  d-flex flex-column">
       {/* Header */}
 
       {/* Main Content */}
@@ -86,7 +86,7 @@ export default function Login(props) {
                 <div className="text-center mb-4">
                   <Card.Title className="fs-2 fw-bold mb-3">Log In</Card.Title>
                   <Card.Text className="text-secondary mb-4">
-                    Welcome back! You can use the same login info in both the app and web.
+                    Welcome back! 
                   </Card.Text>
                 </div>
 

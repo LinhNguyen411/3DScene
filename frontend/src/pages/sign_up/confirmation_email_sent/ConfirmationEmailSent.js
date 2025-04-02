@@ -13,7 +13,7 @@ export default function ConfirmationEmailSent(props) {
                 <Card.Title>Email has been sent !</Card.Title>
                 <Card.Text>Check your email to confirm it.</Card.Text>
                 <Link to={RouterPath.HOME}>
-                  <Button variant="primary" type="submit" className="w-100">
+                  <Button variant="primary" type="submit" className="text-white bg-info border-0 rounded-pill py-3 w-100">
                     Back to home page
                   </Button>
                 </Link>

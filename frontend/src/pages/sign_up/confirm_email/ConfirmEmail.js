@@ -41,7 +41,7 @@ export default function ConfirmEmail(props) {
                   Log in with your email and password on the home page.
                 </Card.Text>
                 <Link to={RouterPath.HOME}>
-                  <Button variant="primary" type="submit" className="w-100">
+                  <Button variant="primary" type="submit" className="w-100 text-white bg-info border-0 rounded-pill py-3">
                     Back to home page
                   </Button>
                 </Link>

@@ -80,7 +80,7 @@ export default function ResetPassword(props) {
                   <Button
                     variant="primary"
                     type="submit"
-                    className="w-100"
+                    className="bg-info text-white border-0 w-100 py-3 rounded-pill"
                     onClick={(e) => handleClick(e)}
                     disabled={isSendingRequest}
                   >

@@ -59,11 +59,11 @@ def send_email_async(
     message.send(to=email_to, render=environment, smtp=smtp_options)
 
 
-@celery_app.task(bind=True)
+@celery_app.task(bind=True, ignore_result=False)
 def process_video(self: Task,
                   task_id: str,
                   video_path: str,
-                  num_iterations: int = 1000
+                  num_iterations: int = 10
                   ) -> Any:
     """Process video to generate 3D Gaussian Splatting model"""
     try:

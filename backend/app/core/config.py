@@ -42,14 +42,10 @@ class Settings(BaseSettings):
 
     # SQLALCHEMY_DATABASE_URI: str = "sqlite:///./sql_app.db"
     POSTGRESQL_DATABASE_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
-            POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-    )
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
 
     POSTGRESQL_DATABASE_CELERY_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
-            POSTGRES_HOST}:{POSTGRES_PORT}/celery_db"
-    )
+        f"db+postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}")
 
     PostgresDsn.build(
         scheme="postgresql",
@@ -60,13 +56,9 @@ class Settings(BaseSettings):
     )
     POSTGRES_TEST_DB: str = POSTGRES_DB + "_test"
     POSTGRESQL_TEST_DATABASE_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
-            POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_TEST_DB}"
-    )
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_TEST_DB}")
     POSTGRESQL_ADMIN_DATABASE_URI: Optional[str] = (
-        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{
-            POSTGRES_HOST}:{POSTGRES_PORT}/postgres"
-    )
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/postgres")
     # PostgresDsn.build(
     #     scheme="postgresql",
     #     user=POSTGRES_USER,

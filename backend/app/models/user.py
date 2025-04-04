@@ -13,4 +13,4 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=False)
     is_superuser = Column(Boolean(), default=False)
-    todos = relationship("Todo", back_populates="owner")
+    splats = relationship("Splat", back_populates="owner")

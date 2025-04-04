@@ -1,6 +1,8 @@
 /backend/env
 /backend/venv
 /backend/app/sql_app.db
+/backend/app/results
+/backend/app/uploads
 /frontend/node_modules
 /frontend/yarn.lock
 __pycache__/

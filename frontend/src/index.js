@@ -24,6 +24,9 @@ import PasswordChanged from "./pages/forgot_password/password_changed/PasswordCh
 import LinkNotValid from "./pages/link_not_valid/LinkNotValid";
 import ConfirmEmail from "./pages/sign_up/confirm_email/ConfirmEmail";
 
+import Admin from "./Admin"
+import AdminLogin from "./admin-pages/admin-login/AdminLogin"
+
 const rootElement = document.getElementById("root");
 render(
   <BrowserRouter>
@@ -85,7 +88,12 @@ render(
         />
         <Route path="*" element={<LinkNotValid />} />
       </Route>
+
+      <Route path={RouterPath.ADMIN} element={<Admin />}>
+        <Route exact path={RouterPath.ADMIN} element={<AdminLogin/>}></Route>
+      </Route>
     </Routes>
+
   </BrowserRouter>,
   rootElement
 );

@@ -22,7 +22,7 @@ celery_app.conf.result_backend = os.environ.get(
 
 celery_app.conf.task_ignore_result = True
 celery_app.conf.task_store_errors_even_if_ignored = True
-celery_app.conf.update(imports=['app.core.celery_app'])
+celery_app.conf.update(imports=['app.celery.celery_app'])
 celery_log = get_task_logger(__name__)
 
 
@@ -63,7 +63,7 @@ def send_email_async(
 def process_video(self: Task,
                   task_id: str,
                   video_path: str,
-                  num_iterations: int = 10
+                  num_iterations: int = 1000
                   ) -> Any:
     """Process video to generate 3D Gaussian Splatting model"""
     try:

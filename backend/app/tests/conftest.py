@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session  # type: ignore
 from sqlalchemy.exc import ProgrammingError
 from app.core.config import settings
 from app.main import app  # type: ignore
-from app.tests.factories.todo import TodoFactory
 from app.tests.factories.user import UserFactory
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -14,7 +13,6 @@ from sqlalchemy import text
 from app.db.base import Base
 from app.api.deps import get_db
 # All fixtures should be imported in conftest.py
-from app.tests.fixtures.todo import todo
 from app.tests.fixtures.user import ordinary_user
 from app.tests.fixtures.authorization import client_superuser, client_user
 
@@ -27,7 +25,8 @@ admin_engine = create_engine(
 
 # Create an engine and sessionmaker bound to the test database
 engine = create_engine(TEST_SQLALCHEMY_DATABASE_URL)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine)
 
 
 def create_test_database():
@@ -35,7 +34,8 @@ def create_test_database():
     with admin_engine.connect() as connection:
         try:
             connection.execute(
-                text(f"CREATE DATABASE {TEST_SQLALCHEMY_DATABASE_URL.split('/')[-1]}")
+                text(f"CREATE DATABASE {
+                     TEST_SQLALCHEMY_DATABASE_URL.split('/')[-1]}")
             )
         except ProgrammingError:
             print("Database already exists, continuing...")
@@ -48,13 +48,14 @@ def drop_test_database():
             text("""
             SELECT pg_terminate_backend(pid)
             FROM pg_stat_activity
-            WHERE datname = 'todo_db_test'
+            WHERE datname = '3dscene_db_test'
             AND pid <> pg_backend_pid();
         """)
         )
         connection.execute(
             text(
-                f"DROP DATABASE IF EXISTS {TEST_SQLALCHEMY_DATABASE_URL.split('/')[-1]}"
+                f"DROP DATABASE IF EXISTS {
+                    TEST_SQLALCHEMY_DATABASE_URL.split('/')[-1]}"
             )
         )
 
@@ -108,4 +109,3 @@ def client(db: Session) -> Generator[TestClient, None, None]:
 @pytest.fixture(autouse=True)
 def set_session_for_factories(db: Session):
     UserFactory._meta.sqlalchemy_session = db
-    TodoFactory._meta.sqlalchemy_session = db

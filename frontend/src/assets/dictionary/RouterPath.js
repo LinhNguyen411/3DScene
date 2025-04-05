@@ -13,6 +13,9 @@ export const RouterPath = {
   LIST_DONE: "/list-done",
   MY_INFORMATION: "/my-information",
   MAILHOG: "/mailhog",
-  FLOWER: "/flower"
+  FLOWER: "/flower",
+  /* admin route */
+  ADMIN: "/admin",
+  ADMIN_DASHBOARD: "/admin/dashboard"
 };
 Object.freeze(RouterPath);

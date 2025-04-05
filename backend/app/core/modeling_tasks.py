@@ -1,35 +1,27 @@
-from typing import Any
 
-from fastapi import APIRouter, Body, Depends, FastAPI, File, UploadFile, BackgroundTasks, HTTPException, Query
-from fastapi.responses import JSONResponse, FileResponse
-from sqlalchemy.orm import Session  # type: ignore
-from fastapi_pagination import Params, Page
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi import APIRouter, File, UploadFile,  HTTPException, Query, Depends
+from fastapi.responses import FileResponse
 
-from app import crud
-from app import models
-from app import schemas
-from app.api import deps
 from app.core.config import settings
-
-from app.core import celery_app
+from app.api import deps
+from app.celery import celery_app
 from celery.result import AsyncResult
 
-import uuid
+from sqlalchemy.orm import Session  # type: ignore
 import os
 import shutil
 
 router = APIRouter()
 
 
-@router.post("/process/", response_model=schemas.ModelingTaskResponse)
 async def process_video(
+    modeling_task_id: str,
+    db: Session = Depends(deps.get_db),
     file: UploadFile = File(...),
     num_iterations: int = Query(
         1000, description="Number of iterations for the opensplat command")
 ):
     # Generate a unique modeling_task ID
-    modeling_task_id = str(uuid.uuid4())
 
     # Create a directory for this modeling_task
     modeling_task_dir = os.path.join(
@@ -52,7 +44,6 @@ async def process_video(
     }
 
 
-@router.get("/status/{modeling_task_id}", response_model=schemas.ModelingTaskStatus)
 def get_modeling_task_status(modeling_task_id: str):
     modeling_task_result = AsyncResult(
         modeling_task_id, app=celery_app.celery_app)
@@ -85,7 +76,6 @@ def get_modeling_task_status(modeling_task_id: str):
     return response
 
 
-@router.get("/download/{modeling_task_id}")
 def download_result(modeling_task_id: str):
     # Check if the modeling_task has completed
     modeling_task_result = AsyncResult(
@@ -129,7 +119,6 @@ def download_result(modeling_task_id: str):
     )
 
 
-@router.delete("/delete/{modeling_task_id}")
 def delete_modeling_task_data(modeling_task_id: str):
     """Delete all data associated with a modeling_task"""
     modeling_task_dir = os.path.join(

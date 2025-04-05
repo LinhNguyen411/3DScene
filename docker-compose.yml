@@ -97,7 +97,7 @@ services:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped
     command: >-
-      celery --app core.celery_app.celery_app worker --loglevel=info --uid=root --gid=nogroup
+      celery --app app.celery.celery_app:celery_app worker --loglevel=info --uid=root --gid=nogroup
     depends_on:
       - 3dscene-api
       - 3dscene-redis
@@ -111,7 +111,6 @@ services:
       - ${FLOWER_PORT}:${FLOWER_PORT_INTERNAL}
     environment:
       - CELERY_BROKER_URL=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0
-      - CELERY_RESULT_BACKEND=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0
     depends_on:
       - 3dscene-api
       - 3dscene-redis

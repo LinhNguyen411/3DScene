@@ -15,7 +15,7 @@ from jose import jwt  # type: ignore
 
 from app.core.config import settings
 from app.core.logging import logger
-from app.core.celery_app import send_email_async
+from app.celery.celery_app import send_email_async
 
 
 def send_email(

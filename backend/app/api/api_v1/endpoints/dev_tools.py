@@ -5,7 +5,7 @@ from pydantic.networks import EmailStr
 
 from app import schemas
 from app.app_utils import send_test_email
-from app.core.celery_app import print_test_message  # type: ignore
+from app.celery.celery_app import print_test_message  # type: ignore
 from celery.result import AsyncResult  # type: ignore
 
 from app.core.logging import logger

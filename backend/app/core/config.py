@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.environ["SECRET_KEY"]
     # 60 minutes * 24 hours * 8 days = 8 days
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    SERVER_NAME: str = "ToDO App Server"
+    SERVER_NAME: str = "3DScene App Server"
     SERVER_HOST_FRONT: AnyHttpUrl = os.environ[  # type: ignore
         "SERVER_HOST_FRONT"
     ]

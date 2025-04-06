@@ -1,13 +1,13 @@
-import { Button, Container, Row, Col, Card } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Home } from "lucide-react";
 
 import { RouterPath } from "../../../assets/dictionary/RouterPath";
 import DataService from "./ConfirmEmailService";
 
 export default function ConfirmEmail(props) {
-  const [isSendingRequest, setisSendingRequest] = useState(true);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [isSendingRequest, setIsSendingRequest] = useState(true);
+  const [searchParams] = useSearchParams();
 
   let navigate = useNavigate();
   let token = searchParams.get("token");
@@ -22,34 +22,33 @@ export default function ConfirmEmail(props) {
         if (response.status !== 200) {
           navigate(RouterPath.LINK_NOT_VALID);
         }
-        setisSendingRequest(false);
+        setIsSendingRequest(false);
       })
       .catch((error) => {
         navigate(RouterPath.LINK_NOT_VALID);
       });
-  }, []);
+  }, [navigate, token]);
 
   return (
-    <>
-      <Container className={isSendingRequest ? "d-none" : ""}>
-        <Row className="justify-content-center pt-5 ">
-          <Col xs={12} sm={10} md={8} lg={6} xl={4} >
-            <Card>
-              <Card.Body>
-                <Card.Title>Email was confirmed !</Card.Title>
-                <Card.Text>
-                  Log in with your email and password on the home page.
-                </Card.Text>
-                <Link to={RouterPath.HOME}>
-                  <Button variant="primary" type="submit" className="w-100 text-white bg-info border-0 rounded-pill py-3">
-                    Back to home page
-                  </Button>
-                </Link>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
-    </>
+    <div className="bg-gray-100 flex flex-col min-h-screen">
+      <div className={`container mx-auto px-4 ${isSendingRequest ? 'hidden' : ''}`}>
+        <div className="flex justify-center pt-10">
+          <div className="w-full max-w-md">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-2">Email was confirmed!</h2>
+              <p className="text-gray-600 mb-4">
+                Log in with your email and password on the home page.
+              </p>
+              <Link to={RouterPath.HOME}>
+                <button className="w-full bg-sky-400 text-white py-3 px-4 rounded-full flex items-center justify-center hover:bg-sky-500 transition-colors">
+                  <Home className="w-4 h-4 mr-2" />
+                  Back to home page
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

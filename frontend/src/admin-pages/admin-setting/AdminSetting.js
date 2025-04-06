@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Form, Tab, Tabs } from 'react-bootstrap';
+// import { Button, Form, Tab, Tabs } from 'react-bootstrap';
 
 function AdminSetting({ user }) {
   const [activeTab, setActiveTab] = useState('profile');
@@ -68,7 +68,7 @@ function AdminSetting({ user }) {
 
   return (
     <div className="page-content">
-      <h2>User Settings</h2>
+      {/* <h2>User Settings</h2>
       
       <Tabs
         activeKey={activeTab}
@@ -212,7 +212,7 @@ function AdminSetting({ user }) {
             </Form>
           </div>
         </Tab>
-      </Tabs>
+      </Tabs> */}
     </div>
   );
 }

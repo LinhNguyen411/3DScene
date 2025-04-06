@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Table, Badge } from 'react-bootstrap';
-import { ThreeDotsVertical } from 'react-bootstrap-icons';
+// import { Button, Table, Badge } from 'react-bootstrap';
+// import { ThreeDotsVertical } from 'react-bootstrap-icons';
 import AdminAddUser from './add-user/AdminAddUser';
 
 function AdminUser() {
@@ -22,7 +22,7 @@ function AdminUser() {
 
   return (
     <div className="page-content">
-      <div className="page-header">
+      {/* <div className="page-header">
         <h2>User Management</h2>
         <Button 
           variant="primary" 
@@ -77,7 +77,7 @@ function AdminUser() {
         show={showModal} 
         handleClose={handleCloseModal}
         handleAdd={handleAddUser}
-      />
+      /> */}
     </div>
   );
 }

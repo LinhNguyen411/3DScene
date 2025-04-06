@@ -1,0 +1,90 @@
+ {/* <div className="page-header">
+        <h2>Items Management</h2>
+        <Button 
+          variant="primary" 
+          className="add-button"
+          onClick={handleShowModal}
+        >
+          + Add Item
+        </Button>
+      </div>
+
+      <div className="table-container">
+        <Table hover className="items-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>TITLE</th>
+              <th>DESCRIPTION</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(item => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.title}</td>
+                <td>{item.description}</td>
+                <td>
+                  <Button variant="light" className="action-button">
+                    <ThreeDotsVertical />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      </div>
+
+      {/* Add Item Modal */}
+      {/* <Modal show={showModal} onHide={handleCloseModal} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Add Item</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleAddItem}>
+            <Form.Group className="mb-3">
+              <Form.Label>Title <span className="text-danger">*</span></Form.Label>
+              <Form.Control
+                type="text"
+                name="title"
+                value={newItem.title}
+                onChange={handleInputChange}
+                required
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                name="description"
+                value={newItem.description}
+                onChange={handleInputChange}
+                rows={3}
+              />
+            </Form.Group>
+            
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button variant="secondary" onClick={handleCloseModal}>
+                Cancel
+              </Button>
+              <Button variant="success" type="submit">
+                Save
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal> */}
+
+      {/* Success Message */}
+      /* {showSuccessMessage && ( */
+        // <div className="success-message">
+        //   <div className="alert alert-success d-flex align-items-center" role="alert">
+        //     <svg className="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Success:">
+        //       <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+        //     </svg>
+        //     <div>Item created successfully.</div>
+        //   </div>
+        // </div>
+      // )}

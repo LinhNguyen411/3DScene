@@ -1,4 +1,4 @@
-import { Button, Container, Row, Col, Card, Form } from "react-bootstrap";
+// import { Button, Container, Row, Col, Card, Form } from "react-bootstrap";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -69,7 +69,7 @@ export default function AdminLogin(props) {
 
   return (
     <div className="admin-login-page">
-      <Container className="d-flex justify-content-center align-items-center vh-100">
+      {/* <Container className="d-flex justify-content-center align-items-center vh-100">
         <Card className="admin-login-card">
           <Card.Body className="p-4">
             <div className="text-center mb-4">
@@ -122,7 +122,7 @@ export default function AdminLogin(props) {
             </Form>
           </Card.Body>
         </Card>
-      </Container>
+      </Container> */}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { Button, Container, Row, Col, Card, Form } from "react-bootstrap";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RouterPath } from "../../../assets/dictionary/RouterPath";
@@ -42,53 +41,52 @@ export default function ForgotPasswordForm(props) {
   };
 
   return (
-    <div className="bg-light d-flex flex-column">
-      <Container className="flex-grow-1 d-flex align-items-center justify-content-center">
-        <Row className="justify-content-center my-4 w-100">
-          <Col xs={12} sm={10} md={8} lg={6} xl={5} >
-            <div className="d-flex align-items-center mb-2">
-              <Button variant="link" className="text-secondary p-0" onClick={() => navigate(-1)}>
-                <i className="bi bi-arrow-left"></i>
-              </Button>
+    <div className="bg-gray-100 flex flex-col min-h-screen">
+      <div className="flex items-center justify-center">
+        <div className="w-full my-4 px-4 flex justify-center">
+          <div className="w-full sm:w-4/5 md:w-2/3 lg:w-1/2 xl:w-2/5">
+            <div className="flex items-center mb-2">
+              <button 
+                className="text-gray-500 p-0"
+                onClick={() => navigate(-1)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </button>
             </div>
-            <Card className="border-0 shadow-sm">
-              <Card.Body className="p-4 p-md-5">
+            <div className="bg-white rounded-lg shadow-sm border-0">
+              <div className="p-4 md:p-10">
                 <div className="text-center mb-4">
-                  <Card.Title className="fs-2 fw-bold mb-3">Forgot Password</Card.Title>
+                  <h2 className="text-2xl font-bold mb-3">Forgot Password</h2>
                 </div>
-                <Form>
-                  <Form.Group className="mb-4" controlId="formBasicEmail">
-                    <Form.Control
+                <form>
+                  <div className="mb-4">
+                    <input
                       type="email"
                       placeholder="Email Address"
-                      className="form-control-lg rounded-pill"
+                      className="w-full px-4 py-3 text-lg rounded-full border focus:outline-none focus:ring-2 focus:ring-sky-400"
                       onChange={(event) => setEmailForm(event.target.value)}
                       value={EmailForm}
                     />
-                    <Form.Text
-                      className={
-                        "text-danger " +
-                        (isEmailValidationError ? "" : "d-none")
-                      }
-                    >
+                    <p className={`text-red-500 mt-1 text-sm ${isEmailValidationError ? "" : "hidden"}`}>
                       Enter valid email
-                    </Form.Text>
-                  </Form.Group>
-                  <Button
-                    variant="primary"
+                    </p>
+                  </div>
+                  <button
                     type="submit"
-                    className="bg-info text-white border-0 w-100 py-3 rounded-pill"
+                    className="bg-sky-400 hover:bg-sky-500 text-white border-0 w-full py-3 rounded-full disabled:opacity-70 disabled:cursor-not-allowed"
                     onClick={(e) => handleClick(e)}
                     disabled={isSendingRequest}
                   >
                     Send reset link
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

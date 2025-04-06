@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { HouseDoor, BoxSeam, Gear, People } from 'react-bootstrap-icons';
+// import { HouseDoor, BoxSeam, Gear, People } from 'react-bootstrap-icons';
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 
 
@@ -14,7 +14,7 @@ function Sidebar() {
 
   return (
     <div className="admin-sidebar">
-      <div className="admin-sidebar-header">
+      {/* <div className="admin-sidebar-header">
         <Link to={RouterPath.ADMIN_DASHBOARD} className="logo-wrapper">
           <div className="logo-icon">
             <div className="logo-bolt"></div>
@@ -57,7 +57,7 @@ function Sidebar() {
           Logged in as:<br />
           NTL
         </p>
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { Button, Container, Row, Col, Card, Form } from "react-bootstrap";
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { RouterPath } from "../../../assets/dictionary/RouterPath";
@@ -54,44 +53,40 @@ export default function ResetPassword(props) {
 
   return (
     <>
-      <Container>
-        <Row className="justify-content-center pt-5 ">
-          <Col xs={12} sm={10} md={8} lg={6} xl={4} >
-            <Card>
-              <Card.Body>
-                <Card.Title>Reset password</Card.Title>
-                <Form>
-                  <Form.Group className="mb-3" controlId="formBasicEmail">
-                    <Form.Label>
-                      New password<span className="text-danger">*</span>
-                    </Form.Label>
-                    <Form.Control
-                      placeholder="Password"
-                      type="password"
-                      onChange={(event) => setPasswordForm(event.target.value)}
-                      value={PasswordForm}
-                    />
-                    <Form.Text
-                      className={isValidationError ? "text-danger" : ""}
-                    >
-                      Minimum 6 characters
-                    </Form.Text>
-                  </Form.Group>
-                  <Button
-                    variant="primary"
-                    type="submit"
-                    className="bg-info text-white border-0 w-100 py-3 rounded-pill"
-                    onClick={(e) => handleClick(e)}
-                    disabled={isSendingRequest}
-                  >
-                    Change
-                  </Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      </Container>
+      <div className="container mx-auto px-4">
+        <div className="flex justify-center pt-5">
+          <div className="w-full sm:w-4/5 md:w-2/3 lg:w-1/2 xl:w-1/3">
+            <div className="bg-white rounded shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">Reset password</h2>
+              <form>
+                <div className="mb-3">
+                  <label className="block mb-1">
+                    New password<span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    placeholder="Password"
+                    type="password"
+                    className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-sky-400"
+                    onChange={(event) => setPasswordForm(event.target.value)}
+                    value={PasswordForm}
+                  />
+                  <p className={`text-sm mt-1 ${isValidationError ? "text-red-500" : "text-gray-500"}`}>
+                    Minimum 6 characters
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  className="bg-sky-400 hover:bg-sky-500 text-white border-0 w-full py-3 rounded-full disabled:opacity-70 disabled:cursor-not-allowed"
+                  onClick={(e) => handleClick(e)}
+                  disabled={isSendingRequest}
+                >
+                  Change
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }

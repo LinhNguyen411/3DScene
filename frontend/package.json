@@ -1,3 +1,4 @@
+
 {
   "name": "3dscene",
   "version": "0.1.0",
@@ -7,26 +8,23 @@
     "@heroicons/react": "^2.2.0",
     "@react-oauth/google": "^0.2.8",
     "@testing-library/jest-dom": "^5.16.1",
-    "@testing-library/react": "^12.1.2",
+    "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^0.25.0",
-    "bootstrap": "^5.1.3",
-    "bootstrap-icons": "^1.8.1",
     "lucide-react": "^0.487.0",
-    "react": "^17.0.2",
-    "react-bootstrap": "^2.1.1",
-    "react-bootstrap-icons": "^1.7.2",
-    "react-bootstrap-table": "^4.3.1",
-    "react-bootstrap-table-next": "^4.0.3",
-    "react-dom": "^17.0.2",
+    "react": "^18.0.2",
+    "react-dom": "^18.0.2",
     "react-paginate": "^8.1.0",
     "react-redux": "^7.2.6",
-    "react-router-bootstrap": "^0.26.0",
     "react-router-dom": "^6.2.1",
     "react-scripts": "5.0.0",
     "redux": "^4.1.2",
     "redux-toolkit": "^1.1.2",
     "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15",
+    "tailwindcss": "^3.4.17"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -51,9 +49,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.15",
-    "tailwindcss": "^3.4.17"
   }
 }
+

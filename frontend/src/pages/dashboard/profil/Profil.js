@@ -1,4 +1,4 @@
-import { Button, Container, Row, Col, Card, Form} from "react-bootstrap";
+// import { Button, Container, Row, Col, Card, Form} from "react-bootstrap";
 import DataService from "./ProfilService"
 import {useState, useEffect} from "react"
 
@@ -24,7 +24,7 @@ export default function Profil(props) {
 
   return (
     <>
-      <Container>
+      {/* <Container>
         <Row className="justify-content-center pt-5 ">
           <Col xs={12} sm={10} md={8} lg={6} xl={4} >
             <Card>
@@ -48,7 +48,7 @@ export default function Profil(props) {
             </Card>
           </Col>
         </Row>
-      </Container>
+      </Container> */}
     </>
   );
 }

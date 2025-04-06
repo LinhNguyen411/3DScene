@@ -1,9 +1,10 @@
 import { Button, Container, Row, Col, Card } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { RouterPath } from "../../../assets/dictionary/RouterPath";
 
 
 export default function ForgotPasswordEmailSent(props) {
+  let navigate = useNavigate();
   return (
     <div className="bg-light d-flex flex-column">
       <Container className="flex-grow-1 d-flex align-items-center justify-content-center">

@@ -93,7 +93,6 @@ def read_users(
     params: Params = Depends(),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
-    is_processed: Optional[bool] = None,
 ) -> Any:
     """
     Retrieve items.

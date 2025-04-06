@@ -15,6 +15,7 @@ class SplatBase(BaseModel):
 class SplatCreate(BaseModel):
     title: Annotated[str, Field(min_length=1)]
     image_url: Optional[str] = None
+    task_id: str
 
 
 # Properties to receive on Splat deletion
@@ -42,7 +43,6 @@ class SplatInDBBase(SplatBase):
 
 # Properties to return to client
 class Splat(SplatInDBBase):
-    is_processed: bool
     date_created: datetime
     task_metadata: Optional[dict] = None
 

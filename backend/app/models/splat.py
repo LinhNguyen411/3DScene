@@ -13,5 +13,4 @@ class Splat(Base):
     owner = relationship("User", back_populates="splats")
     task_id = Column(String(36), nullable=False)
     image_url = Column(String(500), nullable=False)
-    is_processed = Column(Boolean, default=False)
-    date_created = Column(DateTime, default=datetime.utcnow)
+    date_created = Column(DateTime, default=datetime.now())

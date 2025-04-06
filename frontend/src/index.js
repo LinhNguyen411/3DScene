@@ -8,6 +8,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 
 import { RouterPath } from "./assets/dictionary/RouterPath";
 import { PrivateRoute } from "./components/auth/PrivateRoute";
+import { AdminPrivateRoute } from "./components/auth/AdminPrivateRoute";
 
 import App from "./App";
 import HomePage from "./pages/home_page/HomePage";
@@ -26,6 +27,14 @@ import ConfirmEmail from "./pages/sign_up/confirm_email/ConfirmEmail";
 
 import Admin from "./Admin"
 import AdminLogin from "./admin-pages/admin-login/AdminLogin"
+import AdminDashboard from "./admin-pages/admin-dashboard/AdminDashboard";
+import AdminSetting from "./admin-pages/admin-setting/AdminSetting";
+import AdminSplat from "./admin-pages/admin-splat/AdminSplat";
+import AdminUser from "./admin-pages/admin-user/AdminUser";
+import AdminLayout from "./admin-pages/AdminLayout";
+import DashboardLayout from "./pages/dashboard/DashboardLayout";
+import Upload from "./pages/dashboard/upload/Upload";
+import MyModel from './pages/dashboard/my_model/MyModel';
 
 const rootElement = document.getElementById("root");
 render(
@@ -62,22 +71,10 @@ render(
 
         <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
 
-        <Route
-          path={RouterPath.LIST_TODOS}
-          element={
-            <PrivateRoute>
-              <ToDo />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path={RouterPath.LIST_DONE}
-          element={
-            <PrivateRoute>
-              <ToDoDone />
-            </PrivateRoute>
-          }
-        />
+        <Route path={RouterPath.DASHBOARD} element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
+          <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
+          <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
+        </Route>
         <Route
           path={RouterPath.MY_INFORMATION}
           element={
@@ -89,8 +86,13 @@ render(
         <Route path="*" element={<LinkNotValid />} />
       </Route>
 
-      <Route path={RouterPath.ADMIN} element={<Admin />}>
-        <Route exact path={RouterPath.ADMIN} element={<AdminLogin/>}></Route>
+      <Route exact path={RouterPath.ADMIN_LOGIN} element={<AdminLogin/>}></Route>
+
+      <Route path={RouterPath.ADMIN} element={<AdminPrivateRoute><AdminLayout/></AdminPrivateRoute>}>
+        <Route path={RouterPath.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+        <Route path={RouterPath.ADMIN_SETTINGS} element={<AdminSetting />} />
+        <Route path={RouterPath.ADMIN_SPLAT} element={<AdminSplat />} />
+        <Route path={RouterPath.ADMIN_USER} element={<AdminUser />} />
       </Route>
     </Routes>
 

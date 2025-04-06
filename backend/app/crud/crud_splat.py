@@ -24,33 +24,27 @@ class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):
         return db_obj
 
     def query_get_multi_by_owner(
-        self, db: Session, *, owner_id: int, is_processed: bool
+        self, db: Session, *, owner_id: int
     ) -> List[Splat]:
-        query = (
+        splats = (
             db.query(self.model)
             .filter(Splat.owner_id == owner_id)
-            .filter(Splat.is_processed == is_processed)
+            .order_by(Splat.date_created.desc())
+            .all()
+        )
+        
+        # Add task_metadata to each Splat object
+        return (
+            db.query(self.model)
+            .filter(Splat.owner_id == owner_id)
             .order_by(Splat.date_created.desc())
         )
-        if not is_processed:
-            for splat in query.all():
-                modeling_task_result = AsyncResult(
-                    splat.task_id, app=celery_app.celery_app)
-                modeling_task_state = modeling_task_result.state
-                splat_dict = splat.__dict__
-                splat_dict["task_metadata"] = {
-                    "status": modeling_task_state,
-                    "result": modeling_task_result.info
-                    if hasattr(modeling_task_result, 'info')
-                    else None
-                }
-        return query
 
     def get_multi(  # type: ignore
         self, db: Session, *, limit: int = 100
     ) -> List[Splat]:
         query = db.query(self.model)
-        return query.limit(limit).all()
+        return query.limit(limit)
 
     def remove(self, db: Session, *, id: int) -> Splat:
         obj = db.query(self.model).get(id)

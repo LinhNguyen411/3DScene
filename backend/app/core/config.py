@@ -104,6 +104,7 @@ class Settings(BaseSettings):
 
     UPLOAD_VIDEO_DIR: str = "uploads"
     RESULT_DIR: str = "results"
+    SPLAT_THUMBNAILS_DIR = "thumbnails"
 
 
 settings: Settings = Settings()

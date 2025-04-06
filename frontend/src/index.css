@@ -1,6 +1,6 @@
 :root {
   --primary-color: #00A395;
-  --sidebar-bg: #f1f5f9;
+  --admin-sidebar-bg: #f1f5f9;
   --text-color: #333;
   --border-color: #e0e0e0;
   --hover-color: #f5f5f5;
@@ -35,11 +35,9 @@ code {
   display: flex;
   align-items: center;
   text-decoration: none;
-  color: var(--primary-color);
 }
 
 .logo-icon {
-  background-color: var(--primary-color);
   width: 3em;
   height: 3em;
   border-radius: 50%;
@@ -97,5 +95,63 @@ code {
   border-width: 1px;
   border-color: var(--primary-color);
   box-shadow: none;
+}
+
+/* Sidebar Styles */
+.admin-sidebar {
+  width: 190px;
+  background-color: var(--admin-sidebar-bg);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color);
+}
+
+.admin-sidebar-header {
+  padding: 1.5rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-sidebar-nav {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.admin-sidebar-nav ul {
+  list-style: none;
+}
+
+.admin-sidebar-nav li {
+  margin-bottom: 0.25rem;
+}
+
+.admin-sidebar-nav a {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.admin-sidebar-nav a:hover {
+  background-color: var(--hover-color);
+}
+
+.admin-sidebar-nav li.active a {
+  background-color: var(--active-color);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.admin-sidebar-nav svg {
+  margin-right: 10px;
+}
+
+.admin-sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  color: #666;
 }
 

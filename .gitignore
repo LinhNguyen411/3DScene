@@ -3,6 +3,7 @@
 /backend/app/sql_app.db
 /backend/app/results
 /backend/app/uploads
+/backend/app/thumbnails
 /frontend/node_modules
 /frontend/yarn.lock
 __pycache__/

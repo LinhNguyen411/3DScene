@@ -14,8 +14,20 @@ export const RouterPath = {
   MY_INFORMATION: "/my-information",
   MAILHOG: "/mailhog",
   FLOWER: "/flower",
+
+  /* dashboard route */
+  DASHBOARD: "/dashboard",
+  DASHBOARD_UPLOAD: "/dashboard/upload",
+  DASHBOARD_MY_MODEL: "/dashboard/my-model",
+  DASHBOARD_3DGS: "/dashboard/3dgs",
+  DASHBOARD_FAVORITES: "/dashboard/favorites",
+  DASHBOARD_FEEDBACK: "/dashboard/feedback",
   /* admin route */
   ADMIN: "/admin",
-  ADMIN_DASHBOARD: "/admin/dashboard"
+  ADMIN_LOGIN: "/admin/login",
+  ADMIN_DASHBOARD: "/admin/dashboard",
+  ADMIN_USER: "/admin/users",
+  ADMIN_SPLAT: "/admin/splats",
+  ADMIN_SETTINGS: "/admin/settings",
 };
 Object.freeze(RouterPath);

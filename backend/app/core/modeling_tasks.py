@@ -1,31 +1,31 @@
+ 
+from fastapi import APIRouter, File, UploadFile,  HTTPException, Query
 
-from fastapi import APIRouter, File, UploadFile,  HTTPException, Query, Depends
-from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.api import deps
 from app.celery import celery_app
 from celery.result import AsyncResult
 
-from sqlalchemy.orm import Session  # type: ignore
 import os
 import shutil
+import cv2
+import uuid
+
 
 router = APIRouter()
 
 
+
 async def process_video(
-    modeling_task_id: str,
-    db: Session = Depends(deps.get_db),
     file: UploadFile = File(...),
     num_iterations: int = Query(
         1000, description="Number of iterations for the opensplat command")
 ):
-    # Generate a unique modeling_task ID
-
     # Create a directory for this modeling_task
-    modeling_task_dir = os.path.join(
-        settings.UPLOAD_VIDEO_DIR, modeling_task_id)
+    modeling_task_id = str(uuid.uuid4())
+
+    modeling_task_dir = os.path.join(settings.UPLOAD_VIDEO_DIR, modeling_task_id)
     os.makedirs(modeling_task_dir, exist_ok=True)
 
     # Save the uploaded video
@@ -33,16 +33,29 @@ async def process_video(
     with open(video_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    # Extract first frame as thumbnail
+    cap = cv2.VideoCapture(video_path)
+    success, frame = cap.read()
+    cap.release()
+
+    thumbnail_url = None
+    if success:
+        os.makedirs(settings.SPLAT_THUMBNAILS_DIR, exist_ok=True)
+        thumbnail_filename = f"{modeling_task_id}_thumbnail.jpg"
+        thumbnail_path = os.path.join(settings.SPLAT_THUMBNAILS_DIR, thumbnail_filename)
+        cv2.imwrite(thumbnail_path, frame)
+        
+        # Build the public URL or relative path to return
+        thumbnail_url = f"/thumbnails/{thumbnail_filename}"  # or adjust based on your static route
+
     # Submit the modeling_task to Celery
     modeling_task = celery_app.process_video.delay(
         modeling_task_id, video_path, num_iterations)
 
     return {
         "modeling_task_id": modeling_task.id,
-        "status": "Processing",
-        "message": "Video processing started. Use the /status/{modeling_task_id} endpoint to check progress."
+        "image_url": thumbnail_url
     }
-
 
 def get_modeling_task_status(modeling_task_id: str):
     modeling_task_result = AsyncResult(
@@ -76,48 +89,6 @@ def get_modeling_task_status(modeling_task_id: str):
     return response
 
 
-def download_result(modeling_task_id: str):
-    # Check if the modeling_task has completed
-    modeling_task_result = AsyncResult(
-        modeling_task_id, app=celery_app.celery_app)
-
-    # Check task state
-    if modeling_task_result.state != 'SUCCESS':
-        raise HTTPException(
-            status_code=404,
-            detail=f"Result not ready or task failed. Current state: {modeling_task_result.state}")
-
-    # Get the result from the backend
-    try:
-        # Add timeout to avoid hanging
-        result = modeling_task_result.get(timeout=5)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to retrieve result: {str(e)}")
-
-    # Ensure result is a dictionary and has 'output_path'
-    if not isinstance(result, dict) or "output_path" not in result:
-        raise HTTPException(
-            status_code=500,
-            detail="Task result is malformed, 'output_path' not found"
-        )
-
-    output_path = result["output_path"]
-    if not output_path:
-        raise HTTPException(status_code=400, detail="Output path is None")
-    if not os.path.exists(output_path):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Output file not found at: {output_path}"
-        )
-
-    # Return the file as a download response
-    return FileResponse(
-        path=output_path,
-        filename=os.path.basename(output_path),
-        media_type="application/octet-stream"
-    )
-
 
 def delete_modeling_task_data(modeling_task_id: str):
     """Delete all data associated with a modeling_task"""
@@ -125,21 +96,12 @@ def delete_modeling_task_data(modeling_task_id: str):
         settings.UPLOAD_VIDEO_DIR, modeling_task_id)
     result_dir = os.path.join(settings.RESULT_DIR, modeling_task_id)
 
-    deleted = False
-
     # Delete upload directory if it exists
     if os.path.exists(modeling_task_dir):
         shutil.rmtree(modeling_task_dir)
-        deleted = True
-
     # Delete result directory if it exists
     if os.path.exists(result_dir):
         shutil.rmtree(result_dir)
-        deleted = True
-
-    if not deleted:
-        raise HTTPException(
-            status_code=404, detail="ModelingTask data not found")
 
     # Also try to revoke the modeling_task if it's still running
     celery_app.celery_app.control.revoke(modeling_task_id, terminate=True)

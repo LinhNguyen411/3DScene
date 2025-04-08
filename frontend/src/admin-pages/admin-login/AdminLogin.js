@@ -1,15 +1,11 @@
-// import { Button, Container, Row, Col, Card, Form } from "react-bootstrap";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { GoogleLogin } from '@react-oauth/google';
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import DataService from "./AdminLoginService";
 
 export default function AdminLogin(props) {
   const [isShowValidationError, setIsShowValidationError] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
-  const [isSendingRequestLoginGoogle, setIsSendingRequestLoginGoogle] = useState(false);
   const [emailForm, setEmailForm] = useState("");
   const [passwordForm, setPasswordForm] = useState("");
 
@@ -35,7 +31,7 @@ export default function AdminLogin(props) {
       DataService.postLogin(bodyFormData)
         .then((response) => {
           if (response.status === 200) {
-            localStorage.setItem("token", response.data.access_token);
+            localStorage.setItem("supertoken", response.data.access_token);
             navigate(RouterPath.ADMIN_DASHBOARD);
           } else {
             setIsSendingRequest(false);
@@ -49,80 +45,56 @@ export default function AdminLogin(props) {
     }
   };
 
-  const handleSuccessGoogleLogin = (credentials) => {
-    setIsSendingRequestLoginGoogle(true);
-    DataService.postLoginGoogle({
-      "credentials": credentials
-    })
-      .then((response) => {
-        if (response.status === 200) {
-          localStorage.setItem("token", response.data.access_token);
-          navigate(RouterPath.ADMIN_DASHBOARD);
-        } else {
-          setIsSendingRequestLoginGoogle(false);
-        }
-      })
-      .catch((error) => {
-        setIsSendingRequestLoginGoogle(false);
-      });
-  }
 
   return (
-    <div className="admin-login-page">
-      {/* <Container className="d-flex justify-content-center align-items-center vh-100">
-        <Card className="admin-login-card">
-          <Card.Body className="p-4">
-            <div className="text-center mb-4">
-              <div className="d-flex justify-content-center align-items-center">
-                <div className="logo-icon">
-                  <div className="logo-bolt"></div>
-                </div>
-                <h2 className="brand-text">3DScene</h2>
+    <div className="flex items-center justify-center h-screen">
+      <div className="bg-white p-8 rounded shadow-md w-96">
+        <div className="flex justify-center mb-3">
+            <div className="bg-teal-500 logo-icon w-[2em] h-[2em]">
+                <div className="logo-bolt w-[2em] h-[1em]"></div>
               </div>
-            </div>
-            
-            <Form>
-              <Form.Group className="mb-3">
-                <Form.Control
-                  type="email"
-                  placeholder="Email"
-                  value={emailForm}
-                  className="form-control-lg admin-form"
-                  onChange={(event) => setEmailForm(event.target.value)}
-                  required
-                />
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Control
-                  type="password"
-                  placeholder="Password"
-                  className="form-control-lg admin-form"
-                  value={passwordForm}
-                  onChange={(e) => setPasswordForm(e.target.value)}
-                  required
-                />
-              </Form.Group>
-              
-              {isShowValidationError && (
-                <div className="mb-3 text-danger text-center">
-                  Email or password not valid
-                </div>
-              )}
+        </div>
+        <div className="flex justify-center align-center mb-3">
+                
+              <h1 className="text-teal-500 brand-text text-[2em]">3DScene</h1>
+              <h1 className="ml-2 text-gray-500 text-[2em]">Admin</h1>
+        </div>
+        <h1 className="text-2xl font-bold text-center mb-3">Login</h1>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            value={emailForm}
+            onChange={(e) => setEmailForm(e.target.value)}
+            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+            required 
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2" htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            value={passwordForm}
+            onChange={(e) => setPasswordForm(e.target.value)}
+            className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+            required
+          />
+        </div>
+        {isShowValidationError && (
+          <div className="mb-3 text-red-500 text-center">
+            Email or password not valid
+          </div>
+        )}
 
-              <Button 
-                variant="primary" 
-                type="submit" 
-                className="w-100 admin-login-button"
-                onClick={(e) => handleClick(e)}
-                disabled={isSendingRequest}
-              >
-                {isSendingRequest ? "Logging in..." : "Log In"}
-              </Button>
-            </Form>
-          </Card.Body>
-        </Card>
-      </Container> */}
+        <button 
+          onClick={(e) => handleClick(e)}
+          disabled={isSendingRequest}
+          className="w-full bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded">
+            {isSendingRequest ? "Logging in..." : "Log In"}
+        </button>
+      </div>
     </div>
   );
 }

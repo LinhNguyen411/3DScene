@@ -50,6 +50,32 @@ def login_access_token(
         "token_type": "bearer",
     }
 
+@router.post("/login/get-access-supertoken", response_model=schemas.Token)
+def login_access_supertoken(
+    db: Session = Depends(deps.get_db), form_data: OAuth2PasswordRequestForm = Depends()
+) -> Any:
+    """
+    OAuth2 compatible token login, get an access token for future requests
+    """
+    user = crud.user.authenticate(
+        db, email=form_data.username, password=form_data.password
+    )
+    if not user:
+        raise HTTPException(
+            status_code=400, detail="Incorrect email or password")
+    elif not crud.user.is_active(user):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    elif not crud.user.is_superuser(user):
+        raise HTTPException(status_code=400, detail="User is not superuser")
+    access_token_expires = timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return {
+        "access_token": security.create_access_token(
+            user.id, expires_delta=access_token_expires
+        ),
+        "token_type": "bearer",
+}
+
 
 @router.post("/login/verify-token", response_model=schemas.User, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
@@ -58,6 +84,13 @@ def test_token(current_user: models.User = Depends(deps.get_current_active_user)
     """
     Test access token
     """
+    return current_user
+
+@router.post("/login/verify-supertoken", response_model=schemas.User, responses={
+    401: {"model": schemas.Detail, "description": "User unathorized"}
+})
+def test_supertoken(current_user: models.User = Depends(deps.get_current_active_superuser)) -> Any:
+
     return current_user
 
 

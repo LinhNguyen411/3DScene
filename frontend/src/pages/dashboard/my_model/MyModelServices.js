@@ -19,12 +19,10 @@ const getSplats = async (page = 1, size = 10) => {
     }
 }
 const updateSplat=  async (id, title) => {
-    const formData = new FormData();
-    formData.append('title', title);
     try {
       const response = await axios.put(
         `${API_BASE_URL}/${id}`,
-        formData,
+        {title: title},
         {
           headers: getAuthHeaders(),
         }

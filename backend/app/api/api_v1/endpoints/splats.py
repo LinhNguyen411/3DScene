@@ -36,7 +36,7 @@ def read_splats(
     else:
         splats = crud.splat.query_get_multi_by_owner(
             db=db, owner_id=current_user.id)
-
+    
     paginated_result = paginate(splats, params)
 
     # Add task_metadata to each item in the paginated results
@@ -127,11 +127,11 @@ def update_splat(
         raise HTTPException(status_code=404, detail="Splat not found")
     if not current_user.is_superuser and (splat.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    splat = crud.splat.update(db=db, db_obj=splat_in, obj_in=splat_in)
+    splat = crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
     return splat
 
 
-@router.delete("/{id}", response_model=schemas.Splat, responses={
+@router.delete("/{id}", response_model=schemas.Detail, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def delete_splat(
@@ -150,7 +150,7 @@ def delete_splat(
         raise HTTPException(status_code=400, detail="Not enough permissions")
     modeling_tasks.delete_modeling_task_data(splat.task_id)
     splat = crud.splat.remove(db=db, id=id)
-    return splat
+    return {"detail": f'Splat deleted successfully {id}'}
 
 
 

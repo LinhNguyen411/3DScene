@@ -9,6 +9,7 @@ from app import crud, models, schemas
 from app.api import deps
 from app.core.config import settings
 from app.app_utils import send_new_account_email, generate_mail_confirmation_token, verify_mail_confirmation_token
+from app.core.security import get_password_hash
 
 router = APIRouter()
 
@@ -160,9 +161,9 @@ def update_user(
     user = crud.user.get(db=db, id=id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not current_user.is_superuser and (user.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    user = crud.user.update(db=db, db_obj=user_in, obj_in=user_in)
+    if current_user.id == id and (user_in.is_active == False or user_in.is_superuser == False):
+        raise HTTPException(status_code=400, detail="Super users are not allowed to deactivate themselves")
+    user = crud.user.update(db=db, db_obj=user, obj_in=user_in)
     return user
 
 
@@ -183,8 +184,6 @@ def delete_user(
     user = crud.user.get(db=db, id=id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not current_user.is_superuser and (user.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
     if user == current_user:
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"

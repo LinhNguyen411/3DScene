@@ -7,7 +7,7 @@ from pydantic import BaseModel, EmailStr
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = False
-    is_superuser: bool = False
+    is_superuser: Optional[bool] = False
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
@@ -15,14 +15,20 @@ class UserBase(BaseModel):
 # Properties to receive via API on creation
 class UserCreate(UserBase):
     email: EmailStr
-    password: str
     first_name: str
     last_name: str
+    is_active: Optional[bool] = False
+    is_superuser: Optional[bool] = False
+    password: Optional[str] = None
 
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):
     password: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    is_active: bool
+    is_superuser: bool
 
 
 class UserInDBBase(BaseModel):
@@ -36,9 +42,12 @@ class UserInDBBase(BaseModel):
 
 # Additional properties to return via API
 class User(UserInDBBase):
+    id: int
     email: EmailStr
     first_name: str
     last_name: str
+    is_active: bool
+    is_superuser: bool
 
 
 # Additional properties stored in DB

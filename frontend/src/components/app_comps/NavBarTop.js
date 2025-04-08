@@ -13,39 +13,6 @@ export default function NavBarTop(props) {
   };
 
   return (
-    // <header className="header">
-    //     <div className="logo-container">
-    //       <Link to={RouterPath.HOME}>
-    //         <div className="logo-icon">
-    //           <div className="logo-bolt"></div>
-    //         </div>
-    //         <h2 className="brand-text">3DScene</h2>
-    //       </Link>
-    //     </div>
-    //     <div className="header-actions">
-    //     {!isAuthenticated && (
-    //       <>
-    //       <Link to={RouterPath.LOGIN} className="header-link">
-    //         Tutorial
-    //       </Link>
-    //       <Link to={RouterPath.LOGIN} className="header-link pro-link">
-    //         3DScene Pro
-    //       </Link>
-    //       <Link to={RouterPath.LOGIN} className="header-link">
-    //         Login/Signup
-    //       </Link>
-    //       </>
-    //     )}
-    //     {isAuthenticated && (
-    //       <>
-    //       <Link to={RouterPath.DASHBOARD} className="header-link">
-    //         Dashboard
-    //       </Link>
-    //       <button onClick={handleClickLogOut} className="header-btn">Logout</button>
-    //       </>
-    //     )}
-    //     </div>
-    //   </header>
     <header className="bg-white p-4 flex justify-between items-center shadow-sm">
     <div className="flex items-center">
     <Link to={RouterPath.HOME} className="flex justify-between items-center">

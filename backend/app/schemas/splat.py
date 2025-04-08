@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Annotated, Optional
 from datetime import datetime
+from app.schemas.user import User
 
 
 # Shared properties
@@ -43,6 +44,7 @@ class SplatInDBBase(SplatBase):
 
 # Properties to return to client
 class Splat(SplatInDBBase):
+    owner: Optional[User] = None
     date_created: datetime
     task_metadata: Optional[dict] = None
 

@@ -1,6 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+html{
+  padding-right: 0px!important;
+  overflow:auto!important;
+}
 
 :root {
     --primary-color: #0dcaf0;

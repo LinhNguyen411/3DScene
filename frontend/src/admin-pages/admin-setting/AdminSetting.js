@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 // import { Button, Form, Tab, Tabs } from 'react-bootstrap';
 
 function AdminSetting({ user }) {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('myProfile');
   const [profileData, setProfileData] = useState({
     fullName: user?.fullName || 'Admin',
     email: user?.email || 'admin@example.com'
@@ -67,153 +67,80 @@ function AdminSetting({ user }) {
   };
 
   return (
-    <div className="page-content">
-      {/* <h2>User Settings</h2>
-      
-      <Tabs
-        activeKey={activeTab}
-        onSelect={(k) => setActiveTab(k)}
-        className="mb-4 mt-4"
-      >
-        <Tab eventKey="profile" title="My profile">
-          <div className="tab-content-wrapper">
-            <h4 className="mb-3">User Information</h4>
-            <Form onSubmit={handleProfileSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Full name</Form.Label>
-                <Form.Control
+    <div className='flex-1 flex flex-col mt-14 mb-8 mr-8 ml-2'>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold">User Settings</h1>
+          </div>
+          
+          <div className="mb-6">
+            <div className="flex border-b">
+              <button 
+                className={`py-2 px-4 ${activeTab === 'myProfile' ? 'border-b-2 border-teal-500 text-teal-500' : ''}`}
+                onClick={() => setActiveTab('myProfile')}
+              >
+                My profile
+              </button>
+              <button 
+                className={`py-2 px-4 ${activeTab === 'password' ? 'border-b-2 border-teal-500 text-teal-500' : ''}`}
+                onClick={() => setActiveTab('password')}
+              >
+                Password
+              </button>
+              <button 
+                className={`py-2 px-4 ${activeTab === 'appearance' ? 'border-b-2 border-teal-500 text-teal-500' : ''}`}
+                onClick={() => setActiveTab('appearance')}
+              >
+                Appearance
+              </button>
+            </div>
+          </div>
+          
+          <div className="max-w-2xl">
+            <h2 className="text-lg font-semibold mb-4">User Information</h2>
+            
+            <div className="flex flex-row mb-4 gap-4">
+              <div className='flex-1'>
+                <label className="block text-gray-700 mb-2" htmlFor="fullName">Last Name</label>
+                <input
                   type="text"
-                  name="fullName"
-                  value={profileData.fullName}
-                  onChange={handleProfileChange}
+                  id="fullName"
+                  className="w-full px-3 py-2 border rounded"
+                  defaultValue="Admin"
                 />
-              </Form.Group>
-              
-              <Form.Group className="mb-4">
-                <Form.Label>Email</Form.Label>
-                <Form.Control
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  onChange={handleProfileChange}
-                />
-              </Form.Group>
-              
-              <div>
-                <Button variant="success" type="submit" className="me-2">
-                  Save
-                </Button>
-                <Button variant="secondary">
-                  Cancel
-                </Button>
               </div>
-            </Form>
-          </div>
-        </Tab>
-        
-        <Tab eventKey="password" title="Password">
-          <div className="tab-content-wrapper">
-            <h4 className="mb-3">Change Password</h4>
-            <Form onSubmit={handlePasswordSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Current Password <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
-                  name="currentPassword"
-                  value={passwordData.currentPassword}
-                  onChange={handlePasswordChange}
-                  required
+              <div className='flex-1'>
+                <label className="block text-gray-700 mb-2" htmlFor="fullName">First Name</label>
+                <input
+                  type="text"
+                  id="fullName"
+                  className="w-full px-3 py-2 border rounded"
+                  defaultValue="Admin"
                 />
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>New Password <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
-                  name="newPassword"
-                  value={passwordData.newPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
-              </Form.Group>
-              
-              <Form.Group className="mb-4">
-                <Form.Label>Confirm New Password <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                  type="password"
-                  name="confirmPassword"
-                  value={passwordData.confirmPassword}
-                  onChange={handlePasswordChange}
-                  required
-                />
-              </Form.Group>
-              
-              <div>
-                <Button variant="success" type="submit" className="me-2">
-                  Update Password
-                </Button>
-                <Button variant="secondary">
-                  Cancel
-                </Button>
               </div>
-            </Form>
+            </div>
+            
+            <div className="mb-4">
+              <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
+              <input
+                type="email"
+                id="email"
+                className="w-full px-3 py-2 border rounded"
+                defaultValue="admin@example.com"
+              />
+            </div>
+            
+            <div className="flex mt-6">
+              <button 
+                className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded mr-2"
+              >
+                Save
+              </button>
+              <button className="bg-white hover:bg-gray-100 text-gray-700 border px-4 py-2 rounded">
+                Cancel
+              </button>
+            </div>
           </div>
-        </Tab>
-        
-        <Tab eventKey="appearance" title="Appearance">
-          <div className="tab-content-wrapper">
-            <h4 className="mb-3">Interface Settings</h4>
-            <Form onSubmit={handleAppearanceSubmit}>
-              <Form.Group className="mb-3">
-                <Form.Label>Theme</Form.Label>
-                <Form.Select
-                  name="theme"
-                  value={appearance.theme}
-                  onChange={handleAppearanceChange}
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="system">System Default</option>
-                </Form.Select>
-              </Form.Group>
-              
-              <Form.Group className="mb-3">
-                <Form.Label>Font Size</Form.Label>
-                <Form.Select
-                  name="fontSize"
-                  value={appearance.fontSize}
-                  onChange={handleAppearanceChange}
-                >
-                  <option value="small">Small</option>
-                  <option value="medium">Medium</option>
-                  <option value="large">Large</option>
-                </Form.Select>
-              </Form.Group>
-              
-              <Form.Group className="mb-4">
-                <Form.Check
-                  type="checkbox"
-                  id="sidebar-collapsed"
-                  label="Collapse sidebar by default"
-                  name="sidebarCollapsed"
-                  checked={appearance.sidebarCollapsed}
-                  onChange={handleAppearanceChange}
-                />
-              </Form.Group>
-              
-              <div>
-                <Button variant="success" type="submit" className="me-2">
-                  Save Settings
-                </Button>
-                <Button variant="secondary">
-                  Reset to Defaults
-                </Button>
-              </div>
-            </Form>
-          </div>
-        </Tab>
-      </Tabs> */}
-    </div>
+        </div>
   );
 }
 

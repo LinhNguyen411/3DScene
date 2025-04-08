@@ -1,14 +1,16 @@
 import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { render } from "react-dom";
-
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 // import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
 // import 'bootstrap-icons/font/bootstrap-icons.css';
 
 import { RouterPath } from "./assets/dictionary/RouterPath";
 import { PrivateRoute } from "./components/auth/PrivateRoute";
-import { AdminPrivateRoute } from "./components/auth/AdminPrivateRoute";
+import { AdminPrivateRoute } from "./components/admin_auth/AdminPrivateRoute";
 
 import App from "./App";
 import HomePage from "./pages/home_page/HomePage";
@@ -33,68 +35,89 @@ import AdminLayout from "./admin-pages/AdminLayout";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import Upload from "./pages/dashboard/upload/Upload";
 import MyModel from './pages/dashboard/my_model/MyModel';
+import ReactDOM from 'react-dom/client';
+import {SnackbarProvider} from './provider/SnackbarProvider';
+import { Navigate } from 'react-router-dom';
 
-const rootElement = document.getElementById("root");
-render(
-  <BrowserRouter>
-    <Routes>
-      <Route path={RouterPath.HOME} element={<App />}>
-        <Route exact path={RouterPath.HOME} element={<HomePage />}></Route>
-        <Route path={RouterPath.LOGIN} element={<Login />} />
-        <Route path={RouterPath.SIGNUP} element={<SignUpForm />} />
-        <Route
-          path={RouterPath.SIGNUP_MAIL_SENT}
-          element={<ConfirmationEmailSent />}
-        />
-        <Route
-          path={RouterPath.SIGNUP_CONFIRM_EMAIL}
-          element={<ConfirmEmail />}
-        />
-        <Route
-          path={RouterPath.FORGOT_PASSWORD}
-          element={<ForgotPasswordForm />}
-        />
-        <Route
-          path={RouterPath.FORGOT_PASSWORD_MAIL_SENT}
-          element={<ForgotPasswordEmailSent />}
-        />
-        <Route
-          path={RouterPath.RESET_PASSWORD}
-          element={<ResetPasswordForm />}
-        />
-        <Route
-          path={RouterPath.PASSWORD_CHANGED}
-          element={<PasswordChanged />}
-        />
 
-        <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
 
-        <Route path={RouterPath.DASHBOARD} element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
-          <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
-          <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <SnackbarProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path={RouterPath.HOME} element={<App />}>
+          <Route index element={<HomePage />} />
+          <Route path={RouterPath.LOGIN} element={<Login />} />
+          <Route path={RouterPath.SIGNUP} element={<SignUpForm />} />
+          <Route
+            path={RouterPath.SIGNUP_MAIL_SENT}
+            element={<ConfirmationEmailSent />}
+          />
+          <Route
+            path={RouterPath.SIGNUP_CONFIRM_EMAIL}
+            element={<ConfirmEmail />}
+          />
+          <Route
+            path={RouterPath.FORGOT_PASSWORD}
+            element={<ForgotPasswordForm />}
+          />
+          <Route
+            path={RouterPath.FORGOT_PASSWORD_MAIL_SENT}
+            element={<ForgotPasswordEmailSent />}
+          />
+          <Route
+            path={RouterPath.RESET_PASSWORD}
+            element={<ResetPasswordForm />}
+          />
+          <Route
+            path={RouterPath.PASSWORD_CHANGED}
+            element={<PasswordChanged />}
+          />
+          <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
+          <Route
+            path={RouterPath.DASHBOARD}
+            element={
+              <PrivateRoute>
+                <DashboardLayout />
+              </PrivateRoute>
+            }
+          >
+            <Route index element={<Navigate to={RouterPath.DASHBOARD_UPLOAD} replace />} />
+            <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
+            <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
+          </Route>
+          <Route
+            path={RouterPath.MY_INFORMATION}
+            element={
+              <PrivateRoute>
+                <Profil />
+              </PrivateRoute>
+            }
+          />
+          <Route path="*" element={<LinkNotValid />} />
         </Route>
+
         <Route
-          path={RouterPath.MY_INFORMATION}
-          element={
-            <PrivateRoute>
-              <Profil />
-            </PrivateRoute>
-          }
+          path={RouterPath.ADMIN_LOGIN}
+          element={<AdminLogin />}
         />
-        <Route path="*" element={<LinkNotValid />} />
-      </Route>
+        <Route
+          path={RouterPath.ADMIN}
+          element={
+            <AdminPrivateRoute>
+              <AdminLayout />
+            </AdminPrivateRoute>
+          }
+        >
+          <Route path={RouterPath.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+          <Route path={RouterPath.ADMIN_SETTINGS} element={<AdminSetting />} />
+          <Route path={RouterPath.ADMIN_SPLAT} element={<AdminSplat />} />
+          <Route path={RouterPath.ADMIN_USER} element={<AdminUser />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
 
-      <Route exact path={RouterPath.ADMIN_LOGIN} element={<AdminLogin/>}></Route>
-
-      <Route path={RouterPath.ADMIN} element={<AdminPrivateRoute><AdminLayout/></AdminPrivateRoute>}>
-        <Route path={RouterPath.ADMIN_DASHBOARD} element={<AdminDashboard />} />
-        <Route path={RouterPath.ADMIN_SETTINGS} element={<AdminSetting />} />
-        <Route path={RouterPath.ADMIN_SPLAT} element={<AdminSplat />} />
-        <Route path={RouterPath.ADMIN_USER} element={<AdminUser />} />
-      </Route>
-    </Routes>
-
-  </BrowserRouter>,
-  rootElement
+  </SnackbarProvider>
 );
-

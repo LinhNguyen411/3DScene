@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import myAppConfig from "./config";
+import "./Admin.css"
 function Admin() {
   return (
     <>

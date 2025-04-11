@@ -282,7 +282,7 @@ function MyModel(props){
               </button>
             </div>
             
-            <div className="rounded-lg border border-gray-200 p-4 mb-4">
+            {/* <div className="rounded-lg border border-gray-200 p-4 mb-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="bg-yellow-500 rounded-full p-1">
@@ -312,12 +312,16 @@ function MyModel(props){
                 </div>
                 <input type="radio" className="h-4 w-4 text-sky-500" />
               </div>
-            </div>
+            </div> */}
             
             <button
               className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+              onClick={() => {
+                DataService.downloadSplat(model.id, model.title);
+                setIsExportModalOpen(false);
+              }}
             >
-              Upgrade To Pro
+              Download
             </button>
           </div>
         </div>

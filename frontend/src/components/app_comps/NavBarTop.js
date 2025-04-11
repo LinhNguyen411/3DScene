@@ -16,10 +16,10 @@ export default function NavBarTop(props) {
     <header className="bg-white p-4 flex justify-between items-center shadow-sm">
     <div className="flex items-center">
     <Link to={RouterPath.HOME} className="flex justify-between items-center">
-      <div className="logo-icon bg-sky-400 border-sky-400">
-        <div className="logo-bolt"></div>
+      <div className="logo-icon bg-sky-400 border-sky-400 w-[3em] h-[3em]">
+        <div className="logo-bolt w-[2em] h-[1em]"></div>
       </div>
-      <h2 className="brand-text text-sky-400">3DScene</h2>
+      <h2 className="brand-text text-sky-400 text-2xl">3DScene</h2>
     </Link>
       <span className="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">Web</span>
     </div>
@@ -27,7 +27,7 @@ export default function NavBarTop(props) {
     <div className="space-x-6">
       <button className="text-gray-800 font-medium">Join Community</button>
       <button className="text-gray-800 font-medium">Tutorial</button>
-      <button className="bg-gray-900 text-white px-4 py-2 rounded">KIRI Engine Pro</button>
+      <button className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</button>
      {!isAuthenticated && (
           <>
           <Link to={RouterPath.LOGIN} className="header-link">

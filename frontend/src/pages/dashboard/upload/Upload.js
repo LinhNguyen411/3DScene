@@ -33,7 +33,7 @@ function Upload(props){
       const response = await DataService.createSplat(
         title,          // Title from state
         selectedFile,   // The selected video file
-        10             // Number of iterations (keeping default as in your DataService example)
+        1000             // Number of iterations (keeping default as in your DataService example)
       );
       
 

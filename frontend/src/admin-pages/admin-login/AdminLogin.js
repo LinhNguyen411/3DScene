@@ -50,7 +50,7 @@ export default function AdminLogin(props) {
     <div className="flex items-center justify-center h-screen">
       <div className="bg-white p-8 rounded shadow-md w-96">
         <div className="flex justify-center mb-3">
-            <div className="bg-teal-500 logo-icon w-[2em] h-[2em]">
+            <div className="bg-teal-500 logo-icon w-[3em] h-[3em]">
                 <div className="logo-bolt w-[2em] h-[1em]"></div>
               </div>
         </div>
@@ -59,7 +59,7 @@ export default function AdminLogin(props) {
               <h1 className="text-teal-500 brand-text text-[2em]">3DScene</h1>
               <h1 className="ml-2 text-gray-500 text-[2em]">Admin</h1>
         </div>
-        <h1 className="text-2xl font-bold text-center mb-3">Login</h1>
+        <h1 className="text-2xl font-bold text-center mb-3 text-gray-500">Login</h1>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="email">Email</label>
           <input

@@ -37,11 +37,11 @@ function Sidebar() {
     <div className="p-4 border-b">
       <div className="flex items-center text-teal-500 text-xl font-bold">
       <div className="flex justify-center align-center mb-3 ml-2">
-        <div className="bg-teal-500 logo-icon">
-                <div className="logo-bolt"></div>
+        <div className="bg-teal-500 logo-icon w-[3em] h-[3em]">
+                <div className="logo-bolt w-[2em] h-[1em]"></div>
         </div>
         <div className="flex flex-col text-end ml-2">
-        <h1 className="text-teal-500 brand-text text-[1em]">3DScene</h1>
+        <h1 className="text-teal-500 brand-text text-[1.5em]">3DScene</h1>
         <h1 className="ml-2 text-gray-500 text-[1em]">Admin</h1>
         </div>
               

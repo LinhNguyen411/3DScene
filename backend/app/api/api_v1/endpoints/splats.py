@@ -89,7 +89,7 @@ async def create_splat(
     current_user: models.User = Depends(deps.get_current_active_user),
     title: str = Form(...),
     file: UploadFile = File(...),
-    num_iterations: int = Form(10, description="Number of iterations for the opensplat command")
+    num_iterations: int = Form(1000, description="Number of iterations for the opensplat command")
 ) -> Any:
     """
     Create new item.
@@ -148,7 +148,6 @@ def delete_splat(
         raise HTTPException(status_code=404, detail="Splat not found")
     if not current_user.is_superuser and (splat.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    modeling_tasks.delete_modeling_task_data(splat.task_id)
     splat = crud.splat.remove(db=db, id=id)
     return {"detail": f'Splat deleted successfully {id}'}
 

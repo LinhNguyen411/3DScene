@@ -6,7 +6,7 @@ const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('token')}`,
   });
 
-const createSplat = async (title, file, num_iterations = 10) => {
+const createSplat = async (title, file, num_iterations = 5000) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('title', title);

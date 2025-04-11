@@ -44,11 +44,45 @@ const deleteSplat = async (id) => {
       throw new Error('Failed to delete splat');
     }
 }
+const downloadSplat = async (id, title) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}/download`, {
+      headers: getAuthHeaders(),
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+
+    // Use title and ensure it ends with .ply
+    let filename = title?.trim() || 'downloaded_file';
+    if (!filename.endsWith('.ply')) {
+      filename += '.ply';
+    }
+
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download failed:', error);
+    alert('Failed to download file');
+  }
+};
+
 
 const DataService = {
     updateSplat,
     deleteSplat,
     getSplats,
+    downloadSplat,
 };
 
 export default DataService;

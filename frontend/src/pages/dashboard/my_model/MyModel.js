@@ -25,7 +25,7 @@ function MyModel(props){
       await DataService.updateSplat(model.id, title);
       setIsEditModalOpen(false);
       onRefresh(); // Refresh the model list
-      onUpdate(model.id, title);
+      // onUpdate(model.id, title);
     } catch (error) {
       console.error('Error updating model:', error);
     }
@@ -37,7 +37,7 @@ function MyModel(props){
       await DataService.deleteSplat(model.id);
       setIsDeleteModalOpen(false);
       onRefresh(); // Refresh the model list
-      onDelete(model.id);
+      // onDelete(model.id);
     } catch (error) {
       console.error('Error deleting model:', error);
     }

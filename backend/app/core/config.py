@@ -107,4 +107,10 @@ class Settings(BaseSettings):
     SPLAT_THUMBNAILS_DIR = "thumbnails"
 
 
+    STRIPE_API_KEY:str = os.environ.get("STRIPE_API_KEY")
+    FRONTEND_DOMAIN = "http://localhost:8081"
+    MONTHLY_ID = "price_1RCdEMIpv2OeX57hkx16Fs0g"
+    YEARLY_ID = "price_1RCdFSIpv2OeX57h2JIVsxpv"
+    SUPPORT_EMAIL = "3dscene@gmail.com"
+
 settings: Settings = Settings()

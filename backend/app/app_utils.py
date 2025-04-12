@@ -91,6 +91,58 @@ def send_new_account_email(email_to: str, token: str) -> None:
         },
     )
 
+def send_subscription_success_email(
+    email_to: str, 
+    user_name: str, 
+    plan_name: str, 
+    amount: float, 
+    currency: str,
+    created_date: datetime,
+    expired_date: datetime,
+) -> None:
+    """
+    Send a confirmation email to users after successful subscription payment.
+    
+    Args:
+        email_to: Email address of the recipient
+        user_name: Name of the user who subscribed
+        plan_name: Name of the subscription plan (e.g., "Basic", "Premium")
+        amount: Amount paid for the subscription
+        currency: Currency of the payment (e.g., "usd")
+    """
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Subscription Confirmation"
+    
+    # Read email template
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / "subscription_success.html") as f:
+        template_str = f.read()
+    
+    # Generate dashboard link
+    dashboard_link = f"{settings.SERVER_HOST_FRONT}/dashboard"
+    
+    # Format currency for display
+    formatted_amount = f"{amount:.2f}"
+    currency_upper = currency.upper()
+    
+    # Send email asynchronously
+    send_email_async.delay(
+        email_to=email_to,
+        subject_template=subject,
+        html_template=template_str,
+        environment={
+            "project_name": settings.PROJECT_NAME,
+            "user_name": user_name,
+            "email": email_to,
+            "plan_name": plan_name,
+            "amount": formatted_amount,
+            "currency": currency_upper,
+            "dashboard_link": dashboard_link,
+            "created_date": created_date.strftime("%Y-%m-%d %H:%M:%S"),
+            "expired_date": expired_date.strftime("%Y-%m-%d %H:%M:%S"),
+            "support_email": settings.SUPPORT_EMAIL,
+        },
+    )
+
 
 def generate_password_reset_token(email: str) -> str:
     delta = timedelta(hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS)

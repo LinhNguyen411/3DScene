@@ -111,7 +111,12 @@ function AdminUser() {
       <h1 className="text-2xl font-bold">{MODEL_NAME} Management</h1>
     </div>
     
-    <button onClick={() => {setEditingItem(initItem), setOpenEditModal(true)}} className="w-fit bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded flex items-center gap-2 mb-6">
+    <button onClick={() => {
+                  setEditingItem(initItem);
+                  setOpenEditModal(true);
+                  }} 
+            className="w-fit bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded flex items-center gap-2 mb-6"
+    >
       <span>+</span> Add {MODEL_NAME}
     </button>
     
@@ -154,7 +159,10 @@ function AdminUser() {
                     <div >
                       <MenuItem>
                         <button
-                          onClick={() => {setOpenEditModal(true), setEditingItem({...item, confirm_password: item.password})}}
+                          onClick={() => {
+                                      setOpenEditModal(true);
+                                       setEditingItem({...item, confirm_password: item.password});
+                                  }}
                           className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                         >
                           <Pencil className="w-4 h-4" />
@@ -163,7 +171,10 @@ function AdminUser() {
                       </MenuItem>
                       <MenuItem>
                         <button
-                          onClick={() => {setOpenDeleteModal(true), setEditingItem(item)}}
+                          onClick={() => {
+                                      setOpenDeleteModal(true);
+                                      setEditingItem(item);
+                                  }}
                           className="w-full flex gap-5 text-red-500 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                         >
                           <Trash className="w-4 h-4 text-red-500" />

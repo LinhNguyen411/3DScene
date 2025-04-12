@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import (Column, ForeignKey, Integer,
-                        String, Boolean, DateTime)  # type: ignore
+                        String, DateTime)  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from app.db.base_class import Base

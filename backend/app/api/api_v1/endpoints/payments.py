@@ -14,10 +14,10 @@ from fastapi import (APIRouter,  Depends, HTTPException)
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[schemas.Feedback], responses={
+@router.get("/", response_model=Page[schemas.Payment], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def read_feedbacks(
+def read_payments(
     params: Params = Depends(),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -26,35 +26,19 @@ def read_feedbacks(
     Retrieve items.
     """
 
-    if not current_user.is_superuser:
+    if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    feedbacks = crud.feedback.get_multi(db=db)
+    if current_user.is_superuser:
+        payments = crud.payment.get_multi(db=db)
+    else:
+        payments = crud.payment.query_get_multi_by_payer(db=db, payer_id=current_user.id)
 
-    return paginate(feedbacks, params)
+    return paginate(payments, params)
 
-@router.get("/recent", response_model=Page[schemas.Feedback], responses={
+@router.get("/{id}", response_model=schemas.Payment, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def read_feedbacks(
-    params: Params = Depends(),
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Retrieve items.
-    """
-
-    if not current_user.is_superuser:
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    feedbacks = crud.feedback.get_recent(db=db)
-
-    return paginate(feedbacks, params)
-
-
-@router.get("/{id}", response_model=schemas.Feedback, responses={
-    401: {"model": schemas.Detail, "description": "User unathorized"}
-})
-def get_feedback(
+def get_payment(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -63,58 +47,60 @@ def get_feedback(
     """
     Delete an item.
     """
-    feedback = crud.feedback.get(db=db, id=id)
-    if not feedback:
-        raise HTTPException(status_code=404, detail="Feedback not found")
+    payment = crud.payment.get(db=db, id=id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    return feedback
+    return payment
 
 
-@router.post("/", response_model=schemas.Feedback, responses={
+@router.post("/", response_model=schemas.Payment, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-async def create_feedback(
+async def create_payment(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
-    feedback_in: schemas.FeedbackCreate
+    user_id : int,
+    payment_in: schemas.PaymentCreate
 ) -> Any:
     """
     Create new item.
     """
-    
-    feedback: models.Feedback = crud.feedback.create(
-        db, obj_in=feedback_in)
-    return feedback
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    payment: models.Payment = crud.payment.create_with_payer(
+        db, obj_in=payment_in, payer_id=user_id)
+    return payment
 
 
-@router.put("/{id}", response_model=schemas.Feedback, responses={
+@router.put("/{id}", response_model=schemas.Payment, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def update_feedback(
+def update_payment(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     id: int,
-    feedback_in: schemas.FeedbackUpdate,
+    payment_in: schemas.PaymentUpdate,
 ) -> Any:
     """
     Update an item.
     """
-    feedback = crud.feedback.get(db=db, id=id)
-    if not feedback:
-        raise HTTPException(status_code=404, detail="Feedback not found")
+    payment = crud.payment.get(db=db, id=id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    feedback = crud.feedback.update(db=db, db_obj=feedback, obj_in=feedback_in)
-    return feedback
+    payment = crud.payment.update(db=db, db_obj=payment, obj_in=payment_in)
+    return payment
 
 
 @router.delete("/{id}", response_model=schemas.Detail, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def delete_feedback(
+def delete_payment(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -123,10 +109,10 @@ def delete_feedback(
     """
     Delete an item.
     """
-    feedback = crud.feedback.get(db=db, id=id)
-    if not feedback:
-        raise HTTPException(status_code=404, detail="Feedback not found")
+    payment = crud.payment.get(db=db, id=id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    feedback = crud.feedback.remove(db=db, id=id)
-    return {"detail": f'Feedback deleted successfully {id}'}
+    payment = crud.payment.remove(db=db, id=id)
+    return {"detail": f'Payment deleted successfully {id}'}

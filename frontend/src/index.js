@@ -24,6 +24,7 @@ import ResetPasswordForm from "./pages/forgot_password/reset_password/ResetPassw
 import PasswordChanged from "./pages/forgot_password/password_changed/PasswordChanged";
 import LinkNotValid from "./pages/link_not_valid/LinkNotValid";
 import ConfirmEmail from "./pages/sign_up/confirm_email/ConfirmEmail";
+import Feedback from "./pages/dashboard/feedback/Feedback";
 
 import Admin from "./Admin"
 import AdminLogin from "./admin-pages/admin-login/AdminLogin"
@@ -38,6 +39,9 @@ import MyModel from './pages/dashboard/my_model/MyModel';
 import ReactDOM from 'react-dom/client';
 import {SnackbarProvider} from './provider/SnackbarProvider';
 import { Navigate } from 'react-router-dom';
+import Subscription from "./pages/subscription/Subscription";
+import SubscriptionSuccess from "./pages/subscription/SubscriptionSuccess";
+import SubscriptionCancel from "./pages/subscription/SubscriptionCancel";
 
 
 
@@ -75,6 +79,8 @@ root.render(
             path={RouterPath.PASSWORD_CHANGED}
             element={<PasswordChanged />}
           />
+
+
           <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
           <Route
             path={RouterPath.DASHBOARD}
@@ -87,12 +93,38 @@ root.render(
             <Route index element={<Navigate to={RouterPath.DASHBOARD_UPLOAD} replace />} />
             <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
             <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
+            <Route path={RouterPath.DASHBOARD_FEEDBACK} element={<Feedback />} />
+
           </Route>
           <Route
             path={RouterPath.MY_INFORMATION}
             element={
               <PrivateRoute>
                 <Profil />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={RouterPath.SUBSCRIPTION}
+            element={
+              <PrivateRoute>
+                <Subscription />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={RouterPath.SUCCESS}
+            element={
+              <PrivateRoute>
+                <SubscriptionSuccess />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path={RouterPath.CANCEL}
+            element={
+              <PrivateRoute>
+                <SubscriptionCancel />
               </PrivateRoute>
             }
           />

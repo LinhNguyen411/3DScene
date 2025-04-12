@@ -14,3 +14,4 @@ class User(Base):
     is_active = Column(Boolean(), default=False)
     is_superuser = Column(Boolean(), default=False)
     splats = relationship("Splat", back_populates="owner")
+    payments = relationship("Payment", back_populates="payer")

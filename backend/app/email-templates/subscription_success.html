@@ -1,0 +1,233 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Subscription Confirmation</title>
+    <style>
+        @media only screen and (max-width: 620px) {
+            table.body h1 {
+                font-size: 28px !important;
+                margin-bottom: 10px !important;
+            }
+            
+            table.body p,
+            table.body ul,
+            table.body ol,
+            table.body td,
+            table.body span,
+            table.body a {
+                font-size: 16px !important;
+            }
+            
+            table.body .wrapper,
+            table.body .article {
+                padding: 10px !important;
+            }
+            
+            table.body .content {
+                padding: 0 !important;
+            }
+            
+            table.body .container {
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            
+            table.body .main {
+                border-left-width: 0 !important;
+                border-radius: 0 !important;
+                border-right-width: 0 !important;
+            }
+            
+            table.body .btn table {
+                width: 100% !important;
+            }
+            
+            table.body .btn a {
+                width: 100% !important;
+            }
+            
+            table.body .img-responsive {
+                height: auto !important;
+                max-width: 100% !important;
+                width: auto !important;
+            }
+        }
+        
+        @media all {
+            .ExternalClass {
+                width: 100%;
+            }
+            
+            .ExternalClass,
+            .ExternalClass p,
+            .ExternalClass span,
+            .ExternalClass font,
+            .ExternalClass td,
+            .ExternalClass div {
+                line-height: 100%;
+            }
+            
+            .apple-link a {
+                color: inherit !important;
+                font-family: inherit !important;
+                font-size: inherit !important;
+                font-weight: inherit !important;
+                line-height: inherit !important;
+                text-decoration: none !important;
+            }
+            
+            #MessageViewBody a {
+                color: inherit;
+                text-decoration: none;
+                font-size: inherit;
+                font-family: inherit;
+                font-weight: inherit;
+                line-height: inherit;
+            }
+            
+            .btn-primary table td:hover {
+                background-color: #38bdf8 !important;
+            }
+            
+            .btn-primary a:hover {
+                background-color: #38bdf8 !important;
+                border-color: #38bdf8 !important;
+            }
+            .logo-icon {
+                background-color: #38bdf8; /* sky-400 */
+                border: 1px solid #38bdf8; /* border-sky-400 */
+                width: 1.5em;
+                height: 1.5em;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 5px;
+                position: relative;
+            }
+
+            .logo-bolt {
+                width: 1em;
+                height: 0.5em;
+                background-color: white;
+                clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+                transform: rotate(45deg);
+            }
+
+            .brand-text {
+                font-size: 1em;
+                font-weight: bold;
+                color: #38bdf8;
+                padding: 0px;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #f6f6f6; font-family: sans-serif; -webkit-font-smoothing: antialiased; font-size: 14px; line-height: 1.4; margin: 0; padding: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="body" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background-color: #f6f6f6; width: 100%;" width="100%" bgcolor="#f6f6f6">
+        <tr>
+            <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;" valign="top">&nbsp;</td>
+            <td class="container" style="font-family: sans-serif; font-size: 14px; vertical-align: top; display: block; max-width: 580px; padding: 10px; width: 580px; margin: 0 auto;" width="580" valign="top">
+                <div class="content" style="box-sizing: border-box; display: block; margin: 0 auto; max-width: 580px; padding: 10px;">
+                    <!-- START CENTERED WHITE CONTAINER -->
+                    <table role="presentation" class="main" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; background: #ffffff; border-radius: 3px; width: 100%;" width="100%">
+                        <!-- START MAIN CONTENT AREA -->
+                        <tr>
+                            <td class="wrapper" style="font-family: sans-serif; font-size: 14px; vertical-align: top; box-sizing: border-box; padding: 20px;" valign="top">
+                                <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
+                                    <tr>
+                                        <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;" valign="top">
+                                            <div style="text-align: center; margin-bottom: 30px; display: flex; justify-content: center; align-items: center;">
+                                                <div class="logo-icon">
+                                                    <div class="logo-bolt"></div>
+                                                </div>
+                                                <div class="brand-text">3DScene App</div>
+                                            </div>
+                                            <h1 style="text-align: center; color: #38bdf8; margin-bottom: 30px;">Subscription Confirmed!</h1>
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Hi {{ user_name }},</p>
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Thank you for subscribing to <strong>{{ project_name }}</strong>. Your payment has been successfully processed.</p>
+                                            
+                                            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                                                <h3 style="color: #333; margin-top: 0;">Subscription Details</h3>
+                                                <table style="width: 100%; border-collapse: collapse;">
+                                                    <tr>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Plan:</td>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold; text-align: right;">{{ plan_name }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Amount:</td>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold; text-align: right;">{{ amount }} {{ currency }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Created Date:</td>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold; text-align: right;">{{ created_date }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; color: #666;">Expired Date:</td>
+                                                        <td style="padding: 8px 0; border-bottom: 1px solid #eee; font-weight: bold; text-align: right;">{{ expired_date }}</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">You now have full access to all the amazing features included in your plan. Visit your dashboard to start using your subscription right away:</p>
+                                            
+                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" class="btn btn-primary" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; box-sizing: border-box; width: 100%;" width="100%">
+                                                <tbody>
+                                                    <tr>
+                                                        <td align="center" style="font-family: sans-serif; font-size: 14px; vertical-align: top; padding-bottom: 15px;" valign="top">
+                                                            <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: auto;">
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td style="font-family: sans-serif; font-size: 14px; vertical-align: top; border-radius: 5px; text-align: center; background-color: #38bdf8;" valign="top" align="center" bgcolor="#38bdf8">
+                                                                            <a href="{{ dashboard_link }}" target="_blank" style="border: solid 1px #38bdf8; border-radius: 5px; box-sizing: border-box; cursor: pointer; display: inline-block; font-size: 14px; font-weight: bold; margin: 0; padding: 12px 25px; text-decoration: none; text-transform: capitalize; background-color: #38bdf8; border-color: #38bdf8; color: #ffffff;">Go to Dashboard</a>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">If you have any questions or need assistance, please don't hesitate to contact our support team at <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Thank you for choosing {{ project_name }}!</p>
+                                            
+                                            <p style="font-family: sans-serif; font-size: 14px; font-weight: normal; margin: 0; margin-bottom: 15px;">Best regards,<br>
+                                            The {{ project_name }} Team</p>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                        <!-- END MAIN CONTENT AREA -->
+                    </table>
+                    <!-- END CENTERED WHITE CONTAINER -->
+                    
+                    <!-- START FOOTER -->
+                    <div class="footer" style="clear: both; margin-top: 10px; text-align: center; width: 100%;">
+                        <table role="presentation" border="0" cellpadding="0" cellspacing="0" style="border-collapse: separate; mso-table-lspace: 0pt; mso-table-rspace: 0pt; width: 100%;" width="100%">
+                            <tr>
+                                <td class="content-block" style="font-family: sans-serif; vertical-align: top; padding-bottom: 10px; padding-top: 10px; color: #999999; font-size: 12px; text-align: center;" valign="top" align="center">
+                                    <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">{{ project_name }}, Inc.</span>
+                                    <br>
+                                    <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">This is an automated email. Please do not reply.</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="content-block powered-by" style="font-family: sans-serif; vertical-align: top; padding-bottom: 10px; padding-top: 10px; color: #999999; font-size: 12px; text-align: center;" valign="top" align="center">
+                                    &copy; {{ project_name }} 2025
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <!-- END FOOTER -->
+                </div>
+            </td>
+            <td style="font-family: sans-serif; font-size: 14px; vertical-align: top;" valign="top">&nbsp;</td>
+        </tr>
+    </table>
+</body>
+</html>

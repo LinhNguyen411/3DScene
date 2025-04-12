@@ -27,7 +27,7 @@ export default function NavBarTop(props) {
     <div className="space-x-6">
       <button className="text-gray-800 font-medium">Join Community</button>
       <button className="text-gray-800 font-medium">Tutorial</button>
-      <button className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</button>
+      <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</Link>
      {!isAuthenticated && (
           <>
           <Link to={RouterPath.LOGIN} className="header-link">

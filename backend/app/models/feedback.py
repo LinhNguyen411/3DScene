@@ -1,8 +1,8 @@
 from sqlalchemy import Column, String, DateTime, Integer
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
 
-Base = declarative_base()
+from app.db.base_class import Base 
+
 
 class Feedback(Base):
     __tablename__ = 'feedback'

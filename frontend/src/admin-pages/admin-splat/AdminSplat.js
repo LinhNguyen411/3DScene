@@ -139,7 +139,10 @@ function AdminSplat() {
                     <div >
                       <MenuItem>
                         <button
-                          onClick={() => {setOpenEditModal(true), setEditingItem({...item, confirm_password: item.password})}}
+                          onClick={() => {
+                                      setOpenEditModal(true);
+                                      setEditingItem({...item, confirm_password: item.password});
+                                  }}
                           className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                         >
                           <Pencil className="w-4 h-4" />
@@ -148,7 +151,10 @@ function AdminSplat() {
                       </MenuItem>
                       <MenuItem>
                         <button
-                          onClick={() => {setOpenDeleteModal(true), setEditingItem(item)}}
+                          onClick={() => {
+                                        setOpenDeleteModal(true);
+                                        setEditingItem(item);
+                                  }}
                           className="w-full flex gap-5 text-red-500 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                         >
                           <Trash className="w-4 h-4 text-red-500" />

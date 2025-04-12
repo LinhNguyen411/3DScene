@@ -1,6 +1,7 @@
 from .crud_user import user
 from .crud_splat import splat
 from .crud_feedback import feedback
+from .crud_payment import payment
 # For a new basic set of CRUD operations you could just do
 
 # from .base import CRUDBase

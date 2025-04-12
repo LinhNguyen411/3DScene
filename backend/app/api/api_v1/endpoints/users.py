@@ -10,9 +10,16 @@ from app.api import deps
 from app.core.config import settings
 from app.app_utils import send_new_account_email, generate_mail_confirmation_token, verify_mail_confirmation_token
 from app.core.security import get_password_hash
+from datetime import datetime
 
 router = APIRouter()
 
+@router.get("/is-pro-user")
+def check_is_pro_user(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+) -> Any:
+    return crud.payment.check_is_last_payment_not_expired(db, current_user.id)
 
 @router.get("/get-my-info", response_model=schemas.User)
 def read_user_me(

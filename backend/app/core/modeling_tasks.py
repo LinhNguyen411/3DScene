@@ -20,7 +20,7 @@ router = APIRouter()
 async def process_video(
     file: UploadFile = File(...),
     num_iterations: int = Query(
-        1000, description="Number of iterations for the opensplat command")
+        15000, description="Number of iterations for the opensplat command")
 ):
     # Create a directory for this modeling_task
     modeling_task_id = str(uuid.uuid4())

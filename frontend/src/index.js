@@ -42,6 +42,7 @@ import { Navigate } from 'react-router-dom';
 import Subscription from "./pages/subscription/Subscription";
 import SubscriptionSuccess from "./pages/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/subscription/SubscriptionCancel";
+import ModelView from "./pages/model_view/ModelView";
 
 
 
@@ -51,6 +52,10 @@ root.render(
   <SnackbarProvider>
     <BrowserRouter>
       <Routes>
+        <Route
+            path={RouterPath.MODEL_VIEW}
+            element={<ModelView />}
+          />
         <Route path={RouterPath.HOME} element={<App />}>
           <Route index element={<HomePage />} />
           <Route path={RouterPath.LOGIN} element={<Login />} />

@@ -63,7 +63,7 @@ def send_email_async(
 def process_video(self: Task,
                   task_id: str,
                   video_path: str,
-                  num_iterations: int = 1000
+                  num_iterations: int = 5000
                   ) -> Any:
     """Process video to generate 3D Gaussian Splatting model"""
     try:
@@ -193,7 +193,7 @@ def process_video(self: Task,
         cmd = [
             "opensplat",
             os.path.join(dataset_path, "to_opensplat"),
-            "-n", str(num_iterations),
+            "-n", str(5000),
             "-o", os.path.join(dataset_path, "outputs", output_model)
         ]
 

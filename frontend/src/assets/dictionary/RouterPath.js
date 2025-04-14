@@ -22,6 +22,8 @@ export const RouterPath = {
   DASHBOARD_3DGS: "/dashboard/3dgs",
   DASHBOARD_FAVORITES: "/dashboard/favorites",
   DASHBOARD_FEEDBACK: "/dashboard/feedback",
+  
+  MODEL_VIEW: "/model/view",
 
   // subscription route
   SUBSCRIPTION: "/subscription",

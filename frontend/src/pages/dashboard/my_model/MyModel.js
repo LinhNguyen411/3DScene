@@ -5,6 +5,8 @@ import myAppConfig from "../../../config";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { MoreHorizontal, Pencil, Download, Trash } from "lucide-react";
 import { useSnackbar } from '../../../provider/SnackbarProvider';
+import { RouterPath } from '../../../assets/dictionary/RouterPath';
+import { Link } from "react-router-dom";
 
 
 // Main App Component
@@ -57,26 +59,23 @@ function MyModel(props){
   // Combine useEffect with onRefresh to fetch models initially
   useEffect(() => {
     onRefresh(); // Initial fetch when component mounts
-
-    // Set up an interval to check and refresh every 5 seconds
+  }, []);
+  
+  useEffect(() => {
     const intervalId = setInterval(() => {
-      // Check if any model does not have "succeed" status
       const shouldRefresh = models.some((model) => model.task_metadata.status !== 'SUCCESS');
       
       if (shouldRefresh) {
         console.log('Auto-refreshing due to non-succeed status...');
         onRefresh();
       } else {
-        onRefresh();
         console.log('All models succeeded, no refresh needed.');
         clearInterval(intervalId);
-        showSnackbar('Your model completed!', 'info');
       }
-      }, 5000); // 5000ms = 5 seconds
+    }, 5000); // 5000ms = 5 seconds
+  
     return () => clearInterval(intervalId);
-    // Cleanup interval on component unmount
-    
-  }, []);
+  }, [models]);
   const tabToStatusMap = {
     All: 'All',
     Queuing: 'PENDING',
@@ -84,7 +83,6 @@ function MyModel(props){
     Succeeded: 'SUCCESS',
     Failed: 'FAILED',
   };
-  console.log(models);
   const statusToFilter = tabToStatusMap[activeTab];
 
 
@@ -125,75 +123,78 @@ function MyModel(props){
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredModels.map((model) => (
-                    <div key={model.id} className="bg-white rounded-lg shadow">
-                    <div className="relative">
-                        <img 
-                        src={myAppConfig.api.ENDPOINT  + model.image_url} 
-                        alt={model.title} 
-                        className="w-full h-48 object-cover"
-                        />
-                        <div className="absolute bottom-2 left-2">
-                        <span className={`px-3 py-1 rounded-full text-sm ${
-                            model.task_metadata.status === 'SUCCESS' ? 'bg-teal-400 text-white' :
-                            model.task_metadata.status === 'PROCESS' ? 'bg-blue-400 text-white' :
-                            model.task_metadata.status === 'PENDING' ? 'bg-yellow-400 text-white' :
-                            'bg-red-400 text-white'
-                        }`}>
-                            {model.task_metadata.status}
-                        </span>
-                        </div>
-                    </div>
-                    <div className="p-4">
-                        <div className="flex justify-between items-center">
-                        <h3 className="font-medium">{model.title}</h3>
+                    <div className="bg-white rounded-lg shadow">
+                      <div className="relative">
+                        <Link to={RouterPath.MODEL_VIEW + "?id=" + model.id} key={model.id}>
+                            <img 
+                            src={myAppConfig.api.ENDPOINT  + model.image_url} 
+                            alt={model.title} 
+                            className="w-full h-48 object-cover"
+                            />
                         
-                        <Menu as="div" className="relative inline-block text-left">
-                          <div>
-                            <MenuButton className="inline-flex w-full justify-center gap-x-1.5 border-none rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900">
-                              <MoreHorizontal className="w-5 h-5 text-gray-500" />
-                            </MenuButton>
+                        </Link>
+                          <div className="absolute bottom-2 left-2">
+                          <span className={`px-3 py-1 rounded-full text-sm ${
+                              model.task_metadata.status === 'SUCCESS' ? 'bg-teal-400 text-white' :
+                              model.task_metadata.status === 'PROCESS' ? 'bg-blue-400 text-white' :
+                              model.task_metadata.status === 'PENDING' ? 'bg-yellow-400 text-white' :
+                              'bg-red-400 text-white'
+                          }`}>
+                              {model.task_metadata.status}
+                          </span>
                           </div>
-                          <MenuItems
-                            transition
-                            className="absolute w-fit right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-                          >
-                            <div >
-                              <MenuItem>
-                                <button
-                                  onClick={() => (setIsEditModalOpen(true), setModel(model), setTitle(model.title))}
-                                  className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                  Edit
-                                </button>
-                              </MenuItem>
-                              <MenuItem>
-                                <button
-                                  onClick={() => (setIsExportModalOpen(true), setModel(model))}
-                                  className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-                                >
-                                  <Download className="w-4 h-4" />
-                                  Download
-                                </button>
-                              </MenuItem>
-                              <MenuItem>
-                                <button
-                                  onClick={() => (setIsDeleteModalOpen(true), setModel(model))}
-                                  className="w-full flex gap-5 text-red-500 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
-                                >
-                                  <Trash className="w-4 h-4 text-red-500" />
-                                  Delete
-                                </button>
-                              </MenuItem>
+                      </div>
+                      <div className="p-4">
+                          <div className="flex justify-between items-center">
+                          <h3 className="font-medium">{model.title}</h3>
+                          
+                          <Menu as="div" className="relative inline-block text-left">
+                            <div>
+                              <MenuButton className="inline-flex w-full justify-center gap-x-1.5 border-none rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900">
+                                <MoreHorizontal className="w-5 h-5 text-gray-500" />
+                              </MenuButton>
                             </div>
-                          </MenuItems>
-                        </Menu>
-                        </div>
-                        <div className="mt-2 flex items-center">
-                        <span className="text-xs px-2 py-1 bg-teal-100 text-teal-800 rounded mr-2">Photo Scan</span>
-                        <span className="text-xs text-gray-500">{model.date_created}</span>
-                        </div>
-                    </div>
+                            <MenuItems
+                              transition
+                              className="absolute w-fit right-0 z-10 mt-2 w-56 origin-top-right rounded-md bg-white ring-1 shadow-lg ring-black/5 transition focus:outline-hidden data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+                            >
+                              <div >
+                                <MenuItem>
+                                  <button
+                                    onClick={() => (setIsEditModalOpen(true), setModel(model), setTitle(model.title))}
+                                    className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                    Edit
+                                  </button>
+                                </MenuItem>
+                                <MenuItem>
+                                  <button
+                                    onClick={() => (setIsExportModalOpen(true), setModel(model))}
+                                    className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    Download
+                                  </button>
+                                </MenuItem>
+                                <MenuItem>
+                                  <button
+                                    onClick={() => (setIsDeleteModalOpen(true), setModel(model))}
+                                    className="w-full flex gap-5 text-red-500 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
+                                  >
+                                    <Trash className="w-4 h-4 text-red-500" />
+                                    Delete
+                                  </button>
+                                </MenuItem>
+                              </div>
+                            </MenuItems>
+                          </Menu>
+                          </div>
+                          <div className="mt-2 flex items-center">
+                          <span className="text-xs px-2 py-1 bg-teal-100 text-teal-800 rounded mr-2">Photo Scan</span>
+                          <span className="text-xs text-gray-500">{model.date_created}</span>
+                          </div>
+                      </div>
                     </div>
                 ))}
                 </div>

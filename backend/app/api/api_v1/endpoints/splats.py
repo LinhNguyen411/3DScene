@@ -89,7 +89,7 @@ async def create_splat(
     current_user: models.User = Depends(deps.get_current_active_user),
     title: str = Form(...),
     file: UploadFile = File(...),
-    num_iterations: int = Form(1000, description="Number of iterations for the opensplat command")
+    num_iterations: int = Form(15000, description="Number of iterations for the opensplat command")
 ) -> Any:
     """
     Create new item.

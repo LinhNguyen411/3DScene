@@ -7,11 +7,10 @@ from app.crud.base import CRUDBase
 from app.models.splat import Splat
 from app.schemas.splat import SplatCreate, SplatUpdate
 
-from app.celery import celery_app
-from app.core import modeling_tasks
-from celery.result import AsyncResult
 from sqlalchemy.orm import joinedload
-
+from sqlalchemy.sql import func  # type: ignore
+from typing import Dict
+from datetime import datetime, timedelta
 
 class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):
     def create_with_owner(
@@ -45,8 +44,16 @@ class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):
         obj = db.query(self.model).options(joinedload(self.model.owner)).get(id)
         db.delete(obj)
         db.commit()
-        modeling_tasks.delete_modeling_task_data(obj.task_id)
         return obj
+    def get_splats_last_24_hours(self, db: Session) -> List[Splat]:
+        time_threshold = datetime.now() - timedelta(hours=24)
+        return (
+            db.query(self.model)
+            .filter(Splat.date_created >= time_threshold)
+            .options(joinedload(self.model.owner))
+            .order_by(Splat.date_created.desc())
+            .all()
+        )
 
 
 splat = CRUDSplat(Splat)

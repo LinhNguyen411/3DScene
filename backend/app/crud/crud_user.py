@@ -8,6 +8,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 
 
+
 class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     def get_by_email(self, db: Session, *, email: str) -> Optional[User]:
         return db.query(User).filter(User.email == email).first()
@@ -58,5 +59,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     ) -> List[User]:
         query = db.query(self.model)
         return query
+    def get_total_users(self, db: Session) -> int:
+        return db.query(self.model).filter(User.is_superuser == False).count()
+    
+    
 
 user = CRUDUser(User)

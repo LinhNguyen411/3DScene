@@ -46,8 +46,10 @@ if settings.BACKEND_CORS_ORIGINS:
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-os.makedirs(settings.SPLAT_THUMBNAILS_DIR, exist_ok=True)
-app.mount("/thumbnails", StaticFiles(directory=settings.SPLAT_THUMBNAILS_DIR), name="thumbnails")
+os.makedirs(settings.MODEL_ASSETS_DIR, exist_ok=True)
+os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
+os.makedirs(settings.MODEL_WORKSPACES_DIR, exist_ok=True)
+app.mount("/thumbnails", StaticFiles(directory=settings.MODEL_THUMBNAILS_DIR), name="thumbnails")
 
 
 

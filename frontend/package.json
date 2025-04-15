@@ -15,6 +15,7 @@
     "@react-three/drei": "^10.0.6",
     "@react-three/fiber": "^9.1.2",
     "@stripe/stripe-js": "^7.0.0",
+    "@tailwindcss/aspect-ratio": "^0.4.2",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",

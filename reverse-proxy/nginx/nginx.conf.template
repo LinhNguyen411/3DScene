@@ -7,7 +7,7 @@ http {
     sendfile_max_chunk 1m;
 
     # support bigg client body sizes
-    client_max_body_size 256M;
+    client_max_body_size 5120M;
 
     # send HTTP response headers in one packet
     tcp_nopush on;

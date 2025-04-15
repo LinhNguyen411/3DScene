@@ -6,13 +6,12 @@ from sqlalchemy.orm import Session  # type: ignore
 from app.crud.base import CRUDBase
 from app.models.payment import Payment
 from app.schemas.payment import PaymentCreate, PaymentUpdate
+from app.schemas.user import User
 
-from app.celery import celery_app
-from app.core import modeling_tasks
-from celery.result import AsyncResult
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 import re
+from sqlalchemy import func
 
 
 
@@ -73,6 +72,25 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentUpdate]):
         if last_payment and last_payment.expired_at > datetime.now():
             return True
         return False
+    def count_pro_users(self, db: Session) -> int:
+        payment_subquery = (
+        db.query(Payment.payer_id)
+        .distinct()
+        .subquery()
+    )
+    
+        # Count users whose last payment is not expired
+        count = 0
+        for payer_id in db.query(payment_subquery):
+            is_pro = payment.check_is_last_payment_not_expired(db, payer_id=payer_id[0])
+            if is_pro:
+                count += 1
+                
+        return count
+    
+    def get_total_amount(self, db: Session) -> float:
+        total = db.query(func.sum(Payment.amount)).scalar() or 0.0
+        return total
 
 
 payment = CRUDPayment(Payment)

@@ -36,6 +36,7 @@ export const RouterPath = {
   ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_USER: "/admin/users",
   ADMIN_SPLAT: "/admin/splats",
+  ADMIN_PAYMENT: "/admin/payments",
   ADMIN_SETTINGS: "/admin/settings",
 };
 Object.freeze(RouterPath);

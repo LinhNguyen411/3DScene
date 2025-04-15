@@ -37,124 +37,129 @@ import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import Upload from "./pages/dashboard/upload/Upload";
 import MyModel from './pages/dashboard/my_model/MyModel';
 import ReactDOM from 'react-dom/client';
-import {SnackbarProvider} from './provider/SnackbarProvider';
 import { Navigate } from 'react-router-dom';
 import Subscription from "./pages/subscription/Subscription";
 import SubscriptionSuccess from "./pages/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/subscription/SubscriptionCancel";
 import ModelView from "./pages/model_view/ModelView";
+import AdminPayment from "./admin-pages/admin-payment/AdminPayment";
 
+import {SnackbarProvider} from './provider/SnackbarProvider';
+import {LoaderProvider} from './provider/LoaderProvider';
 
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <SnackbarProvider>
-    <BrowserRouter>
-      <Routes>
-        <Route
-            path={RouterPath.MODEL_VIEW}
-            element={<ModelView />}
-          />
-        <Route path={RouterPath.HOME} element={<App />}>
-          <Route index element={<HomePage />} />
-          <Route path={RouterPath.LOGIN} element={<Login />} />
-          <Route path={RouterPath.SIGNUP} element={<SignUpForm />} />
+  <LoaderProvider>
+    <SnackbarProvider>
+      <BrowserRouter>
+        <Routes>
           <Route
-            path={RouterPath.SIGNUP_MAIL_SENT}
-            element={<ConfirmationEmailSent />}
-          />
-          <Route
-            path={RouterPath.SIGNUP_CONFIRM_EMAIL}
-            element={<ConfirmEmail />}
-          />
-          <Route
-            path={RouterPath.FORGOT_PASSWORD}
-            element={<ForgotPasswordForm />}
-          />
-          <Route
-            path={RouterPath.FORGOT_PASSWORD_MAIL_SENT}
-            element={<ForgotPasswordEmailSent />}
-          />
-          <Route
-            path={RouterPath.RESET_PASSWORD}
-            element={<ResetPasswordForm />}
-          />
-          <Route
-            path={RouterPath.PASSWORD_CHANGED}
-            element={<PasswordChanged />}
-          />
+              path={RouterPath.MODEL_VIEW}
+              element={<ModelView />}
+            />
+          <Route path={RouterPath.HOME} element={<App />}>
+            <Route index element={<HomePage />} />
+            <Route path={RouterPath.LOGIN} element={<Login />} />
+            <Route path={RouterPath.SIGNUP} element={<SignUpForm />} />
+            <Route
+              path={RouterPath.SIGNUP_MAIL_SENT}
+              element={<ConfirmationEmailSent />}
+            />
+            <Route
+              path={RouterPath.SIGNUP_CONFIRM_EMAIL}
+              element={<ConfirmEmail />}
+            />
+            <Route
+              path={RouterPath.FORGOT_PASSWORD}
+              element={<ForgotPasswordForm />}
+            />
+            <Route
+              path={RouterPath.FORGOT_PASSWORD_MAIL_SENT}
+              element={<ForgotPasswordEmailSent />}
+            />
+            <Route
+              path={RouterPath.RESET_PASSWORD}
+              element={<ResetPasswordForm />}
+            />
+            <Route
+              path={RouterPath.PASSWORD_CHANGED}
+              element={<PasswordChanged />}
+            />
 
 
-          <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
+            <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
+            <Route
+              path={RouterPath.DASHBOARD}
+              element={
+                <PrivateRoute>
+                  <DashboardLayout />
+                </PrivateRoute>
+              }
+            >
+              <Route index element={<Navigate to={RouterPath.DASHBOARD_UPLOAD} replace />} />
+              <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
+              <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
+              <Route path={RouterPath.DASHBOARD_FEEDBACK} element={<Feedback />} />
+
+            </Route>
+            <Route
+              path={RouterPath.MY_INFORMATION}
+              element={
+                <PrivateRoute>
+                  <Profil />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path={RouterPath.SUBSCRIPTION}
+              element={
+                <PrivateRoute>
+                  <Subscription />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path={RouterPath.SUCCESS}
+              element={
+                <PrivateRoute>
+                  <SubscriptionSuccess />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path={RouterPath.CANCEL}
+              element={
+                <PrivateRoute>
+                  <SubscriptionCancel />
+                </PrivateRoute>
+              }
+            />
+            <Route path="*" element={<LinkNotValid />} />
+          </Route>
+
           <Route
-            path={RouterPath.DASHBOARD}
+            path={RouterPath.ADMIN_LOGIN}
+            element={<AdminLogin />}
+          />
+          <Route
+            path={RouterPath.ADMIN}
             element={
-              <PrivateRoute>
-                <DashboardLayout />
-              </PrivateRoute>
+              <AdminPrivateRoute>
+                <AdminLayout />
+              </AdminPrivateRoute>
             }
           >
-            <Route index element={<Navigate to={RouterPath.DASHBOARD_UPLOAD} replace />} />
-            <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
-            <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
-            <Route path={RouterPath.DASHBOARD_FEEDBACK} element={<Feedback />} />
-
+            <Route index element={<Navigate to={RouterPath.ADMIN_DASHBOARD} replace />} />
+            <Route path={RouterPath.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+            <Route path={RouterPath.ADMIN_SETTINGS} element={<AdminSetting />} />
+            <Route path={RouterPath.ADMIN_SPLAT} element={<AdminSplat />} />
+            <Route path={RouterPath.ADMIN_USER} element={<AdminUser />} />
+            <Route path={RouterPath.ADMIN_PAYMENT} element={<AdminPayment />} />
           </Route>
-          <Route
-            path={RouterPath.MY_INFORMATION}
-            element={
-              <PrivateRoute>
-                <Profil />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={RouterPath.SUBSCRIPTION}
-            element={
-              <PrivateRoute>
-                <Subscription />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={RouterPath.SUCCESS}
-            element={
-              <PrivateRoute>
-                <SubscriptionSuccess />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path={RouterPath.CANCEL}
-            element={
-              <PrivateRoute>
-                <SubscriptionCancel />
-              </PrivateRoute>
-            }
-          />
-          <Route path="*" element={<LinkNotValid />} />
-        </Route>
-
-        <Route
-          path={RouterPath.ADMIN_LOGIN}
-          element={<AdminLogin />}
-        />
-        <Route
-          path={RouterPath.ADMIN}
-          element={
-            <AdminPrivateRoute>
-              <AdminLayout />
-            </AdminPrivateRoute>
-          }
-        >
-          <Route path={RouterPath.ADMIN_DASHBOARD} element={<AdminDashboard />} />
-          <Route path={RouterPath.ADMIN_SETTINGS} element={<AdminSetting />} />
-          <Route path={RouterPath.ADMIN_SPLAT} element={<AdminSplat />} />
-          <Route path={RouterPath.ADMIN_USER} element={<AdminUser />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-
-  </SnackbarProvider>
+        </Routes>
+      </BrowserRouter>
+    </SnackbarProvider>
+  </LoaderProvider>
 );

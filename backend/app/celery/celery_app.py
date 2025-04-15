@@ -12,6 +12,12 @@ from celery.app.task import Task
 from app.core.config import settings
 import emails  # type: ignore
 from emails.template import JinjaTemplate  # type: ignore
+from sqlalchemy.orm import Session
+from fastapi import Depends
+from app.api import deps
+from app import crud
+from app import schemas
+from app.db.session import SessionLocal
 
 celery_app = Celery('tasks')
 celery_app.conf.broker_url = os.environ.get(
@@ -59,37 +65,44 @@ def send_email_async(
     message.send(to=email_to, render=environment, smtp=smtp_options)
 
 
-@celery_app.task(bind=True, ignore_result=False)
+@celery_app.task(bind=True, ignore_result=True)
 def process_video(self: Task,
                   task_id: str,
+                  workspace_path:str,
                   video_path: str,
-                  num_iterations: int = 5000
+                  num_iterations: int = 10,
                   ) -> Any:
+    db = SessionLocal()
     """Process video to generate 3D Gaussian Splatting model"""
     try:
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video path does not exist: {video_path}")
         celery_log.info(f"Starting task {task_id} for video {video_path}")
 
         # Update task state to started
         self.update_state(state=states.STARTED,
                           meta={"status": "Started processing"})
+        
+        splat_in = schemas.SplatUpdate(status = "STARTED")
+        splat = crud.splat.get(db, id= task_id)
+        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         # Create workspace directory
         dataset_path = os.path.join(
-            settings.UPLOAD_VIDEO_DIR, task_id, "workspace")
+            workspace_path, "workspace")
         os.makedirs(dataset_path, exist_ok=True)
 
         # Create output directory
-        output_dir = os.path.join(settings.RESULT_DIR, task_id)
+        output_dir = os.path.join(workspace_path, "result")
         os.makedirs(output_dir, exist_ok=True)
-
-        # Copy video to workspace
-        video_filename = os.path.basename(video_path)
-        video_dst = os.path.join(dataset_path, video_filename)
-        shutil.copy(video_path, video_dst)
 
         # Update task state
         self.update_state(state="PROGRESS",
                           meta={"status": "Extracting frames from video"})
+        
+        splat_in = schemas.SplatUpdate(status = "PROGRESS")
+        splat = crud.splat.get(db, id= task_id)
+        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         # Run the shell script step by step
         # 1. Create images directory
@@ -98,7 +111,7 @@ def process_video(self: Task,
 
         # 2. Extract frames using ffmpeg
         cmd = [
-            "ffmpeg", "-i", video_dst, "-vf", "fps=1",
+            "ffmpeg", "-i", video_path, "-vf", "fps=1",
             os.path.join(img_dir, "output_%04d.png")
         ]
         run_command(cmd)
@@ -193,7 +206,7 @@ def process_video(self: Task,
         cmd = [
             "opensplat",
             os.path.join(dataset_path, "to_opensplat"),
-            "-n", str(5000),
+            "-n", str(num_iterations),
             "-o", os.path.join(dataset_path, "outputs", output_model)
         ]
 
@@ -212,6 +225,10 @@ def process_video(self: Task,
             celery_log.info(f"Model saved to {dst_path}")
         else:
             raise Exception(f"Expected output file {src_path} not found")
+        
+        splat_in = schemas.SplatUpdate(status = "SUCCESS", model_url=dst_path)
+        splat = crud.splat.get(db, id= task_id)
+        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         # Return the result
         return {
@@ -227,8 +244,19 @@ def process_video(self: Task,
             state=states.FAILURE,
             meta={"status": "Failed", "error": str(e)}
         )
+        splat_in = schemas.SplatUpdate(status = "FAILURE")
+        splat = crud.splat.get(db, id= task_id)
+        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
         raise Ignore()
-
+    finally:
+        # Clean up the workspace after processing
+        try:
+            dataset_path = os.path.join(workspace_path, "workspace")
+            if os.path.exists(dataset_path):
+                shutil.rmtree(dataset_path)
+                celery_log.info(f"Cleaned up workspace at {dataset_path}")
+        except Exception as cleanup_error:
+            celery_log.warning(f"Failed to remove workspace: {str(cleanup_error)}")
 
 def run_command(cmd):
     """Run a shell command and handle errors"""

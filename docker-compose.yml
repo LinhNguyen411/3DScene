@@ -92,8 +92,7 @@ services:
   3dscene-worker:
     image: "3dscene-api:latest"
     volumes:
-      - ./backend/app/uploads:/code/app/uploads
-      - ./backend/app/results:/code/app/results
+      - ./backend/app/model_assets:/code/app/model_assets
     environment:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped

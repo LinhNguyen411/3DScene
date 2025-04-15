@@ -102,9 +102,10 @@ class Settings(BaseSettings):
     GOOGLE_AUTH_CLIENT_ID: str = os.environ["GOOGLE_AUTH_CLIENT_ID"]
     GOOGLE_AUTH_CLIENT_SECRET: str = os.environ["GOOGLE_AUTH_CLIENT_SECRET"]
 
-    UPLOAD_VIDEO_DIR: str = "uploads"
-    RESULT_DIR: str = "results"
-    SPLAT_THUMBNAILS_DIR = "thumbnails"
+    MODEL_ASSETS_DIR: str = "model_assets"
+    MODEL_THUMBNAILS_DIR: str = MODEL_ASSETS_DIR + "/thumnails"
+    MODEL_WORKSPACES_DIR: str = MODEL_ASSETS_DIR + "/workspaces"
+
 
 
     STRIPE_API_KEY:str = os.environ.get("STRIPE_API_KEY")

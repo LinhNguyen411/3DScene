@@ -124,6 +124,7 @@ function AdminUser() {
       <table className="w-full">
         <thead>
           <tr className="border-b">
+            <th className="text-left py-3 px-4 text-gray-500">ID</th>
             <th className="text-left py-3 px-4 text-gray-500">FULL NAME</th>
             <th className="text-left py-3 px-4 text-gray-500">EMAIL</th>
             <th className="text-left py-3 px-4 text-gray-500">ROLE</th>
@@ -134,6 +135,7 @@ function AdminUser() {
         <tbody>
           {items.map(item => (
             <tr key={item.id} className="border-b">
+              <td className="py-3 px-4">{item.id}</td>
               <td className="py-3 px-4 flex items-center gap-2">
                 {item.last_name + ' ' + item.first_name}
               </td>

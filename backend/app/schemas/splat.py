@@ -8,15 +8,17 @@ from app.schemas.user import User
 class SplatBase(BaseModel):
     title: str
     owner_id: int
-    task_id: str
-    image_url: str
 
 
 # Properties to receive on Splat creation
 class SplatCreate(BaseModel):
+    id: str
     title: Annotated[str, Field(min_length=1)]
-    image_url: Optional[str] = None
-    task_id: str
+    image_url: str
+    is_public: Optional[bool]
+    model_url: Optional[str]
+    status:Optional[str]
+    
 
 
 # Properties to receive on Splat deletion
@@ -26,16 +28,19 @@ class SplatDelete(BaseModel):
 
 # Properties to receive on Splat update
 class SplatUpdate(BaseModel):
-    title: Annotated[str, Field(min_length=1)]
+    title: Optional[str]
+    is_public: Optional[bool]
+    status: Optional[str]
+    model_url:Optional[str]
+
 
 # Properties shared by models stored in DB
 
 
 class SplatInDBBase(SplatBase):
-    id: int
+    id: str
     title: str
     owner_id: int
-    task_id: str
     image_url: str
 
     class Config:
@@ -46,8 +51,9 @@ class SplatInDBBase(SplatBase):
 class Splat(SplatInDBBase):
     owner: Optional[User] = None
     date_created: datetime
-    task_metadata: Optional[dict] = None
-
+    model_url: Optional[str] = None
+    is_public: bool
+    status: str
 
 # Properties properties stored in DB
 class SplatInDB(SplatInDBBase):

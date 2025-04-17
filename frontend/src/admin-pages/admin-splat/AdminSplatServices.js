@@ -1,14 +1,14 @@
 import axios from 'axios';
 import myAppConfig from "../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/splats/";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/splats";
 const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('supertoken')}`,
   });
 
 const uploadSplat = async (formData) => {
     try {
-      const response = await axios.post(API_BASE_URL + "model-upload", formData, {
+      const response = await axios.post(API_BASE_URL + "/model-upload", formData, {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -57,7 +57,7 @@ const deleteSplat = async (id) => {
 }
 const downloadSplat = async (id, title) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/download-compressed-ply`, {
       headers: getAuthHeaders(),
       responseType: 'blob',
     });
@@ -68,10 +68,10 @@ const downloadSplat = async (id, title) => {
     const a = document.createElement('a');
     a.href = url;
 
-    // Use title and ensure it ends with .ply
+    // Use title and ensure it ends with .compressed.ply
     let filename = title?.trim() || 'downloaded_file';
-    if (!filename.endsWith('.ply')) {
-      filename += '.ply';
+    if (!filename.endsWith('.compressed.ply')) {
+      filename += '.compressed.ply';
     }
 
     a.download = filename;
@@ -82,9 +82,10 @@ const downloadSplat = async (id, title) => {
 
     a.remove();
     window.URL.revokeObjectURL(url);
+    return true;
   } catch (error) {
     console.error('Download failed:', error);
-    alert('Failed to download file');
+    return false;
   }
 };
 

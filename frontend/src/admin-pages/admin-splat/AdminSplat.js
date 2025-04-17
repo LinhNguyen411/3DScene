@@ -9,10 +9,13 @@ import myAppConfig from "../../config";
 import { Eye, Download, Upload } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import { RouterPath } from '../../assets/dictionary/RouterPath';
+import { useLoader } from '../../provider/LoaderProvider';
+
 
 
 function AdminSplat() {
   const { showSnackbar } = useSnackbar();
+  const { showLoader, hideLoader } = useLoader();
   let navigate = useNavigate();
 
 
@@ -157,13 +160,21 @@ function AdminSplat() {
 
   const handleViewModel = (model) => {
     if (model.model_url) {
-      navigate(RouterPath.MODEL_VIEW + "?id=" + model.id)
+      navigate(RouterPath.MODEL_VIEW + "?id=" + model.id + "&viewer=admin")
     }
   };
 
-  const handleDownloadModel = (model) => {
+  const handleDownloadModel = async (model) => {
     if (model.model_url) {
-      DataService.downloadSplat(model.id, model.title);
+      showLoader();
+      const response = await DataService.downloadSplat(model.id, model.title);
+      if(response){
+        showSnackbar('Splat downloading', 'success');
+      }else{
+        showSnackbar('Failed to download splat', 'error')
+      }
+        
+      hideLoader();
     }
   };
 
@@ -202,6 +213,7 @@ function AdminSplat() {
             <th className="text-left py-3 px-4 text-gray-500">OWNER</th>
             <th className="text-left py-3 px-4 text-gray-500">DATE CREATED</th>
             <th className="text-left py-3 px-4 text-gray-500">STATUS</th>
+            <th className="text-left py-3 px-4 text-gray-500">SIZE</th>
             <th className="text-left py-3 px-4 text-gray-500">ACTIONS</th>
           </tr>
         </thead>
@@ -217,6 +229,7 @@ function AdminSplat() {
               <td className="py-3 px-4">{item.owner.email}</td>
               <td className="py-3 px-4">{item.date_created}</td> 
               <td className="py-3 px-4">{item.status}</td>
+              <td className="py-3 px-4">{item.model_size} MB</td>
               <td className="py-3 px-4 relative">
               <Menu as="div" className="relative inline-block text-left">
                   <div>
@@ -363,7 +376,7 @@ function AdminSplat() {
                 <div className="mb-4">
                   <label className="block text-gray-700 mb-2">
                     Model File <span className="text-red-500">*</span> 
-                    <span className="text-sm text-gray-500 ml-2">(.ply files supported)</span>
+                    <span className="text-sm text-gray-500 ml-2">(.compressed.ply and .ply files supported)</span>
                   </label>
                   <div className="flex items-center">
                     <input

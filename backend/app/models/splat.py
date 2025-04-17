@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import (Column, ForeignKey, Integer,
-                        String, DateTime, Boolean)  # type: ignore
+                        String, DateTime, Boolean, Float)  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 
 from app.db.base_class import Base
@@ -15,6 +15,7 @@ class Splat(Base):
 
     image_url = Column(String(500), nullable=False)
     model_url = Column(String(500), nullable=True)
+    model_size = Column(Float, nullable=True)
 
     owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
     owner = relationship("User", back_populates="splats")

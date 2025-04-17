@@ -63,7 +63,7 @@ function MyModel(props){
   
   useEffect(() => {
     const intervalId = setInterval(() => {
-      const shouldRefresh = models.some((model) => model.task_metadata.status !== 'SUCCESS');
+      const shouldRefresh = models.some((model) => model.status !== 'SUCCESS');
       
       if (shouldRefresh) {
         console.log('Auto-refreshing due to non-succeed status...');
@@ -88,7 +88,7 @@ function MyModel(props){
 
   // Filter models based on active tab and search query
   const filteredModels = models.filter(model => {
-    const matchesTab = activeTab === 'All' || model.task_metadata.status === statusToFilter;
+    const matchesTab = activeTab === 'All' || model.status === statusToFilter;
     const matchesSearch = model.title.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
@@ -125,7 +125,7 @@ function MyModel(props){
                 {filteredModels.map((model) => (
                     <div className="bg-white rounded-lg shadow">
                       <div className="relative">
-                        <Link to={RouterPath.MODEL_VIEW + "?id=" + model.id} key={model.id}>
+                        <Link to={RouterPath.MODEL_VIEW + "?id=" + model.id + "&viewer=user"} key={model.id}>
                             <img 
                             src={myAppConfig.api.ENDPOINT  + model.image_url} 
                             alt={model.title} 
@@ -135,12 +135,12 @@ function MyModel(props){
                         </Link>
                           <div className="absolute bottom-2 left-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
-                              model.task_metadata.status === 'SUCCESS' ? 'bg-teal-400 text-white' :
-                              model.task_metadata.status === 'PROCESS' ? 'bg-blue-400 text-white' :
-                              model.task_metadata.status === 'PENDING' ? 'bg-yellow-400 text-white' :
+                              model.status === 'SUCCESS' ? 'bg-teal-400 text-white' :
+                              model.status === 'PROCESS' ? 'bg-blue-400 text-white' :
+                              model.status === 'PENDING' ? 'bg-yellow-400 text-white' :
                               'bg-red-400 text-white'
                           }`}>
-                              {model.task_metadata.status}
+                              {model.status}
                           </span>
                           </div>
                       </div>

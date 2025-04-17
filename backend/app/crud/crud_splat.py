@@ -34,6 +34,19 @@ class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):
             .order_by(Splat.id.desc())
         )
 
+    def get_multi_by_public(
+        self, db: Session
+    ) -> List[Splat]:
+        """
+        Get multiple splats filtered by public status.
+        """
+        return (
+            db.query(self.model)
+            .filter(Splat.is_public == True)
+            .options(joinedload(self.model.owner))
+            .order_by(Splat.id.desc())
+        )
+
     def get_multi(
         self, db: Session
     ) -> List[Splat]:

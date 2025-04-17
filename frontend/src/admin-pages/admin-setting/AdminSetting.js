@@ -133,6 +133,7 @@ function AdminSetting({ user }) {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("supertoken");
+    sessionStorage.clear();
     navigate(RouterPath.ADMIN_LOGIN);
   };
 

@@ -4,7 +4,7 @@
 /* Configuration is built based on the environment variables, they are available only if npm start / npm test is used */
 const development = {
   api: {
-    ENDPOINT: "http://localhost:8081/api",
+    ENDPOINT: "http://localhost:8083",
   },
   frontend: {
     FRONTEND_DOMAIN: "http://localhost:8081",
@@ -20,7 +20,7 @@ const development = {
 /* Configuration is hardcoded here and is used if npm build is used */
 const production = {
   api: {
-    ENDPOINT: "/api",
+    ENDPOINT: "",
   },
   frontend: {
     FRONTEND_DOMAIN: "http://todo.gnetkov.com",

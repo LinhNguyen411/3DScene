@@ -1,10 +1,14 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Check, X } from "lucide-react";
 import { RouterPath } from "../../assets/dictionary/RouterPath";
+import myAppConfig from "../../config";
+import DataService from './HomePageService';
 
 export default function HomePage() {
   const videoRef = useRef(null);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Auto-play the video when component mounts
@@ -14,6 +18,21 @@ export default function HomePage() {
         // Many browsers require user interaction before playing videos with sound
       });
     }
+    
+    // Fetch gallery items for the showcase
+    const fetchGalleryItems = async () => {
+      try {
+        setIsLoading(true);
+        const data = await DataService.getFeaturedGallery();
+        setGalleryItems(data.items || []);
+      } catch (error) {
+        console.error("Failed to fetch gallery items:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchGalleryItems();
   }, []);
 
   return (
@@ -189,7 +208,7 @@ export default function HomePage() {
           </div>
           <div className="mt-8">
             <h4 className="text-lg font-medium text-center mb-4">Example Video</h4>
-              <div class="aspect-w-16 aspect-h-9">
+              <div className="aspect-w-16 aspect-h-9">
               <iframe width="560" height="315" src="https://www.youtube.com/embed/2ZX_5bOdKjo?si=Z26tIpGZfkoZlNDQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>              </div>
             </div>
         </div>
@@ -200,37 +219,47 @@ export default function HomePage() {
         <div className="bg-gradient-to-r from-sky-400 to-sky-500 text-white text-center py-4 rounded-md mb-8">
           <h2 className="text-2xl font-medium">Explore Our 3D Creations</h2>
         </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {[
-              { name: "Pumpkin", creator: "Created by Alex" },
-              { name: "Green Avocado", creator: "Created by Sophie Anderson" },
-              { name: "Nike Air 1", creator: "Created by Michael" },
-              { name: "Rusty Hammer", creator: "Created by Liu" },
-              { name: "Sourdough", creator: "Created by Pierre" },
-              { name: "Nike Dunk TL", creator: "Created by Michael" }
-            ].map((item, index) => (
-              <div key={index} className="rounded-lg overflow-hidden shadow-md bg-white">
-                <img 
-                  src={`/api/placeholder/400/300`} 
-                  alt={item.name} 
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h3 className="font-medium">{item.name}</h3>
-                  <p className="text-sm text-gray-500">{item.creator}</p>
-                </div>
-              </div>
-            ))}
+        
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-sky-500"></div>
           </div>
-
-        <div className="text-center mt-8">
-          <Link
-            to="/gallery"
-            className="border border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-2 rounded-full transition"
-          >
-            View More Creations
-          </Link>
-        </div>
+        ) : (
+          <>
+            {galleryItems.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {galleryItems.map((item, index) => (
+                  <div key={item.id || index} className="rounded-lg overflow-hidden shadow-md bg-white">
+                    <Link to={`${RouterPath.MODEL_VIEW}?id=${item.id}`}>
+                      <img 
+                        src={myAppConfig.api.ENDPOINT  + item.image_url} 
+                        alt={item.title} 
+                        className="w-full h-48 object-cover"
+                      />
+                    </Link>
+                    <div className="p-4">
+                      <h3 className="font-medium">{item.title}</h3>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No featured creations available at the moment.</p>
+                <p className="text-gray-500 mt-2">Be the first to create amazing 3D models!</p>
+              </div>
+            )}
+            
+            <div className="text-center mt-8">
+              <Link
+                to="/gallery"
+                className="border border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-2 rounded-full transition"
+              >
+                View More Creations
+              </Link>
+            </div>
+          </>
+        )}
       </section>
       
 

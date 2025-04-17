@@ -17,6 +17,7 @@ class SplatCreate(BaseModel):
     image_url: str
     is_public: Optional[bool]
     model_url: Optional[str]
+    model_size: Optional[float]
     status:Optional[str]
     
 
@@ -32,6 +33,8 @@ class SplatUpdate(BaseModel):
     is_public: Optional[bool]
     status: Optional[str]
     model_url:Optional[str]
+    model_size: Optional[float]
+
 
 
 # Properties shared by models stored in DB
@@ -52,6 +55,7 @@ class Splat(SplatInDBBase):
     owner: Optional[User] = None
     date_created: datetime
     model_url: Optional[str] = None
+    model_size: Optional[float] = None
     is_public: bool
     status: str
 

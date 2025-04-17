@@ -30,7 +30,6 @@ const updateUserProfile = async (userData) => {
       is_active: true, // Assuming we don't want to deactivate the user
       is_superuser: userData.is_superuser || false, // Keep superuser status unchanged
     };
-
     const response = await axios.put(`${API_BASE_URL}/${userData.id}`, formattedData, {
       headers: getAuthHeaders(),
     });

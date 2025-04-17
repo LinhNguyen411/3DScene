@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from "../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1";
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('supertoken')}`,
 });
@@ -9,7 +9,7 @@ const getAuthHeaders = () => ({
 // Get total number of users
 const getTotalUsers = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}statistics/total-users`, {
+    const response = await axios.get(`${API_BASE_URL}/statistics/total-users`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -22,7 +22,7 @@ const getTotalUsers = async () => {
 // Get total number of pro users
 const getTotalProUsers = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}statistics/total-pro-users`, {
+    const response = await axios.get(`${API_BASE_URL}/statistics/total-pro-users`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -35,7 +35,7 @@ const getTotalProUsers = async () => {
 // Get total payment amount
 const getTotalAmount = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}statistics/total-amount`, {
+    const response = await axios.get(`${API_BASE_URL}/statistics/total-amount`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -48,7 +48,7 @@ const getTotalAmount = async () => {
 // Get models (splats) generated in the last 24 hours
 const getModelsLast24Hours = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}statistics/get-splats-last-24hours`, {
+    const response = await axios.get(`${API_BASE_URL}/statistics/get-splats-last-24hours`, {
       headers: getAuthHeaders(),
     });
     
@@ -64,7 +64,7 @@ const getModelsLast24Hours = async () => {
 // Get recent feedback
 const getRecentFeedback = async (page = 1, size = 10) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}feedbacks/`, {
+    const response = await axios.get(`${API_BASE_URL}/feedbacks/`, {
       params: { page, size },
       headers: getAuthHeaders(),
     });

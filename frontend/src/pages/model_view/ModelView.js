@@ -12,6 +12,7 @@ export default function ModelView() {
     let navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const id = searchParams.get('id');
+    const viewer = searchParams.get('viewer');
     const [splatUrl, setSplatUrl] = useState(null);
     
     // Create a unique key for each model to reset Leva controls
@@ -22,15 +23,13 @@ export default function ModelView() {
         const fetchAndProcess = async () => {
             try {
                 showLoader();
-                const response = await DataService.getModel(id);
+                const response = await DataService.getModel(id, viewer);
                 if (!response || response.status !== 200) {
                     throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
                 }
                 
                 const arrayBuffer = await response.data.arrayBuffer();
-                console.log("ArrayBuffer:", arrayBuffer);
-                const splatBuffer = processPlyBuffer(arrayBuffer);
-                const blob = new Blob([splatBuffer], { type: 'application/octet-stream' });
+                const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
                 objectUrl = URL.createObjectURL(blob);
                 setSplatUrl(objectUrl);
                 hideLoader();

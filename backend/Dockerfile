@@ -83,6 +83,13 @@ ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
 
+
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
+RUN npm install -g @playcanvas/splat-transform
+
 EXPOSE 8000
 
 #CMD ["uvicorn", "main:app", "--reload", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]

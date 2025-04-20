@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 // import { HouseDoor, BoxSeam, Gear, People } from 'react-bootstrap-icons';
 import { RouterPath } from "../../assets/dictionary/RouterPath";
@@ -9,26 +9,11 @@ import {
   UserCircle,
   CircleDollarSign,
 } from "lucide-react";
-import DataService from '../admin_auth/Service';
 
-
-function Sidebar() {
-  const [user, setUser] = useState(null);
+function Sidebar({user, setUser}) {
   const location = useLocation();
-  useEffect(() => {
-    const fetchAuthData = async () => {
-      try {
-        const response = await DataService.getAuth();
-        console.log("Auth data:", response);
-        setUser(response);
-      } catch (error) {
-        console.error("Error fetching auth data:", error);
-      }
-    };
-  
-    fetchAuthData();
-  }, []);
-  
+  console.log(user)
+
   const isActive = (path) => {
     return location.pathname === path ? "active" : "";
   };

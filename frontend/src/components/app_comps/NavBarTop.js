@@ -1,14 +1,13 @@
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
-export default function NavBarTop(props) {
-  const isAuthenticated = localStorage.getItem("token") ? true : false;
-  let navigate = useNavigate();
-  const location = useLocation();
+export default function NavBarTop({ user, setUser }) {
+  const navigate = useNavigate();
 
   const handleClickLogOut = (e) => {
     e.preventDefault();
     localStorage.removeItem("token");
+    setUser(null);
     navigate(RouterPath.HOME);
   };
 
@@ -21,28 +20,31 @@ export default function NavBarTop(props) {
       </div>
       <h2 className="brand-text text-sky-400 text-2xl">3DScene</h2>
     </Link>
-      <span className="ml-2 text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">Web</span>
     </div>
     
     <div className="space-x-6">
       <button className="text-gray-800 font-medium">Join Community</button>
       <button className="text-gray-800 font-medium">Tutorial</button>
-      <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</Link>
-     {!isAuthenticated && (
-          <>
+     {!user && (
+       <>
+          <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</Link>
           <Link to={RouterPath.LOGIN} className="header-link">
             Login/Signup
           </Link>
           </>
         )}
-        {isAuthenticated && (
-          <>
-          <Link to={RouterPath.DASHBOARD} className="text-gray-800 font-medium">
-            Dashboard
-          </Link>
-          <button onClick={handleClickLogOut} className="border-2 border-sky-400 text-sky-400 px-4 py-2 rounded transition-colors hover:bg-sky-500 hover:text-white">Logout</button>
-          </>
-        )}
+    {user && (
+      <>
+      {!user.is_pro && (
+        <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</Link>
+
+      )}
+      <Link to={RouterPath.DASHBOARD} className="text-gray-800 font-medium">
+        Dashboard
+      </Link>
+      <button onClick={handleClickLogOut} className="border-2 border-sky-400 text-sky-400 px-4 py-2 rounded transition-colors hover:bg-sky-500 hover:text-white">Logout</button>
+      </>
+    )}
     </div>
   </header>
   );

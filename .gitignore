@@ -6,7 +6,6 @@
 /frontend/yarn.lock
 __pycache__/
 .env
-.env.example
 /frontend/build
 *.log
 .mypy_cache

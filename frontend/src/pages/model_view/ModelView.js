@@ -1,19 +1,20 @@
 import { useState, useEffect } from 'react';
 import SplatCanvas from './SplatCanvas';
-import { processPlyBuffer } from './plyConverter';
 import { ChevronLeft, Share, Download, MoreHorizontal } from 'lucide-react';
 import { useNavigate, useSearchParams } from "react-router-dom";
-import myAppConfig from '../../config';
 import DataService from './ModelViewService';
 import { useLoader } from '../../provider/LoaderProvider';
+import { useSnackbar } from '../../provider/SnackbarProvider';
 
 export default function ModelView() {
+      const { showSnackbar } = useSnackbar();
     const { showLoader, hideLoader } = useLoader();
     let navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const id = searchParams.get('id');
     const viewer = searchParams.get('viewer');
     const [splatUrl, setSplatUrl] = useState(null);
+    const [splat, setSplat] = useState(null)
     
     // Create a unique key for each model to reset Leva controls
     const canvasKey = `model-${id}`;
@@ -27,7 +28,6 @@ export default function ModelView() {
                 if (!response || response.status !== 200) {
                     throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
                 }
-                
                 const arrayBuffer = await response.data.arrayBuffer();
                 const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
                 objectUrl = URL.createObjectURL(blob);
@@ -46,7 +46,21 @@ export default function ModelView() {
                 URL.revokeObjectURL(objectUrl);
             }
         };
-    }, [id]); // Depend on ID instead of plyUrl
+    }, [id]);
+
+    const handleDownloadModel = async () => {
+        if (splat.model_url) {
+          showLoader();
+          const response = await DataService.downloadSplat(splat.id, splat.title);
+          if(response){
+            showSnackbar('Splat downloading', 'success');
+          }else{
+            showSnackbar('Failed to download splat', 'error')
+          }
+            
+          hideLoader();
+        }
+    };
 
     return (
         <div className='h-screen flex flex-col'>
@@ -66,7 +80,7 @@ export default function ModelView() {
                         <span>Share</span>
                     </button>
                     
-                    <button className="flex items-center text-gray-700 px-3 py-1 rounded-md hover:bg-gray-100">
+                    <button onClick={handleDownloadModel} className="flex items-center text-gray-700 px-3 py-1 rounded-md hover:bg-gray-100">
                         <Download size={16} className="mr-2" />
                         <span>Download</span>
                     </button>

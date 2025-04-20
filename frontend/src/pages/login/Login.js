@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google';
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import DataService from "./LoginService";
 
+
 export default function Login(props) {
+  const {fetchAuthData} = useOutletContext();
   const [isShowValidationError, setIsShowValidationError] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
   const [isSendingRequestLoginGoogle, setIsSendingRequestLoginGoogle] = useState(false);
@@ -35,6 +37,7 @@ export default function Login(props) {
         .then((response) => {
           if (response.status === 200) {
             localStorage.setItem("token", response.data.access_token);
+            fetchAuthData();
             navigate(RouterPath.DASHBOARD_UPLOAD);
           } else {
             setIsSendingRequest(false);

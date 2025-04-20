@@ -14,24 +14,6 @@ from datetime import datetime
 
 router = APIRouter()
 
-@router.get("/is-pro-user")
-def check_is_pro_user(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    return crud.payment.check_is_last_payment_not_expired(db, current_user.id)
-
-@router.get("/get-my-info", response_model=schemas.User)
-def read_user_me(
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-) -> Any:
-    """
-    Get current user information.
-    """
-    return current_user
-
-
 @router.post("/signup", response_model=schemas.User, responses={
     400: {"model": schemas.Detail, "description": "The user with this username already exists in the system"}})
 def create_user_signup(

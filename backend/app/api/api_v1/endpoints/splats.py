@@ -56,6 +56,17 @@ def read_public_splats(
     public_splats = crud.splat.get_multi_by_public(db=db)
     return paginate(public_splats, params)
 
+@router.get("/gallery", response_model=Page[schemas.Splat])
+def read_gallery_splats(
+    params: Params = Depends(),
+    db: Session = Depends(deps.get_db),
+) -> Any:
+    """
+    Retrieve gallery items accessible without authentication.
+    """
+    gallery_splats = crud.splat.get_multi_by_gallery(db=db)
+    return paginate(gallery_splats, params)
+
 
 @router.get("/{id}", response_model=schemas.Splat, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
@@ -387,22 +398,21 @@ def delete_splat(
 @router.get("/{id}/download-compressed-ply", responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def download_splat(
+def download_compress_ply(
     *,
     db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_guess_user),
     id: str,
 ) -> Any:
     # Check if the modeling_task has completed
     splat = crud.splat.get(db=db, id=id)
     if not splat:
         raise HTTPException(status_code=404, detail="Splat not found")
-    if not current_user:
-        if not splat.is_public:
-            raise HTTPException(status_code=400, detail="Not enough permissions")
-    else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
-            raise HTTPException(status_code=400, detail="Not enough permissions")
+    # if not current_user:
+    #     if not splat.is_public:
+    #         raise HTTPException(status_code=400, detail="Not enough permissions")
+    # else:
+    #     if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+    #         raise HTTPException(status_code=400, detail="Not enough permissions")
 
     if splat.status != 'SUCCESS':
         raise HTTPException(

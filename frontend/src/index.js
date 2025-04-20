@@ -32,7 +32,6 @@ import AdminDashboard from "./admin-pages/admin-dashboard/AdminDashboard";
 import AdminSetting from "./admin-pages/admin-setting/AdminSetting";
 import AdminSplat from "./admin-pages/admin-splat/AdminSplat";
 import AdminUser from "./admin-pages/admin-user/AdminUser";
-import AdminLayout from "./admin-pages/AdminLayout";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import Upload from "./pages/dashboard/upload/Upload";
 import MyModel from './pages/dashboard/my_model/MyModel';
@@ -46,6 +45,7 @@ import AdminPayment from "./admin-pages/admin-payment/AdminPayment";
 
 import {SnackbarProvider} from './provider/SnackbarProvider';
 import {LoaderProvider} from './provider/LoaderProvider';
+import Explore from "./pages/dashboard/explore/Explore";
 
 
 
@@ -101,6 +101,7 @@ root.render(
               <Route index element={<Navigate to={RouterPath.DASHBOARD_UPLOAD} replace />} />
               <Route path={RouterPath.DASHBOARD_UPLOAD} element={<Upload />} />
               <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
+              <Route path={RouterPath.DASHBOARD_EXPLORE} element={<Explore />} />
               <Route path={RouterPath.DASHBOARD_FEEDBACK} element={<Feedback />} />
 
             </Route>
@@ -147,7 +148,7 @@ root.render(
             path={RouterPath.ADMIN}
             element={
               <AdminPrivateRoute>
-                <AdminLayout />
+                <Admin />
               </AdminPrivateRoute>
             }
           >

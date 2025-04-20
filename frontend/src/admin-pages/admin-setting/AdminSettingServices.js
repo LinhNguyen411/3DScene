@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from "../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/users";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1";
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('supertoken')}`,
 });
@@ -9,7 +9,7 @@ const getAuthHeaders = () => ({
 // Get the current user information
 const getUserInfo = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/get-my-info`, {
+    const response = await axios.post(`${API_BASE_URL}/login/get-my-info`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -30,7 +30,7 @@ const updateUserProfile = async (userData) => {
       is_active: true, // Assuming we don't want to deactivate the user
       is_superuser: userData.is_superuser || false, // Keep superuser status unchanged
     };
-    const response = await axios.put(`${API_BASE_URL}/${userData.id}`, formattedData, {
+    const response = await axios.put(`${API_BASE_URL}/users/${userData.id}`, formattedData, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -65,7 +65,7 @@ const changePassword = async (userData) => {
     // We'll use the user's ID to update their record
     const userInfo = await getUserInfo();
     
-    const response = await axios.put(`${API_BASE_URL}/${userInfo.id}`, formattedData, {
+    const response = await axios.put(`${API_BASE_URL}/users/${userInfo.id}`, formattedData, {
       headers: getAuthHeaders(),
     });
     return response.data;

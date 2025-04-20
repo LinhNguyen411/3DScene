@@ -61,10 +61,12 @@ export default function HomePage() {
         {/* Hero Content */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-white">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-xl">3DScene</h1>
-            <div className="inline-block bg-white text-gray-700 text-sm px-3 py-1 rounded-full mb-4 shadow-lg">
-              WEB
+            <div className="inline-block px-3 py-1 mb-4">
+              <div className="logo-icon bg-sky-400 border-sky-400 w-[6em] h-[6em] shadow-lg">
+                <div className="logo-bolt w-[4em] h-[2em]"></div>
+              </div>
             </div>
+            <h1 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-xl">3DScene</h1>
             <p className="text-xl md:text-2xl mb-8 drop-shadow-lg">
               Create Stunning 3D Models from Video with Gaussian Splatting
             </p>
@@ -237,8 +239,9 @@ export default function HomePage() {
                         className="w-full h-48 object-cover"
                       />
                     </Link>
-                    <div className="p-4">
+                    <div className="p-4 flex flex-row justify-between items-center">
                       <h3 className="font-medium">{item.title}</h3>
+                      <h4 className="font-small">{item.model_size} MB</h4>
                     </div>
                   </div>
                 ))}
@@ -252,7 +255,7 @@ export default function HomePage() {
             
             <div className="text-center mt-8">
               <Link
-                to="/gallery"
+                to={RouterPath.DASHBOARD_EXPLORE}
                 className="border border-gray-300 hover:border-gray-400 text-gray-700 px-6 py-2 rounded-full transition"
               >
                 View More Creations

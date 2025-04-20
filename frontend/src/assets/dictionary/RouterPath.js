@@ -19,8 +19,7 @@ export const RouterPath = {
   DASHBOARD: "/dashboard",
   DASHBOARD_UPLOAD: "/dashboard/upload",
   DASHBOARD_MY_MODEL: "/dashboard/my-model",
-  DASHBOARD_3DGS: "/dashboard/3dgs",
-  DASHBOARD_FAVORITES: "/dashboard/favorites",
+  DASHBOARD_EXPLORE: "/dashboard/explore",
   DASHBOARD_FEEDBACK: "/dashboard/feedback",
   
   MODEL_VIEW: "/model/view",

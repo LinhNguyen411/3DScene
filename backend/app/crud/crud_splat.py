@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session  # type: ignore
 from app.crud.base import CRUDBase
 from app.models.splat import Splat
 from app.schemas.splat import SplatCreate, SplatUpdate
+from app.models.user import User
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func  # type: ignore
@@ -45,6 +46,21 @@ class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):
             .filter(Splat.is_public == True)
             .options(joinedload(self.model.owner))
             .order_by(Splat.id.desc())
+        )
+    
+    def get_multi_by_gallery(
+        self, db: Session
+    ) -> List[Splat]:
+        """
+        Get multiple splats filtered by public status.
+        """
+        return (
+            db.query(self.model)
+            .filter(self.model.is_public == True)
+            .join(User, User.id == self.model.owner_id)  # Explicit join using foreign key
+            .filter(User.is_superuser == True)  # Filter on User.is_superuser
+            .options(joinedload(self.model.owner))  # Eager load owner data
+            .order_by(self.model.id.asc())
         )
 
     def get_multi(

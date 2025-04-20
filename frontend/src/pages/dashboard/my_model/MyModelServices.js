@@ -18,11 +18,11 @@ const getSplats = async (page = 1, size = 10) => {
       throw new Error('Failed to fetch splats');
     }
 }
-const updateSplat=  async (id, title) => {
+const updateSplat=  async (id, data) => {
     try {
       const response = await axios.put(
         `${API_BASE_URL}/${id}`,
-        {title: title},
+        data,
         {
           headers: getAuthHeaders(),
         }

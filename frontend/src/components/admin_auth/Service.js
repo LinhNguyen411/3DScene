@@ -12,7 +12,6 @@ const getAuth = async () => {
         },
       }
     );
-    console.log(response)
     return response.data;
   } catch (error) {
     throw new Error();

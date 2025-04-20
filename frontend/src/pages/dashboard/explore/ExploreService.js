@@ -1,14 +1,14 @@
 import axios from "axios";
-import myAppConfig from "../../config";
+import myAppConfig from "../../../config";
 
 const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/splats";
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
-const getFeaturedGallery = async (page=1, size=6) => {
+const getFeaturedExplore = async (page=1, size=6) => {
   try {
-    const response = await axios.get(API_BASE_URL +"/gallery", {
+    const response = await axios.get(API_BASE_URL +"/public", {
       params: { page, size },
       headers: getAuthHeaders(),
     });
@@ -18,7 +18,7 @@ const getFeaturedGallery = async (page=1, size=6) => {
   }
 };
 const DataService = {
-  getFeaturedGallery,
+  getFeaturedExplore,
 };
 
 export default DataService;

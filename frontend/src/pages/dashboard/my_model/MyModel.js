@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, GlobeLock, Globe } from 'lucide-react';
 import DataService from './MyModelServices';
 import myAppConfig from "../../../config";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
@@ -7,6 +7,7 @@ import { MoreHorizontal, Pencil, Download, Trash } from "lucide-react";
 import { useSnackbar } from '../../../provider/SnackbarProvider';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import { Link } from "react-router-dom";
+import { format } from 'date-fns';
 
 
 // Main App Component
@@ -19,17 +20,19 @@ function MyModel(props){
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [model, setModel] = useState('');
-  const [title, setTitle] = useState('');
+  const [model, setModel] = useState(null);
 
   const handleUpdateModel = async () => {
     try {
-      await DataService.updateSplat(model.id, title);
+      const data = {title: model.title, is_public: model.is_public};
+      await DataService.updateSplat(model.id, data);
       setIsEditModalOpen(false);
       onRefresh(); // Refresh the model list
       // onUpdate(model.id, title);
+      showSnackbar("Model updated successfully!", "success")
     } catch (error) {
       console.error('Error updating model:', error);
+      showSnackbar("Failed to update model", "error")
     }
   };
 
@@ -146,7 +149,7 @@ function MyModel(props){
                       </div>
                       <div className="p-4">
                           <div className="flex justify-between items-center">
-                          <h3 className="font-medium">{model.title}</h3>
+                          <h3 className="font-medium flex">{model.title}</h3>
                           
                           <Menu as="div" className="relative inline-block text-left">
                             <div>
@@ -161,7 +164,9 @@ function MyModel(props){
                               <div >
                                 <MenuItem>
                                   <button
-                                    onClick={() => (setIsEditModalOpen(true), setModel(model), setTitle(model.title))}
+                                    onClick={() => {setIsEditModalOpen(true);
+                                                     setModel(model);
+                                                    }}
                                     className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                                   >
                                     <Pencil className="w-4 h-4" />
@@ -170,7 +175,9 @@ function MyModel(props){
                                 </MenuItem>
                                 <MenuItem>
                                   <button
-                                    onClick={() => (setIsExportModalOpen(true), setModel(model))}
+                                    onClick={() => {setIsExportModalOpen(true);
+                                                    setModel(model);
+                                    }}
                                     className="w-full flex gap-5 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                                   >
                                     <Download className="w-4 h-4" />
@@ -179,7 +186,9 @@ function MyModel(props){
                                 </MenuItem>
                                 <MenuItem>
                                   <button
-                                    onClick={() => (setIsDeleteModalOpen(true), setModel(model))}
+                                    onClick={() => {setIsDeleteModalOpen(true); 
+                                                    setModel(model);
+                                    }}
                                     className="w-full flex gap-5 text-red-500 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                                   >
                                     <Trash className="w-4 h-4 text-red-500" />
@@ -191,8 +200,9 @@ function MyModel(props){
                           </Menu>
                           </div>
                           <div className="mt-2 flex items-center">
-                          <span className="text-xs px-2 py-1 bg-teal-100 text-teal-800 rounded mr-2">Photo Scan</span>
-                          <span className="text-xs text-gray-500">{model.date_created}</span>
+                          {model.is_public ? <span className="flex text-xs px-2 py-1 bg-teal-100 text-teal-800 rounded mr-2"><Globe size={16} className='mr-1'/> Published</span> : <span className="flex text-xs px-2 py-1 bg-sky-100 text-sky-800 rounded mr-2"><GlobeLock className='mr-1' size={16}/> Unpublish</span>}
+                          <span className="text-xs text-gray-500">{format(new Date(model.date_created), 'HH:mm:ss dd/MM/yyyy')}</span>
+                          {model.model_size && <span className="text-md ml-auto">{model.model_size} MB</span>}
                           </div>
                       </div>
                     </div>
@@ -213,13 +223,23 @@ function MyModel(props){
             <h3 className="text-lg font-medium mb-4">Name</h3>
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={model.title}
+              onChange={(e) => setModel({ ...model, title: e.target.value})}
               className="w-full border border-gray-300 rounded-md p-2 mb-4"
               placeholder="Enter model name"
             />
+            <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  className="mr-2 accent-teal-500 w-4 h-4"
+                  checked={model.is_public}
+                  onChange={(e) => setModel({ ...model, is_public: e.target.checked})}
+                />
+                <label htmlFor="isPublic">Is public?</label>
+              </div>
             <div className="text-right">
-              <span className="text-sm text-gray-500">{title.length} /30</span>
+              <span className="text-sm text-gray-500">{model.title.length} /100</span>
             </div>
             <div className="flex justify-end mt-4 gap-2">
               <button

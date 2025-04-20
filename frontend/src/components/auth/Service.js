@@ -2,9 +2,10 @@ import axios from "axios";
 import myAppConfig from "../../config";
 
 const getAuth = async () => {
-  try {
+  try { 
+    console.log(localStorage.getItem("token"),)
     const response = await axios.post(
-      myAppConfig.api.ENDPOINT + "/api/v1/login/verify-token",
+      myAppConfig.api.ENDPOINT + "/api/v1/login/get-my-info",
       {},
       {
         headers: {
@@ -12,7 +13,7 @@ const getAuth = async () => {
         },
       }
     );
-    console.log(response.data); 
+    console.log(response); 
     return response.data;
   } catch (error) {
     throw new Error();

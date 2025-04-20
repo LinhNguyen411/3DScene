@@ -25,6 +25,20 @@ from app.app_utils import (
 
 router = APIRouter()
 
+@router.post("/login/get-my-info", response_model=schemas.User, responses={
+    401: {"model": schemas.Detail, "description": "User unathorized"}
+})
+def read_user_me(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user)
+) -> Any:
+    user_response = current_user.__dict__
+    is_pro = crud.payment.check_is_last_payment_not_expired(db = db, payer_id=current_user.id)
+    if current_user.is_superuser:
+        is_pro = True
+    user_response["is_pro"] = is_pro
+    return user_response
+
 
 @router.post("/login/get-access-token", response_model=schemas.Token)
 def login_access_token(

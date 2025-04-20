@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { RouterPath } from '../../assets/dictionary/RouterPath';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import SettingsService from './AdminSettingServices';
 import { useSnackbar } from '../../provider/SnackbarProvider';
 
-function AdminSetting({ user }) {
+function AdminSetting() {
+  const {user, setUser} = useOutletContext();
+  console.log(user)
   const [activeTab, setActiveTab] = useState('myProfile');
   const [loading, setLoading] = useState(false);
   // const [isPro, setIsPro] = useState(false);
@@ -31,36 +33,6 @@ function AdminSetting({ user }) {
     fontSize: localStorage.getItem('fontSize') || 'medium'
   });
 
-  // Fetch user data on component mount if not provided
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        const userData = await SettingsService.getUserInfo();
-        setProfileData({
-          id: userData.id,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          email: userData.email,
-          is_superuser: userData.is_superuser,
-          is_active: userData.is_active
-        });
-        
-        // Check if user has pro status
-        // const proStatus = await SettingsService.checkProStatus();
-        // setIsPro(proStatus);
-        
-        setLoading(false);
-      } catch (err) {
-        showSnackbar('Failed to load user data', 'error');
-        setLoading(false);
-      }
-    };
-
-    if (!user || !user.id) {
-      fetchUserData();
-    }
-  }, [user, showSnackbar]);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;

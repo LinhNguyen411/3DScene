@@ -37,8 +37,11 @@ RUN apt-get update && apt-get install -y \
     g++-10 \
     cmake \
     ninja-build \
+    curl \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 
 # Set compilers to gcc-10 and g++-10
@@ -83,11 +86,6 @@ ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
 
-
-RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs
 RUN npm install -g @playcanvas/splat-transform
 
 EXPOSE 8000

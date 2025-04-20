@@ -48,6 +48,7 @@ class User(UserInDBBase):
     last_name: str
     is_active: bool
     is_superuser: bool
+    is_pro: Optional[bool] = False
 
 
 # Additional properties stored in DB

@@ -2,7 +2,7 @@ import { RouterPath } from "../../assets/dictionary/RouterPath";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Edit, UploadCloud, Search, X } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Box, Shield, Star, MessageSquare } from 'lucide-react';
+import { Box, Shield, Earth, MessageSquare } from 'lucide-react';
 
 
 
@@ -35,28 +35,20 @@ export default function SideBar(props) {
             <div className="mr-3">
               <Box size={20} strokeWidth={2} />
             </div>
-            My Model
+            Library
           </Link>
         </li>
         <li>
-          <Link 
-            to={RouterPath.DASHBOARD_MY_MODEL}
-            onClick={() => setCurrentPage('models')}
-            className={`flex items-center p-2 w-full ${currentPage === 'models' ? 'text-sky-400' : 'text-gray-600'}`}
+        <Link 
+            to={RouterPath.DASHBOARD_EXPLORE}
+            onClick={() => setCurrentPage('explore')}
+            className={`flex items-center p-2 w-full ${currentPage === 'explore' ? 'text-sky-400' : 'text-gray-600'}`}
           >
             <div className="mr-3">
-              <Shield size={20} strokeWidth={2} />
+              <Earth size={20} strokeWidth={2} />
             </div>
-            3DGS
+            Explore
           </Link>
-        </li>
-        <li>
-          <button className="flex items-center p-2 w-full text-gray-600">
-            <div className="mr-3">
-              <Star size={20} strokeWidth={2} />
-            </div>
-            Our Favorites
-          </button>
         </li>
         <li>
           <Link 

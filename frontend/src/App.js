@@ -3,12 +3,28 @@ import { Outlet } from "react-router-dom";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import myAppConfig from "./config";
 import "./App.css";
+import React, { useState, useEffect } from 'react';
+import DataService from "./components/auth/Service";
 function App() {
+  const [user, setUser] = useState(null);
+
+  const fetchAuthData = async () => {
+    try {
+      const response = await DataService.getAuth();
+      setUser(response);
+    } catch (error) {
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuthData();
+  }, []);
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <GoogleOAuthProvider clientId={myAppConfig.oauth2.GOOGLE_AUTH_CLIENT_ID}>
-        <NavBarTop />
-        <Outlet />
+        <NavBarTop user={user} setUser={setUser}/>
+        <Outlet context={{ fetchAuthData }}/>
       </GoogleOAuthProvider>
     </div>
   );

@@ -9,4 +9,3 @@ __pycache__/
 /frontend/build
 *.log
 .mypy_cache
-git-filter-repo

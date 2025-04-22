@@ -69,15 +69,15 @@ def send_email_async(
 def process_video(self: Task,
                   task_id: str,
                   workspace_path:str,
-                  video_path: str,
+                  img_dir: str,
                   num_iterations: int = 10,
                   ) -> Any:
     db = SessionLocal()
     """Process video to generate 3D Gaussian Splatting model"""
     try:
-        if not os.path.exists(video_path):
-            raise FileNotFoundError(f"Video path does not exist: {video_path}")
-        celery_log.info(f"Starting task {task_id} for video {video_path}")
+        if not os.path.exists(img_dir):
+            raise FileNotFoundError(f"Video path does not exist: {img_dir}")
+        celery_log.info(f"Starting task {task_id} for video {img_dir}")
 
         # Update task state to started
         self.update_state(state=states.STARTED,
@@ -93,28 +93,27 @@ def process_video(self: Task,
         os.makedirs(dataset_path, exist_ok=True)
 
         # Create output directory
-        output_dir = os.path.join(workspace_path, "result")
-        os.makedirs(output_dir, exist_ok=True)
+        output_dir = workspace_path
 
         # Update task state
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Extracting frames from video"})
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Extracting frames from video"})
         
-        splat_in = schemas.SplatUpdate(status = "PROGRESS")
-        splat = crud.splat.get(db, id= task_id)
-        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        # splat_in = schemas.SplatUpdate(status = "PROGRESS")
+        # splat = crud.splat.get(db, id= task_id)
+        # crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         # Run the shell script step by step
         # 1. Create images directory
-        img_dir = os.path.join(dataset_path, "images")
-        os.makedirs(img_dir, exist_ok=True)
+        # img_dir = os.path.join(dataset_path, "images")
+        # os.makedirs(img_dir, exist_ok=True)
 
-        # 2. Extract frames using ffmpeg
-        cmd = [
-            "ffmpeg", "-i", video_path, "-vf", "fps=1",
-            os.path.join(img_dir, "output_%04d.png")
-        ]
-        run_command(cmd)
+        # # 2. Extract frames using ffmpeg
+        # cmd = [
+        #     "ffmpeg", "-i", video_path, "-vf", "fps=1",
+        #     os.path.join(img_dir, "output_%04d.png")
+        # ]
+        # run_command(cmd)
 
         # 3. Run COLMAP feature extraction
         self.update_state(state="PROGRESS",
@@ -202,11 +201,11 @@ def process_video(self: Task,
         self.update_state(state="PROGRESS",
                           meta={"status": "Running OpenSplat"})
 
-        output_model = f"{task_id}_model.ply"
+        output_model = f"{task_id}_model.splat"
         cmd = [
             "opensplat",
             os.path.join(dataset_path, "to_opensplat"),
-            "-n", str(10),
+            "-n", str(num_iterations),
             "-o", os.path.join(dataset_path, "outputs", output_model)
         ]
 
@@ -226,46 +225,46 @@ def process_video(self: Task,
         else:
             raise Exception(f"Expected output file {src_path} not found")
         
-        # 13. Compress the PLY file using splat-transform
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Compressing the output model"})
+        # # 13. Compress the PLY file using splat-transform
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Compressing the output model"})
         
-        # Define the compressed output path
-        compressed_output = f"{task_id}_model.compressed.ply"
-        compressed_dst_path = os.path.join(output_dir, compressed_output)
+        # # Define the compressed output path
+        # compressed_output = f"{task_id}_model.compressed.ply"
+        # compressed_dst_path = os.path.join(output_dir, compressed_output)
         
-        # Run the compression
-        cmd = [
-            "splat-transform",
-            dst_path,
-            compressed_dst_path
-        ]
-        run_command(cmd)
+        # # Run the compression
+        # cmd = [
+        #     "splat-transform",
+        #     dst_path,
+        #     compressed_dst_path
+        # ]
+        # run_command(cmd)
         
         # Check if compression was successful
-        if os.path.exists(compressed_dst_path):
-            celery_log.info(f"Compressed model saved to {compressed_dst_path}")
+        if os.path.exists(dst_path):
+            celery_log.info(f"Compressed model saved to {dst_path}")
             
             # Calculate the size of the compressed model in MB
-            size = round(os.path.getsize(compressed_dst_path) / (1024 * 1024), 2)
+            size = round(os.path.getsize(dst_path) / (1024 * 1024), 2)
             
-            # Delete the original uncompressed PLY file
-            if os.path.exists(dst_path):
-                os.remove(dst_path)
-                celery_log.info(f"Deleted uncompressed model at {dst_path}")
+            # # Delete the original uncompressed PLY file
+            # if os.path.exists(dst_path):
+            #     os.remove(dst_path)
+            #     celery_log.info(f"Deleted uncompressed model at {dst_path}")
                         
             # Update the model_url to point to the compressed file and include model_size
-            splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=compressed_dst_path, model_size=size)
+            splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=dst_path, model_size=size)
             splat = crud.splat.get(db, id=task_id)
             crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
         else:
-            raise Exception(f"Compression failed: {compressed_dst_path} not found")
+            raise Exception(f"Compression failed: {dst_path} not found")
 
         # Return the result
         return {
             "status": "Completed",
             "message": "3D model generated and compressed successfully",
-            "output_path": compressed_dst_path,
+            "output_path": dst_path,
             "task_id": task_id
         }
 

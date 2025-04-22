@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, List
 from sqlalchemy.orm import Session  # type: ignore
 from app.api import deps
 from app import schemas
@@ -18,8 +18,11 @@ from app.core.config import settings
 import shutil
 import cv2
 import subprocess
+import mimetypes
 
-
+from fastapi.responses import StreamingResponse
+import io
+from app.utils.convert_ply_to_splat import process_ply_buffer
 
 
 router = APIRouter()
@@ -89,65 +92,107 @@ def get_splat(
 
 
 @router.post("/", response_model=schemas.Splat, responses={
-    401: {"model": schemas.Detail, "description": "User unathorized"}
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
 async def create_splat(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     title: str = Form(...),
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
     num_iterations: int = Form(10, description="Number of iterations for the opensplat command")
 ) -> Any:
     """
-    Create new item.
+    Create new splat from uploaded files (either videos or images, not both).
+    If videos are uploaded, extract frames at 2fps.
     """
+    print(files)
     splat_id = str(uuid.uuid4())
+    task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat_id)
+    os.makedirs(task_dir, exist_ok=True)
 
-    modeling_task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat_id)
-    os.makedirs(modeling_task_dir, exist_ok=True)
+    image_dir = os.path.join(task_dir,"workspace", "images")
+    os.makedirs(image_dir, exist_ok=True)
 
-    # Save the uploaded video
-    upload_path = os.path.join(modeling_task_dir, "upload")
-    os.makedirs(upload_path)
-    video_path = os.path.join(upload_path, file.filename)
-    with open(video_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    has_video = False
+    has_image = False
 
-    # Extract first frame as thumbnail
-    cap = cv2.VideoCapture(video_path)
-    success, frame = cap.read()
-    cap.release()
+    for file in files:
+        mime_type, _ = mimetypes.guess_type(file.filename)
+        is_video = mime_type and mime_type.startswith("video")
+        is_image = mime_type and mime_type.startswith("image")
 
+        if is_video:
+            has_video = True
+        elif is_image:
+            has_image = True
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {file.filename}")
+
+    if has_video and has_image:
+        raise HTTPException(status_code=400, detail="Cannot upload both images and videos together.")
+
+    for file in files:
+        temp_path = os.path.join(task_dir, file.filename)
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        mime_type, _ = mimetypes.guess_type(file.filename)
+        if mime_type.startswith("video"):
+            cap = cv2.VideoCapture(temp_path)
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            interval = int(fps / 2) if fps > 0 else 15  # default interval
+
+            count = 0
+            frame_id = 0
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                if count % interval == 0:
+                    image_path = os.path.join(image_dir, f"{file.filename}_frame_{frame_id:04d}.jpg")
+                    cv2.imwrite(image_path, frame)
+                    frame_id += 1
+                count += 1
+            cap.release()
+            os.remove(temp_path)
+        elif mime_type.startswith("image"):
+            image_path = os.path.join(image_dir, file.filename)
+            shutil.move(temp_path, image_path)
+
+    # Create thumbnail from first image in image_dir
     thumbnail_url = None
-    if success:
+    image_files = sorted([f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))])
+    if image_files:
+        first_image_path = os.path.join(image_dir, image_files[0])
         os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
         thumbnail_filename = f"{splat_id}_thumbnail.jpg"
         thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
-        cv2.imwrite(thumbnail_path, frame)
-        
-        # Build the public URL or relative path to return
-        thumbnail_url = f"/thumbnails/{thumbnail_filename}"  # or adjust based on your static route
+        shutil.copy(first_image_path, thumbnail_path)
+        thumbnail_url = f"/thumbnails/{thumbnail_filename}"
 
-    
     splat_in = schemas.SplatCreate(
         id=splat_id,
         title=title,
-        image_url = thumbnail_url
+        image_url=thumbnail_url
     )
 
     splat: models.Splat = crud.splat.create_with_owner(
         db, obj_in=splat_in, owner_id=current_user.id)
-    
+
     celery_app.process_video.delay(
-        task_id = splat.id,workspace_path=modeling_task_dir, video_path = video_path, num_iterations = num_iterations)
-    
+        task_id=splat.id,
+        workspace_path=task_dir,
+        img_dir=image_dir,
+        num_iterations=num_iterations
+    )
+
     return splat
 
 
 @router.post("/model-upload", response_model=schemas.Splat, responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"},
-    400: {"model": schemas.Detail, "description": "Invalid file type (must be .ply or .compressed.ply)"},
+    400: {"model": schemas.Detail, "description": "Invalid file type (must be .ply or .splat)"},
     413: {"model": schemas.Detail, "description": "File too large (max 5GB)"},
     500: {"model": schemas.Detail, "description": "Internal server error during upload or compression"}
 })
@@ -162,17 +207,17 @@ async def upload_splat(
 ) -> Any:
     """
     Create new item with support for models up to 5GB.
-    Validates model file type (.ply or .compressed.ply), compresses .ply files,
+    Validates model file type (.ply or .splat), compresses .ply files,
     and stores the final model size in MB.
     """
     # --- File Type Validation ---
-    if not model.filename.endswith((".ply", ".compressed.ply")):
+    if not model.filename.endswith((".ply", ".splat")):
         raise HTTPException(
             status_code=400,
-            detail="Invalid model file type. Only .ply and .compressed.ply files are accepted."
+            detail="Invalid model file type. Only .ply and .splat files are accepted."
         )
 
-    needs_compression = not model.filename.endswith(".compressed.ply")
+    needs_compression = not model.filename.endswith(".splat")
     # --- End File Type Validation ---
 
     MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
@@ -184,14 +229,14 @@ async def upload_splat(
 
     if needs_compression:
         temp_input_model_path = os.path.join(upload_path, "input.ply")
-        final_model_filename = "model.compressed.ply"
+        final_model_filename = splat_id + "_model.splat"
         final_model_path = os.path.join(upload_path, final_model_filename)
         save_path = temp_input_model_path
     else:
         # Use a consistent final name or the original if preferred
         # Using original: final_model_filename = model.filename
         # Using consistent:
-        final_model_filename = "model.compressed.ply"
+        final_model_filename = splat_id + "_model.splat"
         final_model_path = os.path.join(upload_path, final_model_filename)
         save_path = final_model_path
         temp_input_model_path = None
@@ -227,10 +272,8 @@ async def upload_splat(
             compression_command = ['splat-transform', temp_input_model_path, final_model_path]
             try:
                 print(f"Running compression: {' '.join(compression_command)}")
-                process = subprocess.run(
-                    compression_command, check=True, capture_output=True, text=True
-                )
-                print(f"Compression successful: {process.stdout}")
+                process_ply_buffer(temp_input_model_path, final_model_path, num_threads=4)
+                print(f"Compression successful")
                 os.remove(temp_input_model_path) # Clean up original .ply
             except FileNotFoundError:
                 if os.path.exists(final_model_path): os.remove(final_model_path)
@@ -394,16 +437,95 @@ def delete_splat(
     return {"detail": f'Splat deleted successfully {id}'}
 
 
+# @router.get("/{id}/download-compressed-ply", responses={
+#     401: {"model": schemas.Detail, "description": "User unathorized"}
+# })
+# def download_compress_ply(
+#     *,
+#     db: Session = Depends(deps.get_db),
+#     id: str,
+# ) -> Any:
+#     # Check if the modeling_task has completed
+#     splat = crud.splat.get(db=db, id=id)
+#     if not splat:
+#         raise HTTPException(status_code=404, detail="Splat not found")
+#     # if not current_user:
+#     #     if not splat.is_public:
+#     #         raise HTTPException(status_code=400, detail="Not enough permissions")
+#     # else:
+#     #     if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+#     #         raise HTTPException(status_code=400, detail="Not enough permissions")
 
-@router.get("/{id}/download-compressed-ply", responses={
-    401: {"model": schemas.Detail, "description": "User unathorized"}
+#     if splat.status != 'SUCCESS':
+#         raise HTTPException(
+#             status_code=404,
+#             detail=f"Result not ready or task failed. Current state: {splat.status}")
+
+#     output_path = splat.model_url
+#     if not output_path:
+#         raise HTTPException(status_code=400, detail="Output path is None")
+#     if not os.path.exists(output_path):
+#         raise HTTPException(
+#             status_code=400,
+#             detail=f"Output file not found at: {output_path}"
+#         )
+
+#     # Return the file as a download response
+#     return FileResponse(
+#         path=output_path,
+#         filename=os.path.basename(output_path),
+#         media_type="application/octet-stream"
+#     )
+
+
+@router.get("/{id}/download-splat", responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
-def download_compress_ply(
+def download_splat(
     *,
     db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
     id: str,
 ) -> Any:
-    # Check if the modeling_task has completed
+    # # Check if the modeling_task has completed
+    # splat = crud.splat.get(db=db, id=id)
+    # if not splat:
+    #     raise HTTPException(status_code=404, detail="Splat not found")
+    # if not current_user:
+    #     if not splat.is_public:
+    #         raise HTTPException(status_code=400, detail="Not enough permissions")
+    # else:
+    #     if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+    #         raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # if splat.status != 'SUCCESS':
+    #     raise HTTPException(
+    #         status_code=404,
+    #         detail=f"Result not ready or task failed. Current state: {splat.status}"
+    #     )
+
+    # # Get the file path from splat.model_url
+    # output_path = splat.model_url
+    # if not output_path:
+    #     raise HTTPException(status_code=400, detail="Output path is None")
+    # if not os.path.exists(output_path):
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail=f"Output file not found at: {output_path}"
+    #     )
+
+    # buffer_data = convert_ply_file_to_splat_buffer(output_path, 4)
+
+    # # Create a BytesIO object from the buffer
+    # buffer = io.BytesIO(buffer_data)
+
+    # # Return the buffer as a downloadable response
+    # return StreamingResponse(
+    #     content=buffer,
+    #     media_type="application/octet-stream",
+    #     headers={"Content-Disposition": f"attachment; filename={os.path.basename(output_path)}"}
+    # )
+     # Check if the modeling_task has completed
     splat = crud.splat.get(db=db, id=id)
     if not splat:
         raise HTTPException(status_code=404, detail="Splat not found")
@@ -433,58 +555,4 @@ def download_compress_ply(
         path=output_path,
         filename=os.path.basename(output_path),
         media_type="application/octet-stream"
-    )
-
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.responses import StreamingResponse
-from app.utils.convert_compressed_ply_to_splat import convert_ply_file_to_splat_buffer
-import io
-import os
-
-@router.get("/{id}/download-splat", responses={
-    401: {"model": schemas.Detail, "description": "User unauthorized"}
-})
-def download_splat(
-    *,
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_guess_user),
-    id: str,
-) -> Any:
-    # Check if the modeling_task has completed
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
-    if not current_user:
-        if not splat.is_public:
-            raise HTTPException(status_code=400, detail="Not enough permissions")
-    else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
-            raise HTTPException(status_code=400, detail="Not enough permissions")
-
-    if splat.status != 'SUCCESS':
-        raise HTTPException(
-            status_code=404,
-            detail=f"Result not ready or task failed. Current state: {splat.status}"
-        )
-
-    # Get the file path from splat.model_url
-    output_path = splat.model_url
-    if not output_path:
-        raise HTTPException(status_code=400, detail="Output path is None")
-    if not os.path.exists(output_path):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Output file not found at: {output_path}"
-        )
-
-    buffer_data = convert_ply_file_to_splat_buffer(output_path, 4)
-
-    # Create a BytesIO object from the buffer
-    buffer = io.BytesIO(buffer_data)
-
-    # Return the buffer as a downloadable response
-    return StreamingResponse(
-        content=buffer,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": f"attachment; filename={os.path.basename(output_path)}"}
     )

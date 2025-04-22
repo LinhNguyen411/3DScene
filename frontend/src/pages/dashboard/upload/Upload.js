@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, UploadCloud, Search, X, Image, Video } from 'lucide-react';
+import { Edit, UploadCloud, X, Image, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import DataService from './UploadServices';
 
 // Main App Component
-function Upload(props){
+function Upload(props) {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [filePreviewUrls, setFilePreviewUrls] = useState([]);
   const [title, setTitle] = useState('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [activeTab, setActiveTab] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [uploadType, setUploadType] = useState('video'); // 'video' or 'image'
@@ -68,26 +66,37 @@ function Upload(props){
       return;
     }
     
+    if (!title || title.trim() === '') {
+      setError('Please provide a title for your model');
+      return;
+    }
+    
     setIsProcessing(true);
     try {
+      let response;
       if (uploadType === 'video') {
-        // Process video files
-        const response = await DataService.createSplatFromVideos(
+        // For video uploads, we'll use a higher default iteration count
+        response = await DataService.createSplatFromVideos(
           title,
           selectedFiles,
-          1000 // Number of iterations
+          10 // Higher number of iterations for video processing
         );
       } else {
-        // Process image files
-        const response = await DataService.createSplatFromImages(
+        // For image uploads, use the default iteration count
+        response = await DataService.createSplatFromImages(
           title,
-          selectedFiles
+          selectedFiles,
+          10 // Iterations suitable for image processing
         );
       }
 
+      // Reset form state
       setSelectedFiles([]);
       setFilePreviewUrls([]);
       setTitle('');
+      setError(null);
+      
+      // Navigate to the dashboard
       navigate(RouterPath.DASHBOARD_MY_MODEL);
     } catch (error) {
       console.error(`Error processing ${uploadType}s:`, error);
@@ -137,15 +146,6 @@ function Upload(props){
     <div className="flex-1">
       <main className="p-6">
         <div>
-          {/* <div className="flex space-x-4 mb-6">
-            <button className="flex-1 bg-sky-400 text-white p-4 rounded text-center">
-              3D Gaussian Splatting
-            </button>
-            <button className="flex-1 bg-gray-200 text-gray-800 p-4 rounded text-center" disabled={true}>
-              3DGS with Mesh (Coming soon)
-            </button>
-          </div> */}
-          
           {/* Upload Type Selector */}
           <div className="flex space-x-4 mb-6">
             <button 
@@ -246,6 +246,7 @@ function Upload(props){
               </div>
               
               <div className="flex items-center mb-6">
+                <div className="text-gray-700 mr-2">Title:</div>
                 {isEditingTitle ? (
                   <input
                     type="text"
@@ -274,6 +275,7 @@ function Upload(props){
               >
                 {isProcessing ? 'Processing...' : `Process ${selectedFiles.length} ${uploadType}${selectedFiles.length !== 1 ? 's' : ''}`}
               </button>
+              
               {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm mt-4">
                   <p>{error}</p>

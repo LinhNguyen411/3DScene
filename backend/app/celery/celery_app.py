@@ -133,7 +133,7 @@ def process_video(self: Task,
                           meta={"status": "Running COLMAP matcher"})
 
         cmd = [
-            "colmap", "sequential_matcher",
+            "colmap", "exhaustive_matcher",
             "--database_path", os.path.join(dataset_path, "database.db"),
             "--SiftMatching.use_gpu", "0"
         ]

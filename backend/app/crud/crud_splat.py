@@ -67,7 +67,7 @@ class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):
         self, db: Session
     ) -> List[Splat]:
         query = db.query(self.model)
-        return query.options(joinedload(self.model.owner)).order_by(Splat.id.desc())
+        return query.options(joinedload(self.model.owner)).order_by(Splat.date_created.desc())
 
     def remove(self, db: Session, *, id: int) -> Splat:
         obj = db.query(self.model).options(joinedload(self.model.owner)).get(id)

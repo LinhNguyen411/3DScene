@@ -123,7 +123,7 @@ def process_video(self: Task,
             "colmap", "feature_extractor",
             "--database_path", os.path.join(dataset_path, "database.db"),
             "--image_path", img_dir,
-            "--SiftExtraction.use_gpu", "0",
+            "--SiftExtraction.use_gpu", "1",
             "--ImageReader.single_camera", "1"
         ]
         run_command(cmd)
@@ -135,7 +135,7 @@ def process_video(self: Task,
         cmd = [
             "colmap", "exhaustive_matcher",
             "--database_path", os.path.join(dataset_path, "database.db"),
-            "--SiftMatching.use_gpu", "0"
+            "--SiftMatching.use_gpu", "1"
         ]
         run_command(cmd)
 
@@ -152,7 +152,7 @@ def process_video(self: Task,
             "--database_path", os.path.join(dataset_path, "database.db"),
             "--image_path", img_dir,
             "--output_path", sparse_dir,
-            "--Mapper.ba_use_gpu", "0",
+            "--Mapper.ba_use_gpu", "1",
             "--Mapper.ba_global_function_tolerance", "0.000001"
         ]
         run_command(cmd)

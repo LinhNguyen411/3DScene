@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:experimental
 
-FROM ubuntu:22.04
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
 # This prevents Python from writing out pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -30,12 +30,12 @@ RUN apt-get update && apt-get install -y \
     qtbase5-dev \
     libqt5opengl5-dev \
     libcgal-dev \
-    libceres-dev \
+    libatlas-base-dev \
+    libsuitesparse-dev \
     libopencv-dev \
     unzip \
     gcc-10 \
     g++-10 \
-    cmake \
     ninja-build \
     curl \
     && apt-get clean \
@@ -43,37 +43,75 @@ RUN apt-get update && apt-get install -y \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
+# Download and install newer CMake version
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.sh \
+    && chmod +x cmake-3.28.3-linux-x86_64.sh \
+    && ./cmake-3.28.3-linux-x86_64.sh --skip-license --prefix=/usr/local \
+    && rm cmake-3.28.3-linux-x86_64.sh
 
-# Set compilers to gcc-10 and g++-10
-ENV CC=/usr/bin/gcc-10 \
+ENV PATH=/usr/local/bin:$PATH
+
+# Install CUDSS
+RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb \
+    && dpkg -i cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb \
+    && cp /var/cudss-local-repo-ubuntu2204-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ \
+    && apt-get update \
+    && apt-get -y install cudss
+
+# Set environment variables
+ENV CUDSS_DIR=/usr/local/cudss \
+    PATH=/usr/local/cudss/bin:$PATH \
+    LD_LIBRARY_PATH=/usr/local/cudss/lib:$LD_LIBRARY_PATH \
+    CC=/usr/bin/gcc-10 \
     CXX=/usr/bin/g++-10 \
     CUDAHOSTCXX=/usr/bin/g++-10
 
-# (Optional) Create a symlink so that "python" points to "python3"
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Fix C++ header includes
+RUN sed -i 's/#include_next /#include /g' /usr/include/c++/10/cmath \
+    && sed -i 's/#include_next /#include /g' /usr/include/c++/10/cstdlib \
+    && find /usr/include/c++/10/bits -type f -exec sed -i 's/#include_next /#include /g' {} +
 
-# Install COLMAP
-RUN git clone https://github.com/colmap/colmap.git && \
-    cd colmap && \
-    mkdir build && \
-    cd build && \
-    cmake .. -GNinja && \
-    ninja -j2 && \
-    ninja install
+# Install Ceres solver with CUDA support
+RUN git clone --recursive https://github.com/ceres-solver/ceres-solver.git \
+    && cd ceres-solver \
+    && mkdir build && cd build \
+    && cmake -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_CUDA_ARCHITECTURES="86" .. -GNinja \
+    && ninja && ninja install \
+    && cd ../..
 
-# Install OpenSplat
-RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat && \
-    cd OpenSplat && \
-    wget "https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcpu.zip" && \
-    unzip libtorch-cxx11-abi-shared-with-deps-2.6.0+cpu.zip -d /usr/local/ && \
-    mkdir build && \
-    cd build && \
-    cmake -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ .. -GNinja && \
-    ninja -j2 && \
-    ninja install
+# Install COLMAP with CUDA support
+RUN git clone https://github.com/colmap/colmap.git \
+    && cd colmap \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_CUDA_ARCHITECTURES="86" .. -GNinja \
+    && ninja && ninja install \
+    && cd ../..
 
-# Update LD_LIBRARY_PATH for libtorch
+# Install GloMap
+RUN git clone https://github.com/colmap/glomap.git \
+    && cd glomap \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_CUDA_ARCHITECTURES="86" .. -GNinja \
+    && ninja && ninja install \
+    && cd ../..
+
+# Install PyTorch with CUDA
+RUN wget https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu124.zip \
+    && unzip libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip -d /usr/local/ \
+    && rm libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip
+
 ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:$LD_LIBRARY_PATH
+
+# Install OpenSplat with CUDA support
+RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat \
+    && cd OpenSplat \
+    && mkdir build && cd build \
+    && cmake -DUSE_CUDSS=ON -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ -DCMAKE_CUDA_ARCHITECTURES="86" .. \
+    && make -j$(nproc) \
+    && make install
+
+# Create Python symlink
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 WORKDIR /code/app
 

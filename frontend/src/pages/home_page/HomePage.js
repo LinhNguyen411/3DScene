@@ -48,7 +48,7 @@ export default function HomePage() {
             muted
             loop
             playsInline
-            poster="/api/placeholder/1600/900"
+            poster="herothumbnail.webp"
           >
             {/* Note: In a real implementation, you would use the actual video URL */}
             <source src="videoplayback.mp4" type="video/mp4" />

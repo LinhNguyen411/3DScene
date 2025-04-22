@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google';
 import { ArrowLeft } from "lucide-react";
@@ -7,6 +7,7 @@ import DataService from "./SignUpFormService";
 import { RouterPath } from "../../../assets/dictionary/RouterPath";
 
 export default function SignUpForm(props) {
+  const {fetchAuthData} = useOutletContext();
   const [isShowValidationError, setIsShowValidationError] = useState(false);
   const [isShowUserExistsError, setIsShowUserExistsError] = useState(false);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
@@ -73,7 +74,8 @@ export default function SignUpForm(props) {
       .then((response) => {
         if (response.status === 200) {
           localStorage.setItem("token", response.data.access_token);
-          navigate(RouterPath.LIST_TODOS);
+          fetchAuthData();
+          navigate(response.data.redirect_path);
         } else {
           setIsSendingRequestLoginGoogle(false);
         }

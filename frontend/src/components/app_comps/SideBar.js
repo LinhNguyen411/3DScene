@@ -1,8 +1,7 @@
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Edit, UploadCloud, Search, X } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { Box, Shield, Earth, MessageSquare } from 'lucide-react';
+import { Box, Earth, MessageSquare, UploadCloud , CreditCard, UserCog} from 'lucide-react';
 
 
 
@@ -60,6 +59,30 @@ export default function SideBar(props) {
             <MessageSquare size={20} strokeWidth={2} />
             </div>
             Feedback
+          </Link>
+        </li>
+        <li>
+          <Link 
+            to={RouterPath.DASHBOARD_BILLING}
+            onClick={() => setCurrentPage('billing')}
+            className={`flex items-center p-2 w-full ${currentPage === 'billing' ? 'text-sky-400' : 'text-gray-600'}`}
+          >
+            <div className="mr-3">
+            <CreditCard size={20} strokeWidth={2} />
+            </div>
+            Billing
+          </Link>
+        </li>
+        <li>
+          <Link 
+            to={RouterPath.DASHBOARD_PROFILE}
+            onClick={() => setCurrentPage('profile')}
+            className={`flex items-center p-2 w-full ${currentPage === 'profile' ? 'text-sky-400' : 'text-gray-600'}`}
+          >
+            <div className="mr-3">
+            <UserCog size={20} strokeWidth={2} />
+            </div>
+            Profile
           </Link>
         </li>
       </ul>

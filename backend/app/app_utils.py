@@ -90,6 +90,33 @@ def send_new_account_email(email_to: str, token: str) -> None:
             "link": link,
         },
     )
+def send_new_google_account_email(email_to: str) -> None:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Test email"
+    with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_google_account.html") as f:
+        template_str = f.read()
+    send_email_async.delay(
+        email_to=email_to,
+        subject_template=subject,
+        html_template=template_str,
+        environment={"project_name": settings.PROJECT_NAME, "email": email_to},
+    )
+
+# def send_new_google_account_email(email_to: str) -> None:
+#     project_name = settings.PROJECT_NAME
+#     subject = f"{project_name} - New account"
+#     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_google_account.html") as f:
+#         template_str = f.read()
+#     send_email_async.delay(
+#         email_to=email_to,
+#         subject_template=subject,
+#         html_template=template_str,
+#         environment={
+#             "project_name": settings.PROJECT_NAME,
+#             "email": email_to,
+#             "dashboard_link": settings.FRONTEND_DOMAIN + "/dashboard",
+#         },
+#     )
 
 def send_subscription_success_email(
     email_to: str, 

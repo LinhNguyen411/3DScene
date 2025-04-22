@@ -6,6 +6,7 @@ from app.core.security import get_password_hash, verify_password
 from app.crud.base import CRUDBase
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
+from fastapi import HTTPException
 
 
 
@@ -39,7 +40,42 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             del update_data["password"]
             update_data["hashed_password"] = hashed_password
         return super().update(db, db_obj=db_obj, obj_in=update_data)
+    
 
+    def update_password(
+        self, db: Session, *, db_obj: User, obj_in: Union[UserUpdate, Dict[str, Any]]
+    ) -> User:
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.dict(exclude_unset=True)
+
+        current_password = update_data.get("current_password")
+        new_password = update_data.get("password")
+
+        if new_password:
+            # Check if current_password is provided
+            if not current_password:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Current password is required to change password."
+                )
+
+            # Verify current_password
+            if not verify_password(current_password, db_obj.hashed_password):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Incorrect current password."
+                )
+
+            # Update to new hashed password
+            hashed_password = get_password_hash(new_password)
+            update_data.pop("password", None)
+            update_data.pop("current_password", None)
+            update_data["hashed_password"] = hashed_password
+
+        return super().update(db, db_obj=db_obj, obj_in=update_data)
+    
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         user = self.get_by_email(db, email=email)
         if not user:

@@ -9,6 +9,8 @@ from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session  # type: ignore
+import secrets
+import string
 
 from app import crud
 from app import models
@@ -21,6 +23,8 @@ from app.app_utils import (
     generate_password_reset_token,
     send_reset_password_email,
     verify_password_reset_token,
+    send_new_google_account_email,
+    send_test_email,
 )
 
 router = APIRouter()
@@ -180,18 +184,37 @@ async def auth_credentials(
     except Exception:
         raise HTTPException(
             status_code=400, detail="Incorrect google credentials.")
+    is_sign_up = False
     user_email = idinfo['email']
     user = crud.user.get_by_email(db, email=user_email)
     if not user:
-        raise HTTPException(
-            status_code=400, detail="Incorrect email")
+        is_sign_up = True
+        user_lastname = idinfo['family_name']
+        user_firstname= idinfo['given_name']
+        characters = string.ascii_letters + string.digits + string.punctuation
+        user_temp_password = ''.join(secrets.choice(characters) for _ in range(128))
+        user_in = schemas.UserCreate(
+                email= user_email,
+                first_name= user_firstname,
+                last_name= user_lastname,
+                is_active= True,
+                is_superuser= False,
+                password= user_temp_password,
+        )
+        user = crud.user.create(db=db, obj_in=user_in)
+        send_new_google_account_email(email_to=user.email)
+        if not user:
+            raise HTTPException(
+                status_code=400, detail="Failed to create user.")
     elif not crud.user.is_active(user):
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(
         minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    redirect_path = '/sign-up/set-password' if is_sign_up else '/dashboard'
     return {
         "access_token": security.create_access_token(
             user.id, expires_delta=access_token_expires
         ),
         "token_type": "bearer",
+        "redirect_path": redirect_path,
     }

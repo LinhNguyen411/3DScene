@@ -392,9 +392,9 @@ function AdminPayment() {
                     disabled={editingItem.id}
                   >
                     <option value="">Select a plan</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                    <option value="lifetime">Lifetime</option>
+                    <option value="Monthly Membership">Monthly Membership</option>
+                    <option value="Yearly Membership">Yearly Membership</option>
+                    <option value="Lifetime Membership">Lifetime Membership</option>
                   </select>
                 </div>
 

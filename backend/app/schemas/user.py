@@ -24,11 +24,12 @@ class UserCreate(UserBase):
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):
-    password: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    is_active: bool
-    is_superuser: bool
+    password: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    is_active: Optional[bool]
+    is_superuser: Optional[bool]
+    current_password: Optional[str]
 
 
 class UserInDBBase(BaseModel):

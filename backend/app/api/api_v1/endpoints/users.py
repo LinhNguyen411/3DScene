@@ -75,6 +75,29 @@ def reset_password(
     db.commit()
     return {"msg": "Mail confirmed"}
 
+@router.put("/update-my-info", response_model=schemas.User, responses={
+    401: {"model": schemas.Detail, "description": "User unathorized"}
+})
+def update_user(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_active_user),
+    user_in: schemas.UserUpdate,
+) -> Any:
+    """
+    Update an item.
+    """
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    if not current_user.is_superuser and (user_in.is_superuser == True or user_in.is_active == False):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    if user_in.current_password:
+        user = crud.user.update_password(db=db, db_obj=current_user, obj_in=user_in)
+    else:
+        user = crud.user.update(db=db, db_obj=current_user, obj_in=user_in)
+    return user
+    
+
 
 @router.get("/", response_model=Page[schemas.User], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}

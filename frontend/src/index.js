@@ -17,7 +17,6 @@ import HomePage from "./pages/home_page/HomePage";
 import Login from "./pages/login/Login";
 import SignUpForm from "./pages/sign_up/sign_up_form/SignUpForm";
 import ConfirmationEmailSent from "./pages/sign_up/confirmation_email_sent/ConfirmationEmailSent";
-import Profil from "./pages/dashboard/profil/Profil";
 import ForgotPasswordForm from "./pages/forgot_password/forgot_password_form/ForgotPasswordForm";
 import ForgotPasswordEmailSent from "./pages/forgot_password/forgot_password_email_sent/ForgotPasswordEmailSent";
 import ResetPasswordForm from "./pages/forgot_password/reset_password/ResetPassword";
@@ -46,6 +45,9 @@ import AdminPayment from "./admin-pages/admin-payment/AdminPayment";
 import {SnackbarProvider} from './provider/SnackbarProvider';
 import {LoaderProvider} from './provider/LoaderProvider';
 import Explore from "./pages/dashboard/explore/Explore";
+import SetPassword from "./pages/sign_up/set_password/SetPassword";
+import Billing from "./pages/dashboard/billing/Billing";
+import Profile from "./pages/dashboard/profile/Profile";
 
 
 
@@ -88,6 +90,15 @@ root.render(
               element={<PasswordChanged />}
             />
 
+            <Route
+              path={RouterPath.SIGNUP_SET_PASSWORD}
+              element={
+                <PrivateRoute>
+                  <SetPassword />
+                </PrivateRoute>
+              }
+            />
+
 
             <Route path={RouterPath.LINK_NOT_VALID} element={<LinkNotValid />} />
             <Route
@@ -103,16 +114,10 @@ root.render(
               <Route path={RouterPath.DASHBOARD_MY_MODEL} element={<MyModel />} />
               <Route path={RouterPath.DASHBOARD_EXPLORE} element={<Explore />} />
               <Route path={RouterPath.DASHBOARD_FEEDBACK} element={<Feedback />} />
+              <Route path={RouterPath.DASHBOARD_BILLING} element={<Billing />} />
+              <Route path={RouterPath.DASHBOARD_PROFILE} element={<Profile />} />
 
             </Route>
-            <Route
-              path={RouterPath.MY_INFORMATION}
-              element={
-                <PrivateRoute>
-                  <Profil />
-                </PrivateRoute>
-              }
-            />
             <Route
               path={RouterPath.SUBSCRIPTION}
               element={

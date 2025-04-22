@@ -2,6 +2,7 @@ export const RouterPath = {
   HOME: "/",
   LOGIN: "/login",
   SIGNUP: "/sign-up",
+  SIGNUP_SET_PASSWORD: "/sign-up/set-password",
   SIGNUP_MAIL_SENT: "/sign-up/mail-sent",
   SIGNUP_CONFIRM_EMAIL: "/confirm-email",
   FORGOT_PASSWORD: "/forgot-password",
@@ -21,6 +22,8 @@ export const RouterPath = {
   DASHBOARD_MY_MODEL: "/dashboard/my-model",
   DASHBOARD_EXPLORE: "/dashboard/explore",
   DASHBOARD_FEEDBACK: "/dashboard/feedback",
+  DASHBOARD_BILLING: "/dashboard/billing",
+  DASHBOARD_PROFILE: "/dashboard/profile",
   
   MODEL_VIEW: "/model/view",
 

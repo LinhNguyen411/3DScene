@@ -9,13 +9,11 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination import Params, Page
 from fastapi import (APIRouter,  Depends, HTTPException, Request)
 import os
-from core.config import settings
+from core.config import settings, Config
 import stripe
 import json
 from app.app_utils import send_subscription_success_email
 
-
-stripe.api_key = settings.STRIPE_API_KEY
 
 
 router = APIRouter()
@@ -25,6 +23,7 @@ router = APIRouter()
 })
 async def create_checkout_session(
     *,
+    config: Config = Depends(deps.get_config),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     request:schemas.CheckoutSessionRequest,
@@ -32,13 +31,14 @@ async def create_checkout_session(
     """
     Create new item.
     """
+    stripe.api_key = config.STRIPE_API_KEY
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     if crud.payment.check_is_last_payment_not_expired(db = db, payer_id=current_user.id):
         raise HTTPException(status_code=400, detail="This user already subscripted!")
     checkout_session = stripe.checkout.Session.create(
-        success_url=settings.FRONTEND_DOMAIN + "/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url=settings.FRONTEND_DOMAIN + "/cancel",
+        success_url=config.SERVER_HOST_FRONT + "/success?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=config.SERVER_HOST_FRONT + "/cancel",
         payment_method_types=["card"],
         mode="subscription",
         line_items=[{
@@ -47,13 +47,14 @@ async def create_checkout_session(
         }],
         metadata={
             "user_id": current_user.id,
-            "payment_plan": "Yealy Membership" if request.priceId == settings.YEARLY_ID else "Monthly Membership"
+            "payment_plan": "Yearly Membership" if request.priceId == config.STRIPE_YEARLY_ID else "Monthly Membership"
         }
     )
     return {"sessionId": checkout_session["id"]}
 
 @router.post("/webhook")
-async def stripe_webhook(request: Request, db: Session = Depends(deps.get_db)):
+async def stripe_webhook(request: Request,config: Config = Depends(deps.get_config), db: Session = Depends(deps.get_db)):
+    stripe.api_key = config.STRIPE_API_KEY
     payload = await request.body()
     event = None
 

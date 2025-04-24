@@ -19,7 +19,7 @@ function Sidebar({user, setUser}) {
   };
 
   return (
-    <div className="flex flex-col w-64 bg-white border m-4 rounded-lg shadow-lg">
+    <div className="fixed h-[-webkit-fill-available] flex flex-col w-64 bg-white border m-4 rounded-lg shadow-lg">
     <div className="p-4 border-b">
       <div className="flex items-center text-teal-500 text-xl font-bold">
       <div className="flex justify-center align-center mb-3 ml-2">

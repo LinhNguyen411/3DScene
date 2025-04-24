@@ -7,7 +7,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic.networks import EmailStr
 from app import crud, models, schemas
 from app.api import deps
-from app.core.config import settings
+from app.core.config import settings, Config
 from app.app_utils import send_new_account_email, generate_mail_confirmation_token, verify_mail_confirmation_token
 from app.core.security import get_password_hash
 from datetime import datetime
@@ -18,6 +18,7 @@ router = APIRouter()
     400: {"model": schemas.Detail, "description": "The user with this username already exists in the system"}})
 def create_user_signup(
     *,
+    config: Config = Depends(deps.get_config),
     db: Session = Depends(deps.get_db),
     password: str = Body(...),
     email: EmailStr = Body(...),
@@ -42,7 +43,7 @@ def create_user_signup(
         password=password, email=email, first_name=first_name, last_name=last_name)
     user = crud.user.create(db, obj_in=user_in)
     mail_confirmation_token = generate_mail_confirmation_token(email=email)
-    if settings.EMAILS_ENABLED and user_in.email:
+    if config.EMAILS_ENABLED and user_in.email:
         send_new_account_email(
             email_to=user_in.email, token=mail_confirmation_token
         )

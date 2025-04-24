@@ -22,7 +22,6 @@ import mimetypes
 
 from fastapi.responses import StreamingResponse
 import io
-from app.utils.convert_ply_to_splat import process_ply_buffer
 
 
 router = APIRouter()
@@ -437,47 +436,6 @@ def delete_splat(
     return {"detail": f'Splat deleted successfully {id}'}
 
 
-# @router.get("/{id}/download-compressed-ply", responses={
-#     401: {"model": schemas.Detail, "description": "User unathorized"}
-# })
-# def download_compress_ply(
-#     *,
-#     db: Session = Depends(deps.get_db),
-#     id: str,
-# ) -> Any:
-#     # Check if the modeling_task has completed
-#     splat = crud.splat.get(db=db, id=id)
-#     if not splat:
-#         raise HTTPException(status_code=404, detail="Splat not found")
-#     # if not current_user:
-#     #     if not splat.is_public:
-#     #         raise HTTPException(status_code=400, detail="Not enough permissions")
-#     # else:
-#     #     if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
-#     #         raise HTTPException(status_code=400, detail="Not enough permissions")
-
-#     if splat.status != 'SUCCESS':
-#         raise HTTPException(
-#             status_code=404,
-#             detail=f"Result not ready or task failed. Current state: {splat.status}")
-
-#     output_path = splat.model_url
-#     if not output_path:
-#         raise HTTPException(status_code=400, detail="Output path is None")
-#     if not os.path.exists(output_path):
-#         raise HTTPException(
-#             status_code=400,
-#             detail=f"Output file not found at: {output_path}"
-#         )
-
-#     # Return the file as a download response
-#     return FileResponse(
-#         path=output_path,
-#         filename=os.path.basename(output_path),
-#         media_type="application/octet-stream"
-#     )
-
-
 @router.get("/{id}/download-splat", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
@@ -487,54 +445,15 @@ def download_splat(
     current_user: models.User = Depends(deps.get_current_guess_user),
     id: str,
 ) -> Any:
-    # # Check if the modeling_task has completed
-    # splat = crud.splat.get(db=db, id=id)
-    # if not splat:
-    #     raise HTTPException(status_code=404, detail="Splat not found")
-    # if not current_user:
-    #     if not splat.is_public:
-    #         raise HTTPException(status_code=400, detail="Not enough permissions")
-    # else:
-    #     if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
-    #         raise HTTPException(status_code=400, detail="Not enough permissions")
-
-    # if splat.status != 'SUCCESS':
-    #     raise HTTPException(
-    #         status_code=404,
-    #         detail=f"Result not ready or task failed. Current state: {splat.status}"
-    #     )
-
-    # # Get the file path from splat.model_url
-    # output_path = splat.model_url
-    # if not output_path:
-    #     raise HTTPException(status_code=400, detail="Output path is None")
-    # if not os.path.exists(output_path):
-    #     raise HTTPException(
-    #         status_code=400,
-    #         detail=f"Output file not found at: {output_path}"
-    #     )
-
-    # buffer_data = convert_ply_file_to_splat_buffer(output_path, 4)
-
-    # # Create a BytesIO object from the buffer
-    # buffer = io.BytesIO(buffer_data)
-
-    # # Return the buffer as a downloadable response
-    # return StreamingResponse(
-    #     content=buffer,
-    #     media_type="application/octet-stream",
-    #     headers={"Content-Disposition": f"attachment; filename={os.path.basename(output_path)}"}
-    # )
-     # Check if the modeling_task has completed
     splat = crud.splat.get(db=db, id=id)
     if not splat:
         raise HTTPException(status_code=404, detail="Splat not found")
-    # if not current_user:
-    #     if not splat.is_public:
-    #         raise HTTPException(status_code=400, detail="Not enough permissions")
-    # else:
-    #     if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
-    #         raise HTTPException(status_code=400, detail="Not enough permissions")
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
 
     if splat.status != 'SUCCESS':
         raise HTTPException(

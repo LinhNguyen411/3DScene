@@ -17,14 +17,13 @@ from app import models
 from app import schemas
 from app.api import deps
 from app.core import security
-from app.core.config import settings
+from app.core.config import settings, Config
 from app.core.security import get_password_hash
 from app.app_utils import (
     generate_password_reset_token,
     send_reset_password_email,
     verify_password_reset_token,
     send_new_google_account_email,
-    send_test_email,
 )
 
 router = APIRouter()
@@ -36,6 +35,57 @@ def read_user_me(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
+    """
+    Lấy thông tin tài khoản hiện tại của người dùng sau khi đăng nhập và xác thực thành công.
+
+Response Model
+200 OK
+
+Trả về thông tin của người dùng hiện tại.
+
+Bao gồm cả trạng thái is_pro (người dùng chuyên nghiệp hay không), dựa trên hạn sử dụng gói thanh toán cuối cùng hoặc quyền quản trị.
+
+json
+Copy
+Edit
+{
+  "id": 1,
+  "email": "user@example.com",
+  "full_name": "User Name",
+  "is_active": true,
+  "is_superuser": false,
+  "is_pro": true
+}
+Response Codes
+200: Thành công, trả về thông tin người dùng.
+
+401: Người dùng chưa đăng nhập hoặc token không hợp lệ.
+
+Mẫu phản hồi:
+
+json
+Copy
+Edit
+{
+  "detail": "User unauthorized"
+}
+Authentication
+Yêu cầu xác thực bằng Bearer token (OAuth2 hoặc JWT).
+
+Token phải đại diện cho một người dùng đang hoạt động.
+
+Logic Bổ Sung
+is_pro được xác định bởi:
+
+Nếu người dùng là superuser, luôn là True.
+
+Nếu không, kiểm tra thông qua hàm check_is_last_payment_not_expired() với payer_id là ID của người dùng.
+
+Ghi chú
+Đây là một endpoint hữu ích để frontend gọi sau khi người dùng đăng nhập thành công nhằm lấy dữ liệu cá nhân kèm quyền nâng cao (is_pro).
+
+
+    """
     user_response = current_user.__dict__
     is_pro = crud.payment.check_is_last_payment_not_expired(db = db, payer_id=current_user.id)
     if current_user.is_superuser:
@@ -161,26 +211,27 @@ def reset_password(
     db.commit()
     return {"msg": "Password updated successfully"}
 
-
-config_data = {'GOOGLE_CLIENT_ID': settings.GOOGLE_AUTH_CLIENT_ID,
-               'GOOGLE_CLIENT_SECRET': settings.GOOGLE_AUTH_CLIENT_SECRET}
-starlette_config = Config(environ=config_data)
-oauth = OAuth(starlette_config)
-oauth.register(
-    name='google',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'},
-)
+# config: Config = Config()
+# config_data = {'GOOGLE_CLIENT_ID': config.GOOGLE_AUTH_CLIENT_ID,
+#                'GOOGLE_CLIENT_SECRET': config.GOOGLE_AUTH_CLIENT_SECRET}
+# starlette_config = Config(environ=config_data)
+# oauth = OAuth(starlette_config)
+# oauth.register(
+#     name='google',
+#     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+#     client_kwargs={'scope': 'openid email profile'},
+# )
 
 
 @router.post('/login/google-auth', response_model=schemas.Token)
 async def auth_credentials(
+        config: Config = Depends(deps.get_config),
         credentials: str = Body(..., embed=True),
         db: Session = Depends(deps.get_db)):
     """Swap google token to app jwt token."""
     try:
         idinfo = id_token.verify_oauth2_token(
-            credentials, requests.Request(), settings.GOOGLE_AUTH_CLIENT_ID)
+            credentials, requests.Request(), config.GOOGLE_AUTH_CLIENT_ID)
     except Exception:
         raise HTTPException(
             status_code=400, detail="Incorrect google credentials.")

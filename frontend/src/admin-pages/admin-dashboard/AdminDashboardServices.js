@@ -9,7 +9,7 @@ const getAuthHeaders = () => ({
 // Get total number of users
 const getTotalUsers = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/statistics/total-users`, {
+    const response = await axios.get(`${API_BASE_URL}/admin/statistic/total-users`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -22,7 +22,7 @@ const getTotalUsers = async () => {
 // Get total number of pro users
 const getTotalProUsers = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/statistics/total-pro-users`, {
+    const response = await axios.get(`${API_BASE_URL}/admin/statistic/total-pro-users`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -35,7 +35,7 @@ const getTotalProUsers = async () => {
 // Get total payment amount
 const getTotalAmount = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/statistics/total-amount`, {
+    const response = await axios.get(`${API_BASE_URL}/admin/statistic/total-amount`, {
       headers: getAuthHeaders(),
     });
     return response.data;
@@ -48,7 +48,7 @@ const getTotalAmount = async () => {
 // Get models (splats) generated in the last 24 hours
 const getModelsLast24Hours = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/statistics/get-splats-last-24hours`, {
+    const response = await axios.get(`${API_BASE_URL}/admin/statistic/get-splats-last-24hours`, {
       headers: getAuthHeaders(),
     });
     

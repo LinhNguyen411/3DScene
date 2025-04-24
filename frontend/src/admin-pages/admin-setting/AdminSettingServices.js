@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from "../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/admin";
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('supertoken')}`,
 });
@@ -39,18 +39,6 @@ const updateUserProfile = async (userData) => {
   }
 };
 
-// // Check if the user has Pro status
-// const checkProStatus = async () => {
-//   try {
-//     const response = await axios.get(`${API_BASE_URL}/is-pro-user`, {
-//       headers: getAuthHeaders(),
-//     });
-//     return response.data;
-//   } catch (error) {
-//     throw new Error('Failed to check pro status');
-//   }
-// };
-
 // Change password
 const changePassword = async (userData) => {
   try {
@@ -74,11 +62,64 @@ const changePassword = async (userData) => {
   }
 };
 
+// Get environment variables
+const getEnvironmentVariables = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/config/env`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to fetch environment variables');
+  }
+};
+
+// Update environment variable
+const updateEnvironmentVariable = async (key, value) => {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/config/env`,
+      { key, value },
+      { headers: getAuthHeaders() }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to update environment variable');
+  }
+};
+
+// Reload environment variables
+const reloadEnvironmentVariables = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/config/env/reload`, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to reload environment variables');
+  }
+};
+
+// Create environment backup
+const createEnvBackup = async () => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/config/create-env-backup`, {}, {
+      headers: getAuthHeaders(),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to create environment backup');
+  }
+};
+
 const SettingsService = {
   getUserInfo,
   updateUserProfile,
-//   checkProStatus,
-  changePassword
+  changePassword,
+  getEnvironmentVariables,
+  updateEnvironmentVariable,
+  reloadEnvironmentVariables,
+  createEnvBackup
 };
 
 export default SettingsService;

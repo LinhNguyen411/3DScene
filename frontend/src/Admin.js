@@ -26,8 +26,14 @@ function Admin() {
     <>
       <GoogleOAuthProvider clientId={myAppConfig.oauth2.GOOGLE_AUTH_CLIENT_ID}>
         <div className="flex h-screen bg-gray-50">
+          <div className="min-w-[18em]">
           <Sidebar user={user} setUser={setUser}/>
+
+          </div>
+          <div>
+
           {user && <Outlet context={{ user, setUser }}/>}
+          </div>
         </div>
       </GoogleOAuthProvider>
     </>

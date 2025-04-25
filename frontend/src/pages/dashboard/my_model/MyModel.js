@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Search, GlobeLock, Globe } from 'lucide-react';
+import { Search, GlobeLock, Globe,Loader } from 'lucide-react';
 import DataService from './MyModelServices';
 import myAppConfig from "../../../config";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { MoreHorizontal, Pencil, Download, Trash } from "lucide-react";
 import { useSnackbar } from '../../../provider/SnackbarProvider';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { format } from 'date-fns';
 
 
 // Main App Component
 function MyModel(props){
   const { showSnackbar } = useSnackbar();
-  
+  const {user} = useOutletContext();
   const [models, setModels] = useState([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +21,7 @@ function MyModel(props){
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [model, setModel] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleUpdateModel = async () => {
     try {
@@ -45,6 +46,36 @@ function MyModel(props){
       // onDelete(model.id);
     } catch (error) {
       console.error('Error deleting model:', error);
+    }
+  };
+
+  const handleExportSplat = async () => {
+    try {
+      setLoading(true);
+      await DataService.downloadSplat(model.id, model.title);
+      setIsExportModalOpen(false);
+      showSnackbar("Exported .splat file successfully!", "success");
+    } catch (error) {
+      console.error("Error exporting .splat:", error);
+      showSnackbar("Failed to export .splat file", "error");
+    }
+    finally{
+      setLoading(false);
+    }
+  };
+
+  const handleExportPLY = async () => {
+    try {
+      setLoading(true);
+      await DataService.downloadPLY(model.id, model.title);
+      setIsExportModalOpen(false);
+      showSnackbar("Exported .ply file successfully!", "success");
+    } catch (error) {
+      console.error("Error exporting .ply:", error);
+      showSnackbar("Failed to export .ply file", "error");
+    }
+    finally{
+      setLoading(false);
     }
   };
 
@@ -293,59 +324,50 @@ function MyModel(props){
       {/* Export Modal */}
       {isExportModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">Export</h3>
-              <button onClick={() => setIsExportModalOpen(false)} className="text-gray-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-            
-            {/* <div className="rounded-lg border border-gray-200 p-4 mb-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="bg-yellow-500 rounded-full p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium">Upgrade to Pro</p>
-                    <p className="text-sm text-gray-500">Enjoy unlimited exports and more</p>
-                  </div>
-                </div>
-                <input type="radio" checked className="h-4 w-4 text-sky-500" />
-              </div>
-            </div>
-            
-            <div className="rounded-lg border border-gray-200 p-4 mb-6">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="bg-gray-200 rounded-full p-1">
-                    <Download className="h-4 w-4 text-gray-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Free Export Coupon</p>
-                    <p className="text-sm text-gray-500">You have 3 export coupons left</p>
-                  </div>
-                </div>
-                <input type="radio" className="h-4 w-4 text-sky-500" />
-              </div>
-            </div> */}
-            
-            <button
-              className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-              onClick={() => {
-                DataService.downloadSplat(model.id, model.title);
-                setIsExportModalOpen(false);
-              }}
-            >
-              Download
+        <div className="bg-white rounded-lg p-6 w-96">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium">Export</h3>
+            <button onClick={() => setIsExportModalOpen(false)} className="text-gray-500">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </button>
           </div>
+          {loading ? (
+            <div className='flex items-center justify-center'>
+              <Loader className="w-4 h-4 animate-spin mr-2" />
+              <div>Downloading...</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <button
+                className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+                onClick={handleExportSplat}
+              >
+                Export as .splat
+              </button>
+      
+              {user.is_pro ? (
+                <button
+                  className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+                  onClick={handleExportPLY}
+                >
+                  Export as .ply
+                </button>
+              ) : (
+                <Link to={RouterPath.SUBSCRIPTION}
+                  className="w-full py-3 bg-gray-200 text-gray-500 rounded-md font-medium flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 2a6 6 0 00-6 6v2a2 2 0 00-2 2v5a2 2 0 002 2h12a2 2 0 002-2v-5a2 2 0 00-2-2V8a6 6 0 00-6-6zM8 8a2 2 0 114 0v2H8V8z" />
+                  </svg>
+                  <span>Unlock .ply export – Upgrade to Pro</span>
+                </Link>
+              )}
+            </div>
+          )}
         </div>
+      </div>
       )}
   </div>
   );

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { Check, X } from "lucide-react";
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import myAppConfig from "../../config";
@@ -9,6 +9,8 @@ export default function HomePage() {
   const videoRef = useRef(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const {projectName} = useOutletContext();
+
 
   useEffect(() => {
     // Auto-play the video when component mounts
@@ -66,7 +68,7 @@ export default function HomePage() {
                 <div className="logo-bolt w-[4em] h-[2em]"></div>
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-xl">3DScene</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-xl">{projectName}</h1>
             <p className="text-xl md:text-2xl mb-8 drop-shadow-lg">
               Create Stunning 3D Models from Video with Gaussian Splatting
             </p>
@@ -88,16 +90,16 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* What's 3DScene */}
+      {/* What's {projectName} */}
       <section className="py-10 px-4 max-w-6xl mx-auto">
         <div className="bg-gradient-to-r from-sky-400 to-sky-500 text-white text-center py-4 rounded-md mb-8">
-          <h2 className="text-2xl font-medium">What's 3DScene?</h2>
+          <h2 className="text-2xl font-medium">What's {projectName}?</h2>
         </div>
 
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="md:w-1/2 mb-6 md:mb-0 md:pr-10">
             <p className="mb-4">
-              <span className="font-bold">3DScene</span> is a revolutionary platform that transforms your videos into photorealistic 3D models using advanced Gaussian splatting technology.
+              <span className="font-bold">{projectName}</span> is a revolutionary platform that transforms your videos into photorealistic 3D models using advanced Gaussian splatting technology.
             </p>
             <p className="mb-4">
               Simply upload a video, and our cloud-based algorithms generate high-fidelity 3D assets ready for games, VR, AR, or 3D printing.
@@ -117,7 +119,7 @@ export default function HomePage() {
       {/* How to Create 3D Models */}
       <section className="pt-10 px-4 max-w-6xl mx-auto">
         <div className="bg-gradient-to-r from-sky-400 to-sky-500 text-white text-center py-4 rounded-md mb-8">
-          <h2 className="text-2xl font-medium">How to Create 3D Models with 3DScene</h2>
+          <h2 className="text-2xl font-medium">How to Create 3D Models with {projectName}</h2>
         </div>
 
         {/* Capture the Right Video */}
@@ -269,7 +271,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="mt-auto py-4 px-4 border-t text-sm text-gray-500">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
-          <div>Copyright © 2025 3DScene</div>
+          <div>Copyright © 2025 {projectName}</div>
           <div className="flex space-x-4 mt-2 md:mt-0">
             <Link to="/terms" className="hover:text-gray-700">
               User Agreement

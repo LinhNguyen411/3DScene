@@ -11,6 +11,21 @@ export default function SideBar(props) {
   const isAuthenticated = localStorage.getItem("token") ? true : false;
   let navigate = useNavigate();
   const location = useLocation();
+  useEffect(() => {
+    if (location.pathname.includes(RouterPath.DASHBOARD_UPLOAD)) {
+      setCurrentPage('upload');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_MY_MODEL)) {
+      setCurrentPage('models');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_EXPLORE)) {
+      setCurrentPage('explore');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_FEEDBACK)) {
+      setCurrentPage('feedback');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_BILLING)) {
+      setCurrentPage('billing');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_PROFILE)) {
+      setCurrentPage('profile');
+    }
+  }, [location.pathname]);
   return (
       <div className="w-60 bg-white shadow-md flex flex-col">
       <div className="p-4">

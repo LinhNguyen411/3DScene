@@ -1,20 +1,17 @@
-import { useState, useEffect } from 'react';
-import { Check, X, Package, Shield, MessageSquare, Bell, BarChart3 } from 'lucide-react';
+import { useState } from 'react';
+import { Check, Package, Shield, MessageSquare, Bell, BarChart3 } from 'lucide-react';
 import DataService from './SubscriptionServices';
 import { loadStripe } from '@stripe/stripe-js';
-import myAppConfig from '../../config'
 import { useSnackbar } from '../../provider/SnackbarProvider';
-function Subscription(props){
+import { useOutletContext } from 'react-router-dom';
+function Subscription(){
     const { showSnackbar } = useSnackbar();
-    
-    const stripePromise = loadStripe(myAppConfig.stripe.STRIPE_PUBLIC_KEY);
+    const {stripeMonthlyId,stripePublicKey,stripeYearlyId} = useOutletContext();
+    const stripePromise = loadStripe(stripePublicKey);
 
     const [loading, setLoading] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
   
-    // useEffect(() => {
-    //     const url = new URL(window.location.href);
-    // }, []);
 
     const handleSubscribe = async (plan, priceId) => {
         setLoading(true);
@@ -35,10 +32,9 @@ function Subscription(props){
         }
     };
 
-
     const plans = [
         {
-        priceId: 'price_1RCdEMIpv2OeX57hkx16Fs0g',
+        priceId: stripeMonthlyId,
         name: 'Monthly Plan',
         price: 5,
         period: 'month',
@@ -50,7 +46,7 @@ function Subscription(props){
         ]
         },
         {
-        priceId: 'price_1RCdFSIpv2OeX57h2JIVsxpv',
+        priceId: stripeYearlyId,
         name: 'Yearly Plan',
         price: 40,
         period: 'year',

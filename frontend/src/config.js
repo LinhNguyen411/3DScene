@@ -9,12 +9,6 @@ const development = {
   frontend: {
     FRONTEND_DOMAIN: "http://localhost:8081",
   },
-  oauth2: {
-    GOOGLE_AUTH_CLIENT_ID: process.env.REACT_APP_GOOGLE_AUTH_CLIENT_ID,
-  },
-  stripe:{
-    STRIPE_PUBLIC_KEY: "pk_test_51NtuEzIpv2OeX57hklUATynFfAdbebbii7Zkb5yPMtWi3T9eBNKJCH5wNAS4Atj11YOLb2MeX4hZtt95MwJWavoP00juELMfQz",
-  }
 };
 
 /* Configuration is hardcoded here and is used if npm build is used */
@@ -24,10 +18,7 @@ const production = {
   },
   frontend: {
     FRONTEND_DOMAIN: "http://todo.gnetkov.com",
-  },
-  oauth2: {
-    GOOGLE_AUTH_CLIENT_ID: process.env.REACT_APP_GOOGLE_AUTH_CLIENT_ID
-  }
+  }, 
 };
 
 /* REACT_APP_ENVIRONMENT has only four values:

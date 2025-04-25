@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.api_v1.endpoints import (
-    login, users,  splats, feedbacks, stripe, payments, admin)
+    login, users,  splats, feedbacks, stripe, payments, admin, public)
 
 api_router = APIRouter()
 api_router.include_router(login.router, tags=["login"])
@@ -11,5 +11,6 @@ api_router.include_router(feedbacks.router, prefix="/feedbacks", tags=["feedback
 api_router.include_router(payments.router, prefix="/payments", tags=["payments"])
 api_router.include_router(stripe.router, prefix="/stripe", tags=["stripe"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
+api_router.include_router(public.router, prefix="/public", tags=["public"])
 
 

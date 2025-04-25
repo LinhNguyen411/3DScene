@@ -1,6 +1,4 @@
 import { Outlet } from "react-router-dom";
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import myAppConfig from "./config";
 import "./Admin.css"
 import React, { useState, useEffect } from 'react';
 import DataService from "./components/admin_auth/Service";
@@ -24,18 +22,16 @@ function Admin() {
   }, []);
   return (
     <>
-      <GoogleOAuthProvider clientId={myAppConfig.oauth2.GOOGLE_AUTH_CLIENT_ID}>
         <div className="flex h-screen bg-gray-50">
           <div className="min-w-[18em]">
           <Sidebar user={user} setUser={setUser}/>
 
           </div>
-          <div>
+          <div className="flex-1">
 
           {user && <Outlet context={{ user, setUser }}/>}
           </div>
         </div>
-      </GoogleOAuthProvider>
     </>
   );
 }

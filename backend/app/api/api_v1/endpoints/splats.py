@@ -1,11 +1,10 @@
-from typing import Any, Optional, List
+from typing import Any, List
 from sqlalchemy.orm import Session  # type: ignore
 from app.api import deps
 from app import schemas
 from app import models
 from app import crud
 from app.celery import celery_app
-from celery.result import AsyncResult
 
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination import Params, Page
@@ -128,49 +127,6 @@ def read_gallery_splats(
     """
     gallery_splats = crud.splat.get_multi_by_gallery(db=db)
     return paginate(gallery_splats, params)
-
-
-@router.get("/{id}", response_model=schemas.Splat, responses={
-    401: {"model": schemas.Detail, "description": "User unathorized"}
-})
-def get_splat(
-    *,
-    db: Session = Depends(deps.get_db),
-    current_user: models.User = Depends(deps.get_current_active_user),
-    id: str,
-) -> Any:
-    """
-    Lấy thông tin chi tiết của một splat theo ID.
-
-    **Yêu cầu Header:**
-    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
-
-    **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần lấy thông tin.
-    - **current_user**: Người dùng hiện tại (dựa trên JWT token, xác thực qua `deps.get_current_active_user`).
-
-    **Đầu ra (Response):**
-    - 200 OK: Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
-    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 404 Not Found: Nếu không tìm thấy splat với ID đã cho.
-    - 400 Bad Request: Nếu người dùng không có quyền truy cập splat.
-
-    **Giải thích:**
-    - Endpoint này cho phép người dùng lấy thông tin chi tiết của một splat cụ thể.
-    - Người dùng cần có quyền truy cập đối với splat này: nếu là superuser, họ có thể truy cập bất kỳ splat nào; nếu là người dùng bình thường, họ chỉ có thể truy cập splat của chính mình.
-    - Nếu splat không tồn tại hoặc người dùng không có quyền truy cập, sẽ trả về lỗi tương ứng.
-
-    **Chi tiết về các hành động:**
-    - Kiểm tra xem splat có tồn tại hay không.
-    - Kiểm tra quyền của người dùng (superuser hoặc sở hữu splat).
-    - Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
-    """
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
-    if not current_user.is_superuser and (splat.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
-    return splat
 
 
 @router.post("/", response_model=schemas.Splat, responses={
@@ -504,6 +460,52 @@ def delete_splat(
     splat = crud.splat.remove(db=db, id=id)
     return {"detail": f'Splat deleted successfully {id}'}
 
+@router.get("/{id}", response_model=schemas.Splat, responses={
+    401: {"model": schemas.Detail, "description": "User unathorized"}
+})
+def get_splat(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
+    id: str,
+) -> Any:
+    """
+    Lấy thông tin chi tiết của một splat theo ID.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần lấy thông tin.
+    - **current_user**: Người dùng hiện tại (dựa trên JWT token, xác thực qua `deps.get_current_active_user`).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 404 Not Found: Nếu không tìm thấy splat với ID đã cho.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập splat.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng lấy thông tin chi tiết của một splat cụ thể.
+    - Người dùng cần có quyền truy cập đối với splat này: nếu là superuser, họ có thể truy cập bất kỳ splat nào; nếu là người dùng bình thường, họ chỉ có thể truy cập splat của chính mình.
+    - Nếu splat không tồn tại hoặc người dùng không có quyền truy cập, sẽ trả về lỗi tương ứng.
+
+    **Chi tiết về các hành động:**
+    - Kiểm tra xem splat có tồn tại hay không.
+    - Kiểm tra quyền của người dùng (superuser hoặc sở hữu splat).
+    - Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
+    """
+    splat = crud.splat.get(db=db, id=id)
+    if not splat:
+        raise HTTPException(status_code=404, detail="Splat not found")
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    return splat
 
 @router.get("/{id}/download-splat", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}

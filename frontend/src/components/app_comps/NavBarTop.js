@@ -1,7 +1,7 @@
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
-export default function NavBarTop({ user, setUser }) {
+export default function NavBarTop({ user, setUser,projectName }) {
   const navigate = useNavigate();
 
   const handleClickLogOut = (e) => {
@@ -18,7 +18,7 @@ export default function NavBarTop({ user, setUser }) {
       <div className="logo-icon bg-sky-400 border-sky-400 w-[3em] h-[3em]">
         <div className="logo-bolt w-[2em] h-[1em]"></div>
       </div>
-      <h2 className="brand-text text-sky-400 text-2xl">3DScene</h2>
+      <h2 className="brand-text text-sky-400 text-2xl">{projectName}</h2>
     </Link>
     </div>
     
@@ -27,7 +27,7 @@ export default function NavBarTop({ user, setUser }) {
       <button className="text-gray-800 font-medium">Tutorial</button>
      {!user && (
        <>
-          <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</Link>
+          <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">{projectName} Pro</Link>
           <Link to={RouterPath.LOGIN} className="header-link">
             Login/Signup
           </Link>
@@ -36,7 +36,7 @@ export default function NavBarTop({ user, setUser }) {
     {user && (
       <>
       {!user.is_pro && (
-        <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">3DScene Pro</Link>
+        <Link to={RouterPath.SUBSCRIPTION} className="bg-gray-900 text-white px-4 py-2 rounded">{projectName} Pro</Link>
 
       )}
       <Link to={RouterPath.DASHBOARD} className="text-gray-800 font-medium">

@@ -1,7 +1,5 @@
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from fastapi import Request
-from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 from datetime import timedelta
 from typing import Any
@@ -25,7 +23,7 @@ from app.app_utils import (
     verify_password_reset_token,
     send_new_google_account_email,
 )
-
+from datetime import datetime, timedelta
 router = APIRouter()
 
 @router.post("/login/get-my-info", response_model=schemas.User, responses={
@@ -64,6 +62,13 @@ def read_user_me(
     if current_user.is_superuser:
         is_pro = True
     user_response["is_pro"] = is_pro
+    
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    user_splats_today = db.query(models.Splat).filter(
+        models.Splat.owner_id == current_user.id,
+        models.Splat.date_created >= today_start
+    ).count()
+    user_response["num_splat_today"] = user_splats_today
     return user_response
 
 

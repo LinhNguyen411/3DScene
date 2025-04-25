@@ -8,7 +8,6 @@ from app import crud
 from fastapi import (APIRouter,  Depends, HTTPException)
 import os
 from app.core.config import Config
-from pydantic import BaseModel
 from dotenv import load_dotenv
 
 statistic_router = APIRouter()
@@ -136,17 +135,7 @@ def get_total_amount(
 config_router = APIRouter()
 
 
-class EnvVariableResponse(BaseModel):
-    key: str
-    value: str
-    sensitive: bool
-
-class EnvVariableUpdate(BaseModel):
-    key: str
-    value: str
-
-
-@config_router.get("/env", response_model=List[EnvVariableResponse], responses={
+@config_router.get("/env", response_model=List[schemas.EnvVariableResponse], responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"},
     403: {"model": schemas.Detail, "description": "Not enough permissions"}
 })
@@ -179,6 +168,12 @@ async def get_environment_variables(
         )
     
     # Define sensitive keys that should be masked
+    not_configable_keys = [
+        "SMTP_PORT",
+        "SMTP_HOST",
+        "SMTP_TLS",
+        "EMAILS_ENABLED"
+    ]
     sensitive_keys = [
         "SMTP_PASSWORD", 
         "GOOGLE_AUTH_CLIENT_SECRET", 
@@ -189,7 +184,7 @@ async def get_environment_variables(
     
     # Add environment vars from config
     for key in dir(config):
-        if not key.startswith("_") and key.isupper():
+        if not key.startswith("_") and key.isupper() and key not in not_configable_keys:
             value = getattr(config, key)
             if isinstance(value, (str, int, bool, float)) or value is None:
                 is_sensitive = key in sensitive_keys
@@ -211,7 +206,7 @@ async def update_environment_variable(
     *,
     config: Config = Depends(deps.get_config),
     current_user: models.User = Depends(deps.get_current_active_user),
-    env_update: EnvVariableUpdate,
+    env_update: schemas.EnvVariableUpdate,
 ) -> Any:
     """
     Cập nhật một biến môi trường trong tệp .backend.env.

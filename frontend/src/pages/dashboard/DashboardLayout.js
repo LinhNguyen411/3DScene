@@ -1,7 +1,7 @@
 import SideBar from '../../components/app_comps/SideBar';
 import { Outlet, useOutletContext } from "react-router-dom";
 
-function DashboardLayout(props) {
+function DashboardLayout() {
   const {user, fetchAuthData} = useOutletContext();
   return (
       <div className="flex flex-1">

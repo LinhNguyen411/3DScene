@@ -5,11 +5,8 @@ from app import schemas
 from app import models
 from app import crud
 
-from fastapi_pagination.ext.sqlalchemy import paginate
-from fastapi_pagination import Params, Page
 from fastapi import (APIRouter,  Depends, HTTPException, Request)
-import os
-from core.config import settings, Config
+from core.config import Config
 import stripe
 import json
 from app.app_utils import send_subscription_success_email

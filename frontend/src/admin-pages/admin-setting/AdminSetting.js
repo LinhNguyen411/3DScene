@@ -39,6 +39,8 @@ function AdminSetting() {
   const [updatedValue, setUpdatedValue] = useState('');
   const [loadingEnv, setLoadingEnv] = useState(false);
   const [activeEnvGroup, setActiveEnvGroup] = useState('all');
+  const [copiedKey, setCopiedKey] = useState(null);
+
 
   useEffect(() => {
     if (activeTab === 'environmentConfig' && user?.is_superuser) {
@@ -65,10 +67,10 @@ function AdminSetting() {
 
   const groupEnvironmentVariables = (variables) => {
     const groups = {
+      application: [],
       google: [],
       stripe: [],
       smtp: [],
-      application: [],
       other: []
     };
 
@@ -215,7 +217,15 @@ function AdminSetting() {
       setLoadingEnv(false);
     }
   };
-
+  const handleCopy = (value, key) => {
+    navigator.clipboard.writeText(value);
+    setCopiedKey(key);
+    
+    // Reset "Copied" text after 2 seconds
+    setTimeout(() => {
+      setCopiedKey(null);
+    }, 2000);
+  };
   const renderEnvVariablesTable = (variables) => {
     if (!variables || variables.length === 0) {
       return (
@@ -225,71 +235,87 @@ function AdminSetting() {
 
     return (
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variable</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {variables.map((variable) => (
-            <tr key={variable.key}>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {variable.key}
-                {variable.sensitive && (
-                  <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded-full">
-                    Sensitive
-                  </span>
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {editingVar === variable.key ? (
-                  <input
-                    type={variable.sensitive ? "password" : "text"}
-                    value={updatedValue}
-                    onChange={(e) => setUpdatedValue(e.target.value)}
-                    className="w-[40em] px-2 py-1 border rounded"
-                    placeholder={variable.sensitive ? "Enter new value" : ""}
-                  />
-                ) : (
-                  <span className={variable.sensitive ? "font-mono text-red-500" : "font-mono"}>
+      <thead className="bg-gray-50">
+        <tr>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variable</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody className="bg-white divide-y divide-gray-200">
+        {variables.map((variable) => (
+          <tr key={variable.key}>
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {variable.key}
+              {variable.sensitive && (
+                <span className="ml-2 px-2 py-0.5 text-xs bg-red-100 text-red-800 rounded-full">
+                  Sensitive
+                </span>
+              )}
+            </td>
+            <td className="px-6 py-4 text-sm text-gray-500 max-w-md">
+              {editingVar === variable.key ? (
+                <input
+                  type={variable.sensitive ? "password" : "text"}
+                  value={updatedValue}
+                  onChange={(e) => setUpdatedValue(e.target.value)}
+                  className="w-full px-2 py-1 border rounded"
+                  placeholder={variable.sensitive ? "Enter new value" : ""}
+                />
+              ) : (
+                <div className="flex items-center">
+                  <span 
+                    className={`font-mono ${variable.sensitive ? "text-red-500" : ""} truncate`}
+                    title={variable.value}
+                  >
                     {variable.value}
                   </span>
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {editingVar === variable.key ? (
-                  <div className="flex space-x-2">
+                  {variable.value.length > 30 && (
                     <button
-                      onClick={() => handleUpdateVariable(variable.key)}
-                      className="text-green-600 hover:text-green-900"
-                      disabled={loadingEnv}
+                      className={`ml-2 text-xs ${copiedKey === variable.key ? "text-green-500" : "text-blue-500 hover:text-blue-700"}`}
+                      onClick={() => handleCopy(variable.value, variable.key)}
                     >
-                      Save
+                      {copiedKey === variable.key ? "Copied" : "Copy"}
                     </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="text-gray-600 hover:text-gray-900"
-                      disabled={loadingEnv}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
+                  )}
+                </div>
+              )}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {editingVar === variable.key ? (
+                <div className="flex space-x-2">
                   <button
-                    onClick={() => handleEditVariable(variable)}
-                    className="text-blue-600 hover:text-blue-900"
-                    disabled={loadingEnv || editingVar !== null}
+                    onClick={() => {
+                      handleUpdateVariable(variable.key, updatedValue);
+                      setEditingVar(null);
+                    }}
+                    className="text-green-600 hover:text-green-900"
+                    disabled={loadingEnv}
                   >
-                    Edit
+                    Save
                   </button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-gray-600 hover:text-gray-900"
+                    disabled={loadingEnv}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => handleEditVariable(variable)}
+                  className="text-blue-600 hover:text-blue-900"
+                  disabled={loadingEnv || editingVar !== null}
+                >
+                  Edit
+                </button>
+              )}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
     );
   };
 
@@ -573,6 +599,12 @@ function AdminSetting() {
                     All
                   </button>
                   <button
+                    className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'application' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}
+                    onClick={() => setActiveEnvGroup('application')}
+                  >
+                    Application
+                  </button>
+                  <button
                     className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'google' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}
                     onClick={() => setActiveEnvGroup('google')}
                   >
@@ -589,12 +621,6 @@ function AdminSetting() {
                     onClick={() => setActiveEnvGroup('smtp')}
                   >
                     SMTP/Email
-                  </button>
-                  <button
-                    className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'application' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}
-                    onClick={() => setActiveEnvGroup('application')}
-                  >
-                    Application
                   </button>
                   <button
                     className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'other' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}

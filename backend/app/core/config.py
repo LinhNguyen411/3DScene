@@ -100,6 +100,7 @@ class Config(BaseSettings):
     GOOGLE_AUTH_CLIENT_SECRET: str = os.environ["GOOGLE_AUTH_CLIENT_SECRET"]
 
     STRIPE_API_KEY:str = os.environ.get("STRIPE_API_KEY")
+    STRIPE_PUBLIC_KEY:str = os.environ.get("STRIPE_PUBLIC_KEY")
     STRIPE_MONTHLY_ID: str = os.environ.get("STRIPE_MONTHLY_ID")
     STRIPE_YEARLY_ID: str = os.environ.get("STRIPE_YEARLY_ID")
     SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL")

@@ -1,17 +1,15 @@
-import math
 from fastapi_pagination.ext.sqlalchemy import _to_dict, paginate_query
 from fastapi_pagination.bases import AbstractPage, AbstractParams
 from fastapi_pagination.api import create_page, resolve_params
-from sqlalchemy.orm import Query  # type: ignore
+from sqlalchemy.orm import Query
 from typing import Optional
-import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import emails  # type: ignore
-from emails.template import JinjaTemplate  # type: ignore
-from jose import jwt  # type: ignore
+import emails
+from emails.template import JinjaTemplate
+from jose import jwt
 
 from app.core.config import settings, Config
 from app.core.logging import logger

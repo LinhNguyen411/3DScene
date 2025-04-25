@@ -40,5 +40,13 @@ app.mount("/thumbnails", StaticFiles(directory=settings.MODEL_THUMBNAILS_DIR), n
 
 @app.get("/")
 async def root():
+    """
+    Root endpoint for the application.
 
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông điệp "Hello World".
+
+    **Giải thích:**
+    - Đây là điểm cuối gốc của ứng dụng, trả về một thông điệp chào mừng đơn giản khi truy cập vào URL gốc ("/").
+    """
     return {"message": "Hello World"}

@@ -39,10 +39,7 @@ RUN apt-get update && apt-get install -y \
     ninja-build \
     curl \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
-
+    && rm -rf /var/lib/apt/lists/*
 
 # Set compilers to gcc-10 and g++-10
 ENV CC=/usr/bin/gcc-10 \
@@ -75,6 +72,23 @@ RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat && \
 # Update LD_LIBRARY_PATH for libtorch
 ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:$LD_LIBRARY_PATH
 
+
+# Install Go
+RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
+
+
+# Set Go environment
+ENV PATH="/usr/local/go/bin:$PATH"
+ENV PATH="/root/go/bin:$PATH"
+ENV GOPATH="/root/go"
+
+# Clone gsbox repo and build the app
+RUN git clone https://github.com/gotoeasy/gsbox.git gsbox && \
+    cd gsbox && \
+    go install .
+
 WORKDIR /code/app
 
 COPY ./requirements.txt /code/requirements.txt
@@ -85,8 +99,6 @@ COPY ./app /code/app
 ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
-
-RUN npm install -g @playcanvas/splat-transform
 
 EXPOSE 8000
 

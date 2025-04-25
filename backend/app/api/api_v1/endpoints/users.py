@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session  # type: ignore
 from fastapi import APIRouter, Body, Depends, HTTPException
@@ -9,8 +9,6 @@ from app import crud, models, schemas
 from app.api import deps
 from app.core.config import settings, Config
 from app.app_utils import send_new_account_email, generate_mail_confirmation_token, verify_mail_confirmation_token
-from app.core.security import get_password_hash
-from datetime import datetime
 
 router = APIRouter()
 
@@ -26,7 +24,21 @@ def create_user_signup(
     last_name: str = Body(...),
 ) -> Any:
     """
-    User sign up.
+    Đăng ký tài khoản người dùng mới.
+
+    **Yêu cầu Header:**
+    - Không yêu cầu xác thực.
+
+    **Đầu vào (Request Body):**
+    - `email` (EmailStr): Email người dùng.
+    - `password` (str): Mật khẩu.
+    - `first_name` (str): Tên.
+    - `last_name` (str): Họ.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin người dùng đã đăng ký.
+    - 400 Bad Request: Nếu email đã tồn tại.
+    - 403 Forbidden: Nếu không cho phép đăng ký.
     """
     if not settings.USERS_OPEN_REGISTRATION:
         raise HTTPException(
@@ -57,7 +69,18 @@ def reset_password(
     token: str,
 ) -> Any:
     """
-    Confirm email using token sent in email
+    Xác nhận email người dùng qua token gửi trong email.
+    
+    **Yêu cầu Header:**
+    - Không yêu cầu xác thực.
+
+    **Đầu vào (Path Parameter):**
+    - `token` (str): Mã xác nhận trong email.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về `{ "msg": "Mail confirmed" }` nếu xác nhận thành công.
+    - 400 Bad Request: Nếu token không hợp lệ hoặc email đã được xác nhận.
+    - 404 Not Found: Nếu người dùng không tồn tại.
     """
     email = verify_mail_confirmation_token(token)
     if not email:
@@ -86,7 +109,23 @@ def update_user(
     user_in: schemas.UserUpdate,
 ) -> Any:
     """
-    Update an item.
+    Cập nhật thông tin cá nhân của người dùng hiện tại.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body - UserUpdate):**
+    - `first_name` (str, optional): Tên người dùng.
+    - `last_name` (str, optional): Họ người dùng.
+    - `password` (str, optional): Mật khẩu mới.
+    - `current_password` (str, optional): Mật khẩu hiện tại (bắt buộc nếu đổi mật khẩu).
+    - `is_active` (bool, optional): Trạng thái hoạt động (chỉ superuser mới có thể thay đổi).
+    - `is_superuser` (bool, optional): Quyền superuser (chỉ superuser mới có thể thay đổi).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin người dùng đã cập nhật.
+    - 400 Bad Request: Nếu người dùng không đủ quyền để cập nhật một số trường.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
     """
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Not enough permissions")
@@ -109,7 +148,18 @@ def read_users(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Retrieve items.
+    Lấy danh sách người dùng.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Parameters):**
+    - `params` (Params): Các tham số phân trang (pagination) như `page`, `size` sẽ được tự động lấy từ query parameters.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách người dùng dưới dạng phân trang (Page).
+    - 400 Bad Request: Nếu người dùng không phải là superuser, không có quyền truy cập.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
     """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
@@ -128,7 +178,19 @@ def get_user(
     id: int,
 ) -> Any:
     """
-    Delete an item.
+    Lấy thông tin người dùng theo ID.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Path Parameter):**
+    - `id` (int): ID của người dùng cần lấy thông tin.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin người dùng với ID tương ứng.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập thông tin của người dùng khác.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
+    - 404 Not Found: Nếu không tìm thấy người dùng với ID đã cho.
     """
     user = crud.user.get(db=db, id=id)
     if not user:
@@ -148,7 +210,23 @@ def create_user(
     user_in: schemas.UserCreate
 ) -> Any:
     """
-    Create new item.
+    Tạo người dùng mới.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body - UserCreate):**
+    - `email` (EmailStr, bắt buộc): Địa chỉ email của người dùng.
+    - `first_name` (str, bắt buộc): Tên của người dùng.
+    - `last_name` (str, bắt buộc): Họ của người dùng.
+    - `is_active` (bool, tùy chọn): Trạng thái hoạt động của người dùng (mặc định là `False`).
+    - `is_superuser` (bool, tùy chọn): Quyền superuser của người dùng (mặc định là `False`).
+    - `password` (str, tùy chọn): Mật khẩu của người dùng (bắt buộc nếu tạo người dùng mới).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin người dùng vừa tạo.
+    - 400 Bad Request: Nếu người dùng không có quyền tạo người dùng mới.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
     """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
@@ -167,7 +245,27 @@ def update_user(
     user_in: schemas.UserUpdate,
 ) -> Any:
     """
-    Update an item.
+    Cập nhật thông tin người dùng theo ID.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Path Parameter):**
+    - `id` (int, bắt buộc): ID của người dùng cần cập nhật.
+
+    **Đầu vào (Request Body - UserUpdate):**
+    - `password` (str, tùy chọn): Mật khẩu mới của người dùng.
+    - `first_name` (str, tùy chọn): Tên mới của người dùng.
+    - `last_name` (str, tùy chọn): Họ mới của người dùng.
+    - `is_active` (bool, tùy chọn): Trạng thái hoạt động của người dùng (mặc định là `True`).
+    - `is_superuser` (bool, tùy chọn): Quyền superuser của người dùng (mặc định là `False`).
+    - `current_password` (str, tùy chọn): Mật khẩu hiện tại của người dùng, yêu cầu khi thay đổi mật khẩu.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin người dùng sau khi cập nhật.
+    - 400 Bad Request: Nếu người dùng không đủ quyền hoặc không thể cập nhật thông tin.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
+    - 404 Not Found: Nếu không tìm thấy người dùng với ID đã cho.
     """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
@@ -190,7 +288,20 @@ def delete_user(
     id: int,
 ) -> Any:
     """
-    Delete an item.
+    Xóa người dùng theo ID.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Path Parameter):**
+    - `id` (int, bắt buộc): ID của người dùng cần xóa.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin người dùng đã bị xóa.
+    - 400 Bad Request: Nếu người dùng không có quyền xóa người dùng khác.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
+    - 403 Forbidden: Nếu người dùng cố gắng xóa chính mình (Super users không thể xóa tài khoản của chính mình).
+    - 404 Not Found: Nếu không tìm thấy người dùng với ID đã cho.
     """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")

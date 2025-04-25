@@ -29,7 +29,18 @@ async def create_checkout_session(
     request:schemas.CheckoutSessionRequest,
 ) -> Any:
     """
-    Create new item.
+    Tạo phiên thanh toán Stripe cho người dùng.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - `priceId` (str, bắt buộc): ID của gói thanh toán mà người dùng chọn.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về ID của phiên thanh toán (`sessionId`) nếu tạo thành công.
+    - 400 Bad Request: Nếu người dùng không đủ quyền hoặc đã đăng ký gói thanh toán.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
     """
     stripe.api_key = config.STRIPE_API_KEY
     if not current_user.is_active:
@@ -54,6 +65,23 @@ async def create_checkout_session(
 
 @router.post("/webhook")
 async def stripe_webhook(request: Request,config: Config = Depends(deps.get_config), db: Session = Depends(deps.get_db)):
+    """
+    Nhận và xử lý webhook từ Stripe khi một phiên thanh toán hoàn thành.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Dữ liệu webhook từ Stripe được gửi dưới dạng JSON. Payload chứa thông tin sự kiện thanh toán hoàn thành (ví dụ: checkout.session.completed).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông báo "success" nếu webhook được xử lý thành công.
+    - 400 Bad Request: Nếu có lỗi khi xử lý sự kiện webhook hoặc dữ liệu không hợp lệ từ Stripe.
+
+    **Giải thích:**
+    - Webhook nhận sự kiện từ Stripe khi một phiên thanh toán hoàn thành, bao gồm thông tin về số tiền thanh toán, kế hoạch thanh toán, và người dùng.
+    - Sau khi xác thực sự kiện, nó sẽ lưu thông tin thanh toán vào cơ sở dữ liệu và gửi email thông báo cho người dùng về việc đăng ký thành công.
+    """
     stripe.api_key = config.STRIPE_API_KEY
     payload = await request.body()
     event = None

@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, EmailStr
-from typing import Annotated, Optional
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime
 from app.schemas.user import User
 

@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from app.db.base_class import Base
-from datetime import datetime
 
 class Payment(Base):
     __tablename__ = 'payments'

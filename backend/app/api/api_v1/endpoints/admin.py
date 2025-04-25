@@ -1,24 +1,15 @@
-from typing import Any, Optional, List,Dict
+from typing import Any, List,Dict
 from sqlalchemy.orm import Session  # type: ignore
 from app.api import deps
 from app import schemas
 from app import models
 from app import crud
-from app.celery import celery_app
-from celery.result import AsyncResult
 
-from fastapi_pagination.ext.sqlalchemy import paginate
-from fastapi_pagination import Params, Page
-from fastapi import (APIRouter,  Depends, HTTPException,
-                     File, UploadFile, Form)
-from fastapi.responses import FileResponse
+from fastapi import (APIRouter,  Depends, HTTPException)
 import os
-import uuid
-from app.core.config import settings, Config
-import shutil
-import cv2
+from app.core.config import Config
 from pydantic import BaseModel
-from dotenv import load_dotenv, set_key
+from dotenv import load_dotenv
 
 statistic_router = APIRouter()
 
@@ -30,6 +21,23 @@ def get_total_pro_users(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
+    """
+    Lấy tổng số người dùng đã đăng ký gói Pro.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về tổng số người dùng đã đăng ký gói Pro.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập (không phải là superuser).
+
+    **Giải thích:**
+    - Hàm này sẽ trả về tổng số người dùng đã đăng ký gói Pro, chỉ khi người yêu cầu là superuser.
+    - Nếu người dùng không phải là superuser, sẽ ném ra lỗi 400 với thông báo "Not enough permissions".
+    """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     total = crud.payment.count_pro_users(db=db)
@@ -38,11 +46,28 @@ def get_total_pro_users(
 @statistic_router.get("/total-users", responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def get_total_pro_users(
+def get_total_users(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
+    """
+    Lấy tổng số người dùng trong hệ thống.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về tổng số người dùng trong hệ thống.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập (không phải là superuser).
+
+    **Giải thích:**
+    - Hàm này sẽ trả về tổng số người dùng trong hệ thống, chỉ khi người yêu cầu là superuser.
+    - Nếu người dùng không phải là superuser, sẽ ném ra lỗi 400 với thông báo "Not enough permissions".
+    """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     total = crud.user.get_total_users(db=db)
@@ -56,6 +81,23 @@ def get_splats_last_24hours(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
+    """
+    Lấy dữ liệu splats trong 24 giờ qua.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách splats trong 24 giờ qua.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập (không phải là superuser).
+
+    **Giải thích:**
+    - Hàm này sẽ trả về danh sách splats đã được ghi nhận trong vòng 24 giờ qua, chỉ khi người yêu cầu là superuser.
+    - Nếu người dùng không phải là superuser, sẽ ném ra lỗi 400 với thông báo "Not enough permissions".
+    """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     splats = crud.splat.get_splats_last_24_hours(db=db)
@@ -69,6 +111,23 @@ def get_total_amount(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
+    """
+    Lấy tổng số tiền thanh toán trong hệ thống.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về tổng số tiền thanh toán trong hệ thống.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập (không phải là superuser).
+
+    **Giải thích:**
+    - Hàm này sẽ trả về tổng số tiền thanh toán đã được ghi nhận trong hệ thống, chỉ khi người yêu cầu là superuser.
+    - Nếu người dùng không phải là superuser, sẽ ném ra lỗi 400 với thông báo "Not enough permissions".
+    """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
     total_amount = crud.payment.get_total_amount(db)
@@ -76,7 +135,6 @@ def get_total_amount(
 
 config_router = APIRouter()
 
-router = APIRouter()
 
 class EnvVariableResponse(BaseModel):
     key: str
@@ -98,7 +156,21 @@ async def get_environment_variables(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Get all environment variables.
+    Lấy tất cả các biến môi trường từ cấu hình.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách các biến môi trường với tên và giá trị.
+    - 403 Forbidden: Nếu người dùng không có quyền truy cập (không phải là superuser).
+    
+    **Giải thích:**
+    - Hàm này trả về tất cả các biến môi trường từ cấu hình hệ thống. Những biến nhạy cảm như `SMTP_PASSWORD`, `GOOGLE_AUTH_CLIENT_SECRET`, và `STRIPE_API_KEY` sẽ được ẩn giá trị (hiển thị dưới dạng `****`).
+    - Chỉ người dùng có quyền superuser mới có thể truy cập danh sách các biến môi trường này. Nếu người dùng không phải là superuser, sẽ trả về lỗi 403 với thông báo "Not enough permissions".
     """
     if not current_user.is_superuser:
         raise HTTPException(
@@ -142,7 +214,26 @@ async def update_environment_variable(
     env_update: EnvVariableUpdate,
 ) -> Any:
     """
-    Update an environment variable in .backend.env file.
+    Cập nhật một biến môi trường trong tệp .backend.env.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - `key` (str): Tên biến môi trường cần cập nhật.
+    - `value` (str): Giá trị mới của biến môi trường.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông báo xác nhận rằng biến môi trường đã được cập nhật thành công.
+    - 403 Forbidden: Nếu người dùng không có quyền truy cập (không phải là superuser).
+    - 400 Bad Request: Nếu tên biến môi trường không hợp lệ hoặc không tồn tại trong cấu hình.
+    - 500 Internal Server Error: Nếu có lỗi khi cập nhật biến môi trường trong tệp .backend.env.
+
+    **Giải thích:**
+    - Hàm này sẽ cập nhật một biến môi trường trong tệp `.backend.env` và nạp lại các giá trị môi trường từ tệp này.
+    - Chỉ những người dùng có quyền superuser mới có thể thực hiện việc cập nhật này. Nếu người dùng không có quyền, sẽ trả về lỗi 403.
+    - Nếu tên biến môi trường không tồn tại trong cấu hình, hàm sẽ trả về lỗi 400.
+    - Khi cập nhật thành công, biến môi trường sẽ được cập nhật trong hệ thống và trong tệp `.backend.env`.
     """
     if not current_user.is_superuser:
         raise HTTPException(
@@ -207,7 +298,22 @@ async def reload_environment_variables(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Reload all environment variables from .backend.env file.
+    Tải lại tất cả các biến môi trường từ tệp .backend.env.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông báo xác nhận rằng các biến môi trường đã được tải lại thành công.
+    - 403 Forbidden: Nếu người dùng không có quyền truy cập (không phải là superuser).
+    - 500 Internal Server Error: Nếu có lỗi khi tải lại các biến môi trường từ tệp `.backend.env`.
+
+    **Giải thích:**
+    - Hàm này sẽ tải lại tất cả các biến môi trường từ tệp `.backend.env` và nạp lại vào hệ thống. Chỉ những người dùng có quyền superuser mới có thể thực hiện việc này.
+    - Nếu có lỗi khi tải lại các biến môi trường, sẽ trả về lỗi 500 với thông báo chi tiết.
     """
     if not current_user.is_superuser:
         raise HTTPException(
@@ -234,7 +340,23 @@ async def create_env_backup(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Create a backup of the current .backend.env file.
+    Tạo một bản sao lưu của tệp .backend.env hiện tại.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Đầu vào (Request Body):**
+    - Không có dữ liệu đầu vào yêu cầu từ người dùng.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông báo xác nhận rằng bản sao lưu tệp .backend.env đã được tạo thành công.
+    - 403 Forbidden: Nếu người dùng không có quyền truy cập (không phải là superuser).
+    - 500 Internal Server Error: Nếu có lỗi khi tạo bản sao lưu.
+
+    **Giải thích:**
+    - Hàm này sẽ tạo một bản sao lưu của tệp `.backend.env` hiện tại, lưu trữ bản sao lưu với tên có chứa dấu thời gian.
+    - Chỉ những người dùng có quyền superuser mới có thể thực hiện việc này.
+    - Nếu có lỗi khi sao chép tệp, sẽ trả về lỗi 500 với thông báo chi tiết.
     """
     if not current_user.is_superuser:
         raise HTTPException(

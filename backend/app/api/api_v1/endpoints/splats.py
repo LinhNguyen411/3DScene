@@ -10,7 +10,7 @@ from celery.result import AsyncResult
 from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination import Params, Page
 from fastapi import (APIRouter,  Depends, HTTPException,
-                     File, UploadFile, Form)
+                     File, UploadFile, Form, BackgroundTasks)
 from fastapi.responses import FileResponse
 import os
 import uuid
@@ -21,8 +21,15 @@ import subprocess
 import mimetypes
 
 from fastapi.responses import StreamingResponse
-import io
+import asyncio
 
+MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024  # 5GB in bytes
+
+def delete_file(path: str):
+    try:
+        os.remove(path)
+    except Exception:
+        pass  # You might want to log this
 
 router = APIRouter()
 
@@ -36,7 +43,26 @@ def read_splats(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Retrieve items.
+    Lấy danh sách splat (mô hình 3D) từ hệ thống.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **params**: Các tham số phân trang (page size, page number).
+    - **current_user**: Người dùng hiện tại (dựa trên JWT token, xác thực qua `deps.get_current_active_user`).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách các splat dưới dạng phân trang (page).
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng lấy danh sách các mô hình splat (3D objects). Người dùng có thể lấy tất cả các splats nếu là superuser, hoặc chỉ lấy các splat thuộc sở hữu của họ nếu là người dùng bình thường.
+    - Danh sách các splats sẽ được phân trang, giúp dễ dàng quản lý dữ liệu lớn.
+
+    **Chi tiết về các hành động:**
+    - Kiểm tra quyền hạn của người dùng, nếu là superuser, sẽ lấy tất cả các splat. Nếu là người dùng bình thường, sẽ chỉ lấy các splat của họ.
+    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Splat]`.
     """
 
     if current_user.is_superuser:
@@ -53,7 +79,24 @@ def read_public_splats(
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
-    Retrieve public items accessible without authentication.
+    Lấy danh sách các splat công khai có thể truy cập mà không cần xác thực.
+
+    **Yêu cầu Header:**
+    - Không yêu cầu header đặc biệt, có thể truy cập mà không cần xác thực người dùng.
+
+    **Đầu vào (Request Parameters):**
+    - **params**: Các tham số phân trang (page size, page number).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách các splat công khai dưới dạng phân trang (page).
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng truy cập vào các mô hình splat (3D objects) công khai mà không cần phải đăng nhập hoặc cung cấp thông tin xác thực.
+    - Danh sách các splat công khai sẽ được phân trang để dễ dàng quản lý và truy xuất dữ liệu lớn.
+
+    **Chi tiết về các hành động:**
+    - Lấy tất cả các splat có thuộc tính `is_public=True`.
+    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Splat]`.
     """
     public_splats = crud.splat.get_multi_by_public(db=db)
     return paginate(public_splats, params)
@@ -64,7 +107,24 @@ def read_gallery_splats(
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
-    Retrieve gallery items accessible without authentication.
+    Lấy danh sách các splat trong gallery có thể truy cập mà không cần xác thực.
+
+    **Yêu cầu Header:**
+    - Không yêu cầu header đặc biệt, có thể truy cập mà không cần xác thực người dùng.
+
+    **Đầu vào (Request Parameters):**
+    - **params**: Các tham số phân trang (page size, page number).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách các splat trong gallery dưới dạng phân trang (page).
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng truy cập vào các mô hình splat (3D objects) được lưu trong gallery mà không cần phải đăng nhập hoặc cung cấp thông tin xác thực.
+    - Danh sách các splat trong gallery sẽ được phân trang để dễ dàng quản lý và truy xuất dữ liệu lớn.
+
+    **Chi tiết về các hành động:**
+    - Lấy tất cả các splat có thuộc tính `is_gallery=True`.
+    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Splat]`.
     """
     gallery_splats = crud.splat.get_multi_by_gallery(db=db)
     return paginate(gallery_splats, params)
@@ -80,7 +140,30 @@ def get_splat(
     id: str,
 ) -> Any:
     """
-    Delete an item.
+    Lấy thông tin chi tiết của một splat theo ID.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần lấy thông tin.
+    - **current_user**: Người dùng hiện tại (dựa trên JWT token, xác thực qua `deps.get_current_active_user`).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 404 Not Found: Nếu không tìm thấy splat với ID đã cho.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập splat.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng lấy thông tin chi tiết của một splat cụ thể.
+    - Người dùng cần có quyền truy cập đối với splat này: nếu là superuser, họ có thể truy cập bất kỳ splat nào; nếu là người dùng bình thường, họ chỉ có thể truy cập splat của chính mình.
+    - Nếu splat không tồn tại hoặc người dùng không có quyền truy cập, sẽ trả về lỗi tương ứng.
+
+    **Chi tiết về các hành động:**
+    - Kiểm tra xem splat có tồn tại hay không.
+    - Kiểm tra quyền của người dùng (superuser hoặc sở hữu splat).
+    - Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
     """
     splat = crud.splat.get(db=db, id=id)
     if not splat:
@@ -102,8 +185,36 @@ async def create_splat(
     num_iterations: int = Form(10, description="Number of iterations for the opensplat command")
 ) -> Any:
     """
-    Create new splat from uploaded files (either videos or images, not both).
-    If videos are uploaded, extract frames at 2fps.
+    Tạo một splat mới từ các tệp tải lên (có thể là video hoặc hình ảnh, không thể tải lên cả hai).
+    Nếu video được tải lên, hệ thống sẽ trích xuất các khung hình với tốc độ 2fps.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **title**: Tiêu đề cho splat mới (dưới dạng form data).
+    - **files**: Danh sách các tệp video hoặc hình ảnh tải lên (dưới dạng form data).
+    - **num_iterations**: Số vòng lặp cho lệnh opensplat (dưới dạng form data, mặc định là 10).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về đối tượng splat mới sau khi tạo thành công.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu các tệp tải lên có kiểu không hợp lệ hoặc cả video và hình ảnh đều được tải lên cùng lúc.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng tạo một splat mới bằng cách tải lên các tệp video hoặc hình ảnh.
+    - Nếu video được tải lên, hệ thống sẽ trích xuất các khung hình với tốc độ 2fps và lưu chúng vào thư mục làm việc.
+    - Nếu hình ảnh được tải lên, hệ thống sẽ di chuyển các tệp hình ảnh vào thư mục làm việc.
+    - Sau khi các tệp được xử lý, một thumbnail sẽ được tạo từ hình ảnh đầu tiên (nếu có) và được lưu vào thư mục thumbnail.
+    - Một tác vụ xử lý video (hoặc hình ảnh) sẽ được đưa vào hàng đợi Celery để xử lý tiếp.
+
+    **Chi tiết về các hành động:**
+    - Kiểm tra loại tệp tải lên (video hoặc hình ảnh) và đảm bảo chỉ tải lên một loại tệp.
+    - Nếu video được tải lên, trích xuất khung hình với tốc độ 2fps và lưu vào thư mục làm việc.
+    - Nếu hình ảnh được tải lên, di chuyển chúng vào thư mục làm việc.
+    - Tạo thumbnail từ hình ảnh đầu tiên (nếu có) và lưu vào thư mục thumbnail.
+    - Tạo một đối tượng splat mới và lưu vào cơ sở dữ liệu.
+    - Gửi tác vụ xử lý video hoặc hình ảnh vào hàng đợi Celery.
     """
     print(files)
     splat_id = str(uuid.uuid4())
@@ -205,172 +316,96 @@ async def upload_splat(
     thumbnail: UploadFile = File(...),
 ) -> Any:
     """
-    Create new item with support for models up to 5GB.
-    Validates model file type (.ply or .splat), compresses .ply files,
-    and stores the final model size in MB.
+    Tải lên một mô hình và thumbnail của mô hình, và tạo một mục Splat trong cơ sở dữ liệu.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **title**: Tiêu đề của mô hình (dưới dạng Form data).
+    - **is_public**: Xác định xem mô hình có công khai hay không (dưới dạng Form data).
+    - **model**: File mô hình (định dạng `.ply` hoặc `.splat`).
+    - **thumbnail**: File thumbnail cho mô hình.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về đối tượng Splat vừa được tạo trong cơ sở dữ liệu.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu file không phải định dạng `.ply` hoặc `.splat`.
+    - 413 Payload Too Large: Nếu kích thước file vượt quá giới hạn 5GB.
+    - 500 Internal Server Error: Nếu có lỗi trong quá trình tải lên hoặc chuyển đổi file.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng tải lên một mô hình 3D và thumbnail của mô hình.
+    - Mô hình có thể là file `.ply` hoặc `.splat`. Nếu là `.ply`, file sẽ được chuyển đổi thành `.splat` sử dụng công cụ Go (`gsbox`).
+    - Thumbnail sẽ được lưu trữ trong thư mục riêng biệt.
+    - Sau khi tải lên và chuyển đổi (nếu cần), thông tin mô hình sẽ được lưu trữ trong cơ sở dữ liệu, bao gồm đường dẫn tới mô hình và thumbnail.
+    - Kích thước của mô hình sẽ được tính toán và lưu trữ trong cơ sở dữ liệu.
     """
-    # --- File Type Validation ---
-    if not model.filename.endswith((".ply", ".splat")):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid model file type. Only .ply and .splat files are accepted."
-        )
+    if model.size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="File too large (max 5GB)")
 
-    needs_compression = not model.filename.endswith(".splat")
-    # --- End File Type Validation ---
+    if not (model.filename.endswith(".ply") or model.filename.endswith(".splat")):
+        raise HTTPException(status_code=400, detail="Invalid file type (must be .ply or .splat)")
 
-    MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024  # 5GB
-    splat_id = str(uuid.uuid4())
+    splat_id = str(uuid.uuid4())  # Unique ID for this model
     modeling_task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat_id)
     os.makedirs(modeling_task_dir, exist_ok=True)
-    upload_path = os.path.join(modeling_task_dir, "model")
-    os.makedirs(upload_path)
 
-    if needs_compression:
-        temp_input_model_path = os.path.join(upload_path, "input.ply")
-        final_model_filename = splat_id + "_model.splat"
-        final_model_path = os.path.join(upload_path, final_model_filename)
-        save_path = temp_input_model_path
-    else:
-        # Use a consistent final name or the original if preferred
-        # Using original: final_model_filename = model.filename
-        # Using consistent:
-        final_model_filename = splat_id + "_model.splat"
-        final_model_path = os.path.join(upload_path, final_model_filename)
-        save_path = final_model_path
-        temp_input_model_path = None
+    # Path where the model and thumbnail will be stored
+    model_path = os.path.join(modeling_task_dir, model.filename)
+    thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail.filename)
 
-    file_size_bytes_uploaded = 0 # Store the uploaded size (might be different from final size if compressed)
-    chunk_size = 1024 * 1024  # 1MB chunks
+    # Save the thumbnail file
+    with open(thumbnail_path, "wb") as f:
+        shutil.copyfileobj(thumbnail.file, f)
 
-    try:
-        # --- Save Uploaded File ---
-        with open(save_path, "wb") as buffer:
-            while True:
-                chunk = await model.read(chunk_size)
-                if not chunk:
-                    break
-                file_size_bytes_uploaded += len(chunk)
-                if file_size_bytes_uploaded > MAX_FILE_SIZE:
-                    buffer.close()
-                    os.remove(save_path)
-                    if os.path.exists(modeling_task_dir):
-                         shutil.rmtree(modeling_task_dir)
-                    raise HTTPException(
-                        status_code=413,
-                        detail=f"Model file too large ({file_size_bytes_uploaded / (1024*1024):.2f}MB). Maximum size is 5GB."
-                    )
-                buffer.write(chunk)
-        # --- End Save Uploaded File ---
+    # --- For .ply File: Save and Convert to .splat ---
+    if model.filename.endswith(".ply"):
+        # Save the .ply file temporarily
+        with open(model_path, "wb") as f:
+            shutil.copyfileobj(model.file, f)
 
-        # --- Compression Step (if needed) ---
-        if needs_compression:
-            if not temp_input_model_path: # Should not happen based on logic, but safety check
-                 raise HTTPException(status_code=500, detail="Internal error: Temp path not set for compression.")
-
-            compression_command = ['splat-transform', temp_input_model_path, final_model_path]
-            try:
-                print(f"Running compression: {' '.join(compression_command)}")
-                process_ply_buffer(temp_input_model_path, final_model_path, num_threads=4)
-                print(f"Compression successful")
-                os.remove(temp_input_model_path) # Clean up original .ply
-            except FileNotFoundError:
-                if os.path.exists(final_model_path): os.remove(final_model_path)
-                if os.path.exists(temp_input_model_path): os.remove(temp_input_model_path)
-                if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-                raise HTTPException(status_code=500, detail="Compression command 'splat-transform' not found.")
-            except subprocess.CalledProcessError as e:
-                if os.path.exists(final_model_path): os.remove(final_model_path)
-                if os.path.exists(temp_input_model_path): os.remove(temp_input_model_path)
-                if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-                error_message = f"Compression failed: {e.stderr}"
-                print(error_message)
-                raise HTTPException(status_code=500, detail=error_message)
-            except Exception as e:
-                if os.path.exists(final_model_path): os.remove(final_model_path)
-                if os.path.exists(temp_input_model_path): os.remove(temp_input_model_path)
-                if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-                raise HTTPException(status_code=500, detail=f"Unexpected error during compression: {str(e)}")
-        # --- End Compression Step ---
-
-        # --- Calculate Final Size ---
+        # Convert the .ply to .splat using Go tool (adjust based on your Go command)
+        splat_path = os.path.join(modeling_task_dir, f"{splat_id}.splat")
         try:
-            final_file_size_bytes = os.path.getsize(final_model_path)
-            memory_in_mb = round(final_file_size_bytes / (1024 * 1024), 2) # Calculate MB and round
-        except FileNotFoundError:
-             # This case means the final file is missing after supposed success, indicates an issue
-             if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir) # Clean up before error
-             raise HTTPException(status_code=500, detail="Internal error: Final model file not found after processing.")
-        except Exception as e:
-             # Catch any other errors during size calculation
-             if os.path.exists(final_model_path): os.remove(final_model_path)
-             if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-             raise HTTPException(status_code=500, detail=f"Error calculating final file size: {str(e)}")
-        # --- End Calculate Final Size ---
+            subprocess.run(
+                ['gsbox', 'p2s', '-i', model_path, '-o', splat_path],
+                check=True
+            )
+        except subprocess.CalledProcessError:
+            os.remove(model_path)  # Cleanup in case of failure
+            raise HTTPException(status_code=500, detail="Conversion to .splat failed")
 
-    except HTTPException as e:
-        # Re-raise known HTTP exceptions
-        raise e
-    except Exception as e:
-        # Catch other file processing errors and cleanup
-        if os.path.exists(save_path): os.remove(save_path) # save_path could be temp or final
-        if needs_compression and temp_input_model_path and os.path.exists(temp_input_model_path):
-             os.remove(temp_input_model_path) # Ensure temp is removed if error occurred before its cleanup
-        if os.path.exists(final_model_path): os.remove(final_model_path) # Ensure final is removed on error
-        if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-        raise HTTPException(status_code=500, detail=f"Error during file upload/processing: {str(e)}")
+        # Cleanup the temporary .ply file
+        os.remove(model_path)
 
-
-    # --- Thumbnail Handling ---
-    thumbnail_ext = os.path.splitext(thumbnail.filename)[-1]
-    thumbnail_filename = f"{splat_id}_thumbnail{thumbnail_ext}"
-    thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
-    os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
-
-    try:
-        with open(thumbnail_path, "wb") as f:
-            thumbnail_size = 0
-            while True:
-                chunk = await thumbnail.read(1024 * 1024)
-                if not chunk: break
-                thumbnail_size += len(chunk)
-                # Optional: Add size check for thumbnail here if needed
-                # if thumbnail_size > MAX_THUMBNAIL_SIZE: ...
-                f.write(chunk)
-    except Exception as e:
-        # Clean up model file and task directory if thumbnail fails
-        if os.path.exists(final_model_path): os.remove(final_model_path)
-        if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-        if os.path.exists(thumbnail_path): os.remove(thumbnail_path) # Clean up partial thumbnail
-        raise HTTPException(status_code=500, detail=f"Error saving thumbnail: {str(e)}")
-
-    thumbnail_url = f"/thumbnails/{thumbnail_filename}"
-    # --- End Thumbnail Handling ---
-
+    # --- For .splat File: Directly Save ---
+    elif model.filename.endswith(".splat"):
+        # Save the .splat file directly
+        with open(model_path, "wb") as f:
+            shutil.copyfileobj(model.file, f)
+        splat_path = model_path
 
     # --- Create Database Entry ---
-    # Include the calculated memory size
+    # Calculate model file size (in MB)
+    model_size = os.path.getsize(splat_path) / (1024 * 1024)
+
+    # Create the Splat entry in the database
     splat_in = schemas.SplatCreate(
         id=splat_id,
         title=title,
-        image_url=thumbnail_url,
-        model_url=final_model_path, # Use the final path
+        image_url=thumbnail_path,
+        model_url=splat_path,
         is_public=is_public,
         status='SUCCESS',
-        model_size=memory_in_mb # <--- Add the calculated size here
+        model_size=model_size  # Include the calculated size here
     )
 
-    try:
-        splat: models.Splat = crud.splat.create_with_owner(
-            db, obj_in=splat_in, owner_id=current_user.id)
-    except Exception as e:
-        # Clean up files if database operation fails
-        if os.path.exists(final_model_path): os.remove(final_model_path)
-        if os.path.exists(thumbnail_path): os.remove(thumbnail_path)
-        if os.path.exists(modeling_task_dir): shutil.rmtree(modeling_task_dir)
-        raise HTTPException(status_code=500, detail=f"Error creating database record: {str(e)}")
-    # --- End Create Database Entry ---
+    splat: models.Splat = crud.splat.create_with_owner(
+        db, obj_in=splat_in, owner_id=current_user.id
+    )
 
+    # Return the Splat object (now stored in DB)
     return splat
 
 
@@ -385,7 +420,24 @@ def update_splat(
     splat_in: schemas.SplatUpdate,
 ) -> Any:
     """
-    Update an item.
+    Cập nhật thông tin của một splat.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần cập nhật (dưới dạng URL parameter).
+    - **splat_in**: Dữ liệu cập nhật cho splat (dưới dạng JSON body).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về đối tượng splat đã được cập nhật.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu người dùng không có quyền chỉnh sửa splat hoặc splat không tồn tại.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng cập nhật thông tin của một splat.
+    - Nếu người dùng là superuser hoặc là chủ sở hữu của splat, việc cập nhật sẽ được thực hiện.
+    - Cập nhật sẽ chỉ thay đổi các trường trong `splat_in`.
     """
     splat = crud.splat.get(db=db, id=id)
     if not splat:
@@ -406,7 +458,24 @@ def delete_splat(
     id: str,
 ) -> Any:
     """
-    Delete an item.
+    Cập nhật thông tin của một splat.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần cập nhật (dưới dạng URL parameter).
+    - **splat_in**: Dữ liệu cập nhật cho splat (dưới dạng JSON body).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về đối tượng splat đã được cập nhật.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu người dùng không có quyền chỉnh sửa splat hoặc splat không tồn tại.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng cập nhật thông tin của một splat.
+    - Nếu người dùng là superuser hoặc là chủ sở hữu của splat, việc cập nhật sẽ được thực hiện.
+    - Cập nhật sẽ chỉ thay đổi các trường trong `splat_in`.
     """
     splat = crud.splat.get(db=db, id=id)
     if not splat:
@@ -445,6 +514,27 @@ def download_splat(
     current_user: models.User = Depends(deps.get_current_guess_user),
     id: str,
 ) -> Any:
+    """
+    Tải xuống splat đã hoàn thành.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần tải xuống (dưới dạng URL parameter).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về file splat dưới dạng tải xuống.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu splat không tồn tại, trạng thái không thành công, hoặc không có quyền truy cập.
+    - 404 Not Found: Nếu file không tìm thấy tại đường dẫn đầu ra.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng tải xuống một splat nếu có quyền truy cập.
+    - Nếu người dùng không xác thực và splat không công khai, truy cập sẽ bị từ chối.
+    - Nếu splat chưa hoàn tất hoặc thất bại, yêu cầu tải xuống sẽ không được xử lý.
+    - Trạng thái của splat cần là `SUCCESS` và file phải có sẵn tại đường dẫn output.
+    """
     splat = crud.splat.get(db=db, id=id)
     if not splat:
         raise HTTPException(status_code=404, detail="Splat not found")
@@ -474,4 +564,91 @@ def download_splat(
         path=output_path,
         filename=os.path.basename(output_path),
         media_type="application/octet-stream"
+    )
+
+
+
+
+@router.get("/{id}/download-ply", responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
+})
+async def download_ply(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
+    id: str,
+    background_tasks: BackgroundTasks,
+) -> Any:
+    """
+    Tải xuống file PLY chuyển đổi từ file .splat.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần tải xuống (dưới dạng URL parameter).
+    - **background_tasks**: Được sử dụng để lên lịch dọn dẹp file sau khi tải xuống.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về file PLY dưới dạng tải xuống.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
+    - 404 Not Found: Nếu splat không tồn tại.
+    - 500 Internal Server Error: Nếu có lỗi trong quá trình chuyển đổi file hoặc trong việc kiểm tra file.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng tải xuống một file PLY chuyển đổi từ file `.splat`.
+    - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể tải xuống file.
+    - File `.splat` cần có trạng thái `SUCCESS` và tồn tại trên hệ thống.
+    - Sử dụng lệnh `gsbox` để chuyển đổi từ `.splat` sang `.ply`. Quá trình này diễn ra bất đồng bộ.
+    - Sau khi tải xuống, file sẽ được lên lịch dọn dẹp trong nền.
+    """
+    splat = crud.splat.get(db=db, id=id)
+    if not splat:
+        raise HTTPException(status_code=404, detail="Splat not found")
+
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    if splat.status != 'SUCCESS':
+        raise HTTPException(
+            status_code=404,
+            detail=f"Result not ready or task failed. Current state: {splat.status}"
+        )
+
+    input_path = splat.model_url
+    if not input_path or not os.path.exists(input_path):
+        raise HTTPException(status_code=400, detail="Input .splat file not found")
+
+    output_path = input_path.replace('.splat', '.ply')
+
+    # Run the Go command asynchronously
+    loop = asyncio.get_event_loop()
+    try:
+        await loop.run_in_executor(
+            None,
+            lambda: subprocess.run(
+                ['gsbox', 's2p', '-i', input_path, '-o', output_path],
+                check=True
+            )
+        )
+    except subprocess.CalledProcessError:
+        raise HTTPException(status_code=500, detail="Failed to convert .splat to .ply")
+
+    # Check again just in case
+    if not os.path.exists(output_path):
+        raise HTTPException(status_code=500, detail="Converted .ply file not found")
+
+    # Schedule cleanup
+    background_tasks.add_task(delete_file, output_path)
+
+    # Stream the file back
+    return StreamingResponse(
+        open(output_path, 'rb'),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f"attachment; filename={os.path.basename(output_path)}"}
     )

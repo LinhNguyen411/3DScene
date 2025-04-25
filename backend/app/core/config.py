@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     EMAIL_TEMPLATES_DIR: str = "email-templates"
 
 class Config(BaseSettings):
-    load_dotenv(dotenv_path=".backend.env", override=True)
+    load_dotenv(dotenv_path="/code/app/core/.backend.env", override=True)
     PROJECT_NAME: str = os.environ["PROJECT_NAME"]
     SERVER_HOST_FRONT: AnyHttpUrl = os.environ["SERVER_HOST_FRONT"]
     SERVER_NAME: str = f"{PROJECT_NAME} App Server"

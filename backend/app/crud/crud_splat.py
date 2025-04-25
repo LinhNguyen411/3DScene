@@ -9,8 +9,6 @@ from app.schemas.splat import SplatCreate, SplatUpdate
 from app.models.user import User
 
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql import func  # type: ignore
-from typing import Dict
 from datetime import datetime, timedelta
 
 class CRUDSplat(CRUDBase[Splat, SplatCreate, SplatUpdate]):

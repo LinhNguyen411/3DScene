@@ -23,7 +23,24 @@ def read_feedbacks(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Retrieve items.
+    Lấy danh sách phản hồi (feedback) từ hệ thống.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Điều kiện:**
+    - Người dùng phải là superuser để có quyền truy cập.
+
+    **Đầu vào (Query Parameters - Params):**
+    - Các tham số phân trang (ví dụ: `page`, `size`) sẽ được lấy từ query params.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách phản hồi đã phân trang.
+    - 401 Unauthorized: Nếu người dùng không có quyền truy cập.
+    - 400 Bad Request: Nếu người dùng không phải là superuser.
+
+    **Ví dụ:**
+    - GET /feedbacks?size=10&page=1
     """
 
     if not current_user.is_superuser:
@@ -41,7 +58,24 @@ def read_feedbacks(
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Retrieve items.
+    Lấy danh sách phản hồi gần đây từ hệ thống.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Điều kiện:**
+    - Người dùng phải là superuser để có quyền truy cập.
+
+    **Đầu vào (Query Parameters - Params):**
+    - Các tham số phân trang (ví dụ: `page`, `size`) sẽ được lấy từ query params.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về danh sách phản hồi gần đây đã phân trang.
+    - 401 Unauthorized: Nếu người dùng không có quyền truy cập.
+    - 400 Bad Request: Nếu người dùng không phải là superuser.
+
+    **Ví dụ:**
+    - GET /feedbacks/recent?size=10&page=1
     """
 
     if not current_user.is_superuser:
@@ -61,7 +95,25 @@ def get_feedback(
     id: int,
 ) -> Any:
     """
-    Delete an item.
+    Lấy thông tin phản hồi theo ID.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Điều kiện:**
+    - Người dùng phải là superuser để có quyền truy cập.
+
+    **Đầu vào (Path Parameter):**
+    - `id` (int): ID của phản hồi cần lấy thông tin.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông tin phản hồi với ID tương ứng.
+    - 401 Unauthorized: Nếu người dùng không có quyền truy cập.
+    - 404 Not Found: Nếu không tìm thấy phản hồi với ID tương ứng.
+    - 400 Bad Request: Nếu người dùng không phải là superuser.
+
+    **Ví dụ:**
+    - GET /feedbacks/1
     """
     feedback = crud.feedback.get(db=db, id=id)
     if not feedback:
@@ -81,7 +133,29 @@ async def create_feedback(
     feedback_in: schemas.FeedbackCreate
 ) -> Any:
     """
-    Create new item.
+    Tạo một phản hồi mới.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Điều kiện:**
+    - Người dùng phải là người đã đăng nhập và có quyền truy cập.
+
+    **Đầu vào (Request Body - FeedbackCreate):**
+    - Các trường cần thiết để tạo phản hồi mới. Các trường này sẽ được xác định trong `schemas.FeedbackCreate`.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về phản hồi vừa được tạo.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
+
+    **Ví dụ:**
+    - POST /feedbacks
+      ```json
+      {
+        "content": "Great product!",
+        "rating": 5
+      }
+      ```
     """
     
     feedback: models.Feedback = crud.feedback.create(
@@ -100,7 +174,32 @@ def update_feedback(
     feedback_in: schemas.FeedbackUpdate,
 ) -> Any:
     """
-    Update an item.
+    Cập nhật thông tin phản hồi theo ID.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Điều kiện:**
+    - Người dùng phải là superuser để có quyền cập nhật phản hồi.
+
+    **Đầu vào (Path Parameter và Request Body):**
+    - `id` (int): ID của phản hồi cần cập nhật.
+    - `feedback_in` (FeedbackUpdate): Các trường cần cập nhật, ví dụ như nội dung phản hồi hoặc đánh giá.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về phản hồi đã được cập nhật.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
+    - 404 Not Found: Nếu không tìm thấy phản hồi với ID tương ứng.
+    - 400 Bad Request: Nếu người dùng không phải là superuser.
+
+    **Ví dụ:**
+    - PUT /feedbacks/1
+      ```json
+      {
+        "content": "Updated feedback content",
+        "rating": 4
+      }
+      ```
     """
     feedback = crud.feedback.get(db=db, id=id)
     if not feedback:
@@ -121,7 +220,30 @@ def delete_feedback(
     id: int,
 ) -> Any:
     """
-    Delete an item.
+    Xóa một phản hồi theo ID.
+
+    **Yêu cầu Header:**
+    - `Authorization: Bearer <access_token>`
+
+    **Điều kiện:**
+    - Người dùng phải là superuser để có quyền xóa phản hồi.
+
+    **Đầu vào (Path Parameter):**
+    - `id` (int): ID của phản hồi cần xóa.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về thông báo xác nhận phản hồi đã được xóa thành công.
+    - 401 Unauthorized: Nếu người dùng chưa đăng nhập hoặc token không hợp lệ.
+    - 404 Not Found: Nếu không tìm thấy phản hồi với ID tương ứng.
+    - 400 Bad Request: Nếu người dùng không phải là superuser.
+
+    **Ví dụ:**
+    - DELETE /feedbacks/1
+      ```json
+      {
+        "detail": "Feedback deleted successfully 1"
+      }
+      ```
     """
     feedback = crud.feedback.get(db=db, id=id)
     if not feedback:

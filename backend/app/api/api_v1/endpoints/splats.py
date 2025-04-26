@@ -138,7 +138,7 @@ async def create_splat(
     current_user: models.User = Depends(deps.get_current_active_user),
     title: str = Form(...),
     files: List[UploadFile] = File(...),
-    num_iterations: int = Form(10, description="Number of iterations for the opensplat command")
+    num_iterations: int = Form(8000, description="Number of iterations for the opensplat command")
 ) -> Any:
     """
     Tạo một splat mới từ các tệp tải lên (có thể là video hoặc hình ảnh, không thể tải lên cả hai).

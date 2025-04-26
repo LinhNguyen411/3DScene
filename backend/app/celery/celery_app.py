@@ -66,7 +66,7 @@ def process_video(self: Task,
                   task_id: str,
                   workspace_path:str,
                   img_dir: str,
-                  num_iterations: int = 1000,
+                  num_iterations: int = 8000,
                   ) -> Any:
     db = SessionLocal()
     """Process video to generate 3D Gaussian Splatting model"""
@@ -126,14 +126,16 @@ def process_video(self: Task,
         # 6. Run COLMAP mapper
         self.update_state(state="PROGRESS",
                           meta={"status": "Running COLMAP mapper"})
-
+        num_images = len([f for f in os.listdir(img_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+        max_num_tracks = num_images * 1000
         cmd = [
-            "colmap", "mapper",
+            "glomap", "mapper",
             "--database_path", os.path.join(dataset_path, "database.db"),
             "--image_path", img_dir,
             "--output_path", sparse_dir,
-            "--Mapper.ba_use_gpu", "1",
-            "--Mapper.ba_global_function_tolerance", "0.000001"
+            "--GlobalPositioning.use_gpu", "1",
+            "--BundleAdjustment.use_gpu", "1",
+            "--TrackEstablishment.max_num_tracks", str(max_num_tracks)
         ]
         run_command(cmd)
 
@@ -180,13 +182,25 @@ def process_video(self: Task,
         # 11. Run opensplat
         self.update_state(state="PROGRESS",
                           meta={"status": "Running OpenSplat"})
+        
+        downscale_factor = 1  # Default
+        try:
+            first_image = next(f for f in os.listdir(img_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg')))
+            from PIL import Image
+            with Image.open(os.path.join(img_dir, first_image)) as img:
+                width, height = img.size
+                if max(width, height) > 1600:
+                    downscale_factor = 2
+        except Exception as e:
+            celery_log.warning(f"Could not determine image width: {str(e)}")
 
         output_model = f"{task_id}_model.splat"
         cmd = [
             "opensplat",
             os.path.join(dataset_path, "to_opensplat"),
             "-n", str(num_iterations),
-            "-o", os.path.join(dataset_path, "outputs", output_model)
+            "-o", os.path.join(dataset_path, "outputs", output_model),
+            "--downscale-factor", str(downscale_factor)
         ]
 
         # Change to dataset path for opensplat execution
@@ -212,12 +226,6 @@ def process_video(self: Task,
             # Calculate the size of the compressed model in MB
             size = round(os.path.getsize(dst_path) / (1024 * 1024), 2)
             
-            # # Delete the original uncompressed PLY file
-            # if os.path.exists(dst_path):
-            #     os.remove(dst_path)
-            #     celery_log.info(f"Deleted uncompressed model at {dst_path}")
-                        
-            # Update the model_url to point to the compressed file and include model_size
             splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=dst_path, model_size=size)
             splat = crud.splat.get(db, id=task_id)
             crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)

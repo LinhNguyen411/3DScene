@@ -3,13 +3,13 @@ import { RouterPath } from '../../assets/dictionary/RouterPath';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import SettingsService from './AdminSettingServices';
 import { useSnackbar } from '../../provider/SnackbarProvider';
+import myAppConfig from "../../config";
 
 function AdminSetting() {
   const {user, setUser} = useOutletContext();
   console.log(user)
   const [activeTab, setActiveTab] = useState('myProfile');
   const [loading, setLoading] = useState(false);
-  // const [isPro, setIsPro] = useState(false);
   let navigate = useNavigate();
   const { showSnackbar } = useSnackbar();
 
@@ -37,10 +37,10 @@ function AdminSetting() {
   const [groupedEnvVars, setGroupedEnvVars] = useState({});
   const [editingVar, setEditingVar] = useState(null);
   const [updatedValue, setUpdatedValue] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [loadingEnv, setLoadingEnv] = useState(false);
   const [activeEnvGroup, setActiveEnvGroup] = useState('all');
   const [copiedKey, setCopiedKey] = useState(null);
-
 
   useEffect(() => {
     if (activeTab === 'environmentConfig' && user?.is_superuser) {
@@ -54,7 +54,6 @@ function AdminSetting() {
       const variables = await SettingsService.getEnvironmentVariables();
       setEnvVariables(variables);
       
-      // Group the variables
       const grouped = groupEnvironmentVariables(variables);
       setGroupedEnvVars(grouped);
       
@@ -81,9 +80,9 @@ function AdminSetting() {
         groups.google.push(variable);
       } else if (key.includes('stripe')) {
         groups.stripe.push(variable);
-      } else if (key.includes('smtp') || key.includes('email') || key.includes('mail')) {
+      } else if (key.includes('smtp') || key.includes('email') || key.includes('mail') || key.includes('host')) {
         groups.smtp.push(variable);
-      } else if (key.includes('project') || key.includes('server') || key.includes('support')) {
+      } else if (key.includes('project')) {
         groups.application.push(variable);
       } else {
         groups.other.push(variable);
@@ -107,7 +106,6 @@ function AdminSetting() {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
     setAppearance({ ...appearance, [name]: newValue });
-    // Save appearance settings to localStorage
     localStorage.setItem(name, newValue.toString());
   };
 
@@ -142,7 +140,6 @@ function AdminSetting() {
       
       showSnackbar('Password updated successfully', 'success');
       
-      // Reset form
       setPasswordData({
         new_password: '',
         confirm_password: ''
@@ -157,7 +154,6 @@ function AdminSetting() {
 
   const handleAppearanceSubmit = (e) => {
     e.preventDefault();
-    // All appearance changes are already saved to localStorage on change
     showSnackbar('Appearance settings saved', 'success');
   };
 
@@ -171,20 +167,35 @@ function AdminSetting() {
   const handleEditVariable = (variable) => {
     setEditingVar(variable.key);
     setUpdatedValue(variable.value === '****' ? '' : variable.value);
+    setSelectedFile(null);
   };
 
   const handleCancelEdit = () => {
     setEditingVar(null);
     setUpdatedValue('');
+    setSelectedFile(null);
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
   };
 
   const handleUpdateVariable = async (key) => {
     try {
       setLoadingEnv(true);
-      await SettingsService.updateEnvironmentVariable(key, updatedValue);
+      if (key === 'PROJECT_ICON' && selectedFile) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        await SettingsService.uploadProjectIcon(formData);
+      } else {
+        await SettingsService.updateEnvironmentVariable(key, updatedValue);
+      }
       showSnackbar(`Environment variable ${key} updated successfully`, 'success');
       setEditingVar(null);
       setUpdatedValue('');
+      setSelectedFile(null);
       await loadEnvironmentVariables();
     } catch (error) {
       showSnackbar('Failed to update environment variable', 'error');
@@ -217,15 +228,15 @@ function AdminSetting() {
       setLoadingEnv(false);
     }
   };
+
   const handleCopy = (value, key) => {
     navigator.clipboard.writeText(value);
     setCopiedKey(key);
-    
-    // Reset "Copied" text after 2 seconds
     setTimeout(() => {
       setCopiedKey(null);
     }, 2000);
   };
+  
   const renderEnvVariablesTable = (variables) => {
     if (!variables || variables.length === 0) {
       return (
@@ -255,21 +266,65 @@ function AdminSetting() {
             </td>
             <td className="px-6 py-4 text-sm text-gray-500 max-w-md">
               {editingVar === variable.key ? (
-                <input
-                  type={variable.sensitive ? "password" : "text"}
-                  value={updatedValue}
-                  onChange={(e) => setUpdatedValue(e.target.value)}
-                  className="w-full px-2 py-1 border rounded"
-                  placeholder={variable.sensitive ? "Enter new value" : ""}
-                />
+                variable.key === 'PROJECT_ICON' ? (
+                  <div className="space-y-2">
+                    {variable.value && !variable.value.startsWith('****') && (
+                      <div className="mb-2">
+                        <span className="text-xs text-gray-500 block mb-1">Current Icon:</span>
+                        <img 
+                          src={myAppConfig.api.ENDPOINT + variable.value} 
+                          alt="Project Icon" 
+                          className="h-12 w-12 object-contain border rounded"
+                        />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    {selectedFile && (
+                      <div className="mt-2">
+                        <p className="text-xs text-gray-500">Selected: {selectedFile.name}</p>
+                        <img 
+                          src={URL.createObjectURL(selectedFile)} 
+                          alt="New icon preview" 
+                          className="h-12 w-12 object-contain border rounded mt-1"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type={variable.sensitive ? "password" : "text"}
+                    value={updatedValue}
+                    onChange={(e) => setUpdatedValue(e.target.value)}
+                    className="w-full px-2 py-1 border rounded"
+                    placeholder={variable.sensitive ? "Enter new value" : ""}
+                  />
+                )
               ) : (
                 <div className="flex items-center">
-                  <span 
-                    className={`font-mono ${variable.sensitive ? "text-red-500" : ""} truncate`}
-                    title={variable.value}
-                  >
-                    {variable.value}
-                  </span>
+                  {variable.key === 'PROJECT_ICON' && variable.value && !variable.value.startsWith('****') ? (
+                    <div className="flex items-center">
+                      <img 
+                        src={myAppConfig.api.ENDPOINT + variable.value} 
+                        alt="Project Icon" 
+                        className="h-8 w-8 object-contain border rounded mr-2"
+                      />
+                      <span className="font-mono truncate" title={variable.value}>
+                        {variable.value}
+                      </span>
+                    </div>
+                  ) : (
+                    <span 
+                      className={`font-mono ${variable.sensitive ? "text-red-500" : ""} truncate`}
+                      title={variable.value}
+                    >
+                      {variable.value}
+                    </span>
+                  )}
                   {variable.value.length > 30 && (
                     <button
                       className={`ml-2 text-xs ${copiedKey === variable.key ? "text-green-500" : "text-blue-500 hover:text-blue-700"}`}
@@ -285,12 +340,9 @@ function AdminSetting() {
               {editingVar === variable.key ? (
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => {
-                      handleUpdateVariable(variable.key, updatedValue);
-                      setEditingVar(null);
-                    }}
+                    onClick={() => handleUpdateVariable(variable.key)}
                     className="text-green-600 hover:text-green-900"
-                    disabled={loadingEnv}
+                    disabled={loadingEnv || (variable.key === 'PROJECT_ICON' && !selectedFile)}
                   >
                     Save
                   </button>
@@ -319,14 +371,12 @@ function AdminSetting() {
     );
   };
 
-  // Only show Environment Config tab for superusers
   const isAdmin = user?.is_superuser === true;
 
   return (
     <div className='flex-1 flex flex-col mt-14 mb-8 mr-8 ml-2'>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">User Settings</h1>
-        {/* {isPro && <span className="bg-blue-500 text-white px-2 py-1 rounded">Pro User</span>} */}
       </div>
       
       <div className="mb-6">
@@ -528,18 +578,6 @@ function AdminSetting() {
               </div>
               
               <div className="flex mt-6">
-                {/* <button 
-                  type="submit"
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded mr-2"
-                >
-                  Save Settings
-                </button>
-                <button 
-                  type="button"
-                  className="bg-white hover:bg-gray-100 text-gray-700 border px-4 py-2 rounded"
-                >
-                  Cancel
-                </button> */}
                 <button 
                   type="button"
                   className="bg-gray-500 text-gray-700 border px-4 py-2 rounded"

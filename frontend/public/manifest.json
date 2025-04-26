@@ -1,5 +1,5 @@
 {
-  "short_name": "React App",
+  "short_name": "3d",
   "name": "Create React App Sample",
   "icons": [
     {
@@ -21,5 +21,6 @@
   "start_url": ".",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "title": "3d"
 }

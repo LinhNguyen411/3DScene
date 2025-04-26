@@ -36,6 +36,10 @@ async def get_public_environment_variables(
         "STRIPE_MONTHLY_ID",
         "STRIPE_YEARLY_ID",
         "PROJECT_NAME",
+        "PROJECT_DESCRIPTION",
+        "PROJECT_KEYWORDS",
+        "PROJECT_ICON",
+        "SUPPORT_EMAIL",
     ]
     
     env_vars = []

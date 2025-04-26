@@ -6,7 +6,6 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('supertoken')}`,
 });
 
-// Get the current user information
 const getUserInfo = async () => {
   try {
     const response = await axios.post(`${API_BASE_URL}/login/get-my-info`, {
@@ -18,17 +17,14 @@ const getUserInfo = async () => {
   }
 };
 
-// Update the current user profile
 const updateUserProfile = async (userData) => {
   try {
-    // Map to match the UserUpdate schema expected by the API
     const formattedData = {
       first_name: userData.first_name,
       last_name: userData.last_name,
       email: userData.email,
-      // We need to include these fields as they're required in UserUpdate
-      is_active: true, // Assuming we don't want to deactivate the user
-      is_superuser: userData.is_superuser || false, // Keep superuser status unchanged
+      is_active: true,
+      is_superuser: userData.is_superuser || false,
     };
     const response = await axios.put(`${API_BASE_URL}/users/${userData.id}`, formattedData, {
       headers: getAuthHeaders(),
@@ -39,20 +35,14 @@ const updateUserProfile = async (userData) => {
   }
 };
 
-// Change password
 const changePassword = async (userData) => {
   try {
-    // For password change, we need to include the password in the UserUpdate schema
     const formattedData = {
       password: userData.new_password,
-      // We must include these fields as they're required in UserUpdate
       is_active: true,
       is_superuser: userData.is_superuser || false,
     };
-
-    // We'll use the user's ID to update their record
     const userInfo = await getUserInfo();
-    
     const response = await axios.put(`${API_BASE_URL}/users/${userInfo.id}`, formattedData, {
       headers: getAuthHeaders(),
     });
@@ -62,7 +52,6 @@ const changePassword = async (userData) => {
   }
 };
 
-// Get environment variables
 const getEnvironmentVariables = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/config/env`, {
@@ -74,7 +63,6 @@ const getEnvironmentVariables = async () => {
   }
 };
 
-// Update environment variable
 const updateEnvironmentVariable = async (key, value) => {
   try {
     const response = await axios.put(
@@ -88,7 +76,6 @@ const updateEnvironmentVariable = async (key, value) => {
   }
 };
 
-// Reload environment variables
 const reloadEnvironmentVariables = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/config/env/reload`, {
@@ -100,7 +87,6 @@ const reloadEnvironmentVariables = async () => {
   }
 };
 
-// Create environment backup
 const createEnvBackup = async () => {
   try {
     const response = await axios.post(`${API_BASE_URL}/config/create-env-backup`, {}, {
@@ -112,6 +98,20 @@ const createEnvBackup = async () => {
   }
 };
 
+const uploadProjectIcon = async (formData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/config/upload-icon`, formData, {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to upload project icon');
+  }
+};
+
 const SettingsService = {
   getUserInfo,
   updateUserProfile,
@@ -119,7 +119,8 @@ const SettingsService = {
   getEnvironmentVariables,
   updateEnvironmentVariable,
   reloadEnvironmentVariables,
-  createEnvBackup
+  createEnvBackup,
+  uploadProjectIcon
 };
 
 export default SettingsService;

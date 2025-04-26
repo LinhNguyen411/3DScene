@@ -9,7 +9,7 @@ export default function HomePage() {
   const videoRef = useRef(null);
   const [galleryItems, setGalleryItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const {projectName} = useOutletContext();
+  const {projectName, projectIcon} = useOutletContext();
 
 
   useEffect(() => {
@@ -64,9 +64,7 @@ export default function HomePage() {
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-white">
           <div className="text-center">
             <div className="inline-block px-3 py-1 mb-4">
-              <div className="logo-icon bg-sky-400 border-sky-400 w-[6em] h-[6em] shadow-lg">
-                <div className="logo-bolt w-[4em] h-[2em]"></div>
-              </div>
+             <img className="w-[7em]" src={projectIcon} />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-2 drop-shadow-xl">{projectName}</h1>
             <p className="text-xl md:text-2xl mb-8 drop-shadow-lg">
@@ -117,7 +115,7 @@ export default function HomePage() {
       </section>
 
       {/* How to Create 3D Models */}
-      <section className="pt-10 px-4 max-w-6xl mx-auto">
+      <section id="how-to-create" className="pt-10 px-4 max-w-6xl mx-auto">
         <div className="bg-gradient-to-r from-sky-400 to-sky-500 text-white text-center py-4 rounded-md mb-8">
           <h2 className="text-2xl font-medium">How to Create 3D Models with {projectName}</h2>
         </div>
@@ -219,7 +217,7 @@ export default function HomePage() {
       </section>
 
       {/* Showcase Gallery */}
-      <section className="py-10 px-4 max-w-6xl mx-auto w-full">
+      <section id="showcase-gallery" className="py-10 px-4 max-w-6xl mx-auto w-full">
         <div className="bg-gradient-to-r from-sky-400 to-sky-500 text-white text-center py-4 rounded-md mb-8">
           <h2 className="text-2xl font-medium">Explore Our 3D Creations</h2>
         </div>
@@ -273,10 +271,10 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
           <div>Copyright © 2025 {projectName}</div>
           <div className="flex space-x-4 mt-2 md:mt-0">
-            <Link to="/terms" className="hover:text-gray-700">
-              User Agreement
+            <Link to={RouterPath.TERMS} className="hover:text-gray-700">
+              Terms of Service
             </Link>
-            <Link to="/privacy" className="hover:text-gray-700">
+            <Link to={RouterPath.PRIVACY} className="hover:text-gray-700">
               Privacy Policy
             </Link>
           </div>

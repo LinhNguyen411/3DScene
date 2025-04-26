@@ -21,18 +21,18 @@ function Admin() {
     fetchAuthData();
   }, []);
   return (
-    <>
-        <div className="flex h-screen bg-gray-50">
-          <div className="min-w-[18em]">
-          <Sidebar user={user} setUser={setUser}/>
+    <div className="flex h-screen bg-gray-50">
+      <title>Admin</title>
+      <link rel="icon" href="/admin-logo.png" type="image/png" />
+      <div className="min-w-[18em]">
+      <Sidebar user={user} setUser={setUser}/>
 
-          </div>
-          <div className="flex-1">
+      </div>
+      <div className="flex-1">
 
-          {user && <Outlet context={{ user, setUser }}/>}
-          </div>
-        </div>
-    </>
+      {user && <Outlet context={{ user, setUser }}/>}
+      </div>
+    </div>
   );
 }
 

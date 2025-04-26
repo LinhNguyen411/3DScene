@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     MODEL_ASSETS_DIR: str = "model_assets"
     MODEL_THUMBNAILS_DIR: str = MODEL_ASSETS_DIR + "/thumnails"
     MODEL_WORKSPACES_DIR: str = MODEL_ASSETS_DIR + "/workspaces"
+    PUBLIC_DIR:str = "public"
     PROJECT_NAME: str = os.environ["PROJECT_NAME"]
 
     EMAIL_CONFIRMATION_TOKEN_EXPIRE_HOURS: int = 24
@@ -66,8 +67,11 @@ class Settings(BaseSettings):
 class Config(BaseSettings):
     load_dotenv(dotenv_path="/code/app/core/.backend.env", override=True)
     PROJECT_NAME: str = os.environ["PROJECT_NAME"]
+    PROJECT_DESCRIPTION: str = os.environ["PROJECT_DESCRIPTION"]
+    PROJECT_KEYWORDS: str = os.environ["PROJECT_KEYWORDS"]
+    PROJECT_ICON: str = os.environ["PROJECT_ICON"]
+
     SERVER_HOST_FRONT: AnyHttpUrl = os.environ["SERVER_HOST_FRONT"]
-    SERVER_NAME: str = f"{PROJECT_NAME} App Server"
 
     SMTP_TLS: bool = True if os.environ["MAIL_TLS"].upper(
     ) == "TRUE" else False

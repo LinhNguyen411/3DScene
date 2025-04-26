@@ -93,7 +93,7 @@ export default function ModelView() {
                 {/* Left section */}
                 <div className="flex items-center">
                     <button className="h-8 w-8 flex items-center justify-center rounded-full border border-gray-300 mr-4" onClick={() => navigate(-1)}>
-                        <ChevronLeft size={16} />
+                        <ChevronLeft size={16} /> 
                     </button>
                     <span className="text-gray-700 font-medium">Details</span>
                 </div>
@@ -116,7 +116,7 @@ export default function ModelView() {
                             <span>Login to Download</span>
                         </Link>
                     )}
-                    {currenUser?.is_pro && (
+                    {currenUser && !currenUser?.is_pro && (
                         <button className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600">
                             Go Pro
                         </button>

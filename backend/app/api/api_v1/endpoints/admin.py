@@ -5,10 +5,12 @@ from app import schemas
 from app import models
 from app import crud
 
-from fastapi import (APIRouter,  Depends, HTTPException)
+from fastapi import (APIRouter,  Depends, HTTPException, File, UploadFile)
 import os
 from app.core.config import Config
 from dotenv import load_dotenv
+import time
+import shutil
 
 statistic_router = APIRouter()
 
@@ -179,11 +181,32 @@ async def get_environment_variables(
         "GOOGLE_AUTH_CLIENT_SECRET", 
         "STRIPE_API_KEY"
     ]
-    
+    order_keys = [
+        "PROJECT_NAME",
+        "PROJECT_DESCRIPTION",
+        "PROJECT_KEYWORDS",
+        "PROJECT_ICON",
+
+        "GOOGLE_AUTH_CLIENT_ID",
+        "GOOGLE_AUTH_CLIENT_SECRET",
+
+        "STRIPE_PUBLIC_KEY",
+        "STRIPE_API_KEY",
+        "STRIPE_MONTHLY_ID",
+        "STRIPE_YEARLY_ID",
+
+        "SMTP_USER",
+        "SMTP_PASSWORD",
+        "EMAILS_FROM_EMAIL",
+        "EMAILS_FROM_NAME",
+        "SUPPORT_EMAIL",
+        "SERVER_HOST_FRONT",
+
+    ]
     env_vars = []
     
     # Add environment vars from config
-    for key in dir(config):
+    for key in order_keys:
         if not key.startswith("_") and key.isupper() and key not in not_configable_keys:
             value = getattr(config, key)
             if isinstance(value, (str, int, bool, float)) or value is None:
@@ -375,6 +398,62 @@ async def create_env_backup(
             status_code=500,
             detail=f"Failed to create backup: {str(e)}"
         )
+    
+@config_router.post("/upload-icon", response_model=Dict[str, str], responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"},
+    403: {"model": schemas.Detail, "description": "Not enough permissions"}
+})
+async def upload_project_icon(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(deps.get_current_active_user),
+    config: Config = Depends(deps.get_config),  # Added to access current PROJECT_ICON
+):
+    if not current_user.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    # Retrieve the current (old) PROJECT_ICON URL
+    old_icon_url = config.PROJECT_ICON
+    
+    upload_dir = "/code/app/public/icons"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_extension = file.filename.split(".")[-1]
+    filename = f"project_icon_{int(time.time())}.{file_extension}"
+    file_path = os.path.join(upload_dir, filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    icon_url = f"/public/icons/{filename}"
+    
+    env_file = "/code/app/core/.backend.env"
+    with open(env_file, 'r') as file:
+        lines = file.readlines()
+    
+    with open(env_file, 'w') as file:
+        key_found = False
+        for line in lines:
+            if line.startswith("PROJECT_ICON="):
+                file.write(f'PROJECT_ICON="{icon_url}"\n')
+                key_found = True
+            else:
+                file.write(line)
+        if not key_found:
+            file.write(f'PROJECT_ICON="{icon_url}"\n')
+    
+    load_dotenv(dotenv_path=env_file, override=True)
+    
+    # Delete the old icon file if it exists and is different from the new one
+    if old_icon_url and old_icon_url.startswith('/public/icons/') and old_icon_url != icon_url:
+        old_filename = os.path.basename(old_icon_url)
+        old_file_path = os.path.join(upload_dir, old_filename)
+        if os.path.exists(old_file_path):
+            try:
+                os.remove(old_file_path)
+            except Exception as e:
+                print(f"Failed to delete old icon file: {e}")
+    
+    return {"message": "Project icon updated successfully", "url": icon_url}
 
 router = APIRouter()
 router.include_router(statistic_router, prefix="/statistic", tags=["statistic"])

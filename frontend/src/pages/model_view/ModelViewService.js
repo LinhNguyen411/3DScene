@@ -3,7 +3,7 @@ import myAppConfig from '../../config';
 
 const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/splats";
 const getAuthHeaders = (viewer) => {
-  const tokenKey = viewer === 'admin' ? 'supertoken' : viewer === 'user' ? 'token' : null;
+  const tokenKey = viewer === 'admin' ? 'supertoken' : 'token';
   const token = localStorage.getItem(tokenKey);
   return {
     Authorization: `Bearer ${token}`,

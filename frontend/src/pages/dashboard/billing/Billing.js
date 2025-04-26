@@ -178,7 +178,7 @@ function Billing() {
           </div>
           
           {/* Upgrade/Manage Buttons */}
-          <div className="flex flex-wrap gap-4 mb-6">
+          {/* <div className="flex flex-wrap gap-4 mb-6">
             <button className="bg-sky-500 hover:bg-sky-600 text-white rounded-md px-4 py-2 flex items-center">
               <CreditCard className="mr-2 h-5 w-5" />
               Manage Subscription
@@ -190,7 +190,7 @@ function Billing() {
                 Upgrade Plan
               </button>
             )}
-          </div>
+          </div> */}
           
           {/* Payment History */}
 

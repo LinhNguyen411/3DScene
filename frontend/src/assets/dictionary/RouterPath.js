@@ -1,5 +1,7 @@
 export const RouterPath = {
   HOME: "/",
+  TERMS: "/terms",
+  PRIVACY: "/privacy",
   LOGIN: "/login",
   SIGNUP: "/sign-up",
   SIGNUP_SET_PASSWORD: "/sign-up/set-password",

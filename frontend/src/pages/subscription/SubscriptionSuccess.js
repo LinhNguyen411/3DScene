@@ -1,9 +1,8 @@
 import { Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { RouterPath } from '../../assets/dictionary/RouterPath';
 
 function SubscriptionSuccess(){
-    const handleBackToMain = () => {
-
-    };
 
     return(
         <div className='flex justify-center align-center mt-14'>
@@ -18,12 +17,12 @@ function SubscriptionSuccess(){
                     Thank you for your subscription. You now have access to all the amazing features!
                     We've sent a confirmation email to your inbox.
                 </p>
-                <button
-                    onClick={handleBackToMain}
+                <Link
+                    to={RouterPath.DASHBOARD}
                     className="flex items-center justify-center mx-auto px-4 py-2 text-gray-600 font-medium"
                 >
-                    <span className="mr-1">←</span> Back to Main
-                </button>
+                    <span className="mr-1">←</span> Back to Dashboard
+                </Link>
             </div>
 
         </div>

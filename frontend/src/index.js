@@ -48,6 +48,8 @@ import Explore from "./pages/dashboard/explore/Explore";
 import SetPassword from "./pages/sign_up/set_password/SetPassword";
 import Billing from "./pages/dashboard/billing/Billing";
 import Profile from "./pages/dashboard/profile/Profile";
+import Terms from "./pages/privacy/Terms";
+import Privacy from "./pages/privacy/Privacy";
 
 
 
@@ -63,6 +65,9 @@ root.render(
             />
           <Route path={RouterPath.HOME} element={<App />}>
             <Route index element={<HomePage />} />
+            <Route path={RouterPath.TERMS} element={<Terms />} />
+            <Route path={RouterPath.PRIVACY} element={<Privacy />} />
+            
             <Route path={RouterPath.LOGIN} element={<Login />} />
             <Route path={RouterPath.SIGNUP} element={<SignUpForm />} />
             <Route

@@ -11,3 +11,4 @@ __pycache__/
 /frontend/build
 *.log
 .mypy_cache
+backend/app/core/.backend.env

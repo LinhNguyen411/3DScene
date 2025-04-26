@@ -10,13 +10,15 @@ from app import crud
 from app import models
 from app import schemas
 from app.core import security
-from app.core.config import settings
+from app.core.config import settings, Config
 from app.db.session import SessionLocal
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/get-access-token"
 )
 
+def get_config() -> Config:
+    return Config()
 
 def get_db() -> Generator:
     try:

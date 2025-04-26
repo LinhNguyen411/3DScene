@@ -4,7 +4,7 @@
 # docker-compose up -f docker-compose.yml --> docker-compose.override.yml is NOT going to be processed.
 #
 # override file used on developer workstations to bind volumes for direct code modifications.
-version: '3.8'
+# version: '3.8'
 services:
   # react application
   3dscene-frontend:

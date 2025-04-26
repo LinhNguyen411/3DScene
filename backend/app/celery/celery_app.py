@@ -9,12 +9,9 @@ from celery.utils.log import get_task_logger  # type: ignore
 from celery.exceptions import Ignore
 from celery.app.task import Task
 
-from app.core.config import settings
+from app.core.config import settings, Config
 import emails  # type: ignore
 from emails.template import JinjaTemplate  # type: ignore
-from sqlalchemy.orm import Session
-from fastapi import Depends
-from app.api import deps
 from app import crud
 from app import schemas
 from app.db.session import SessionLocal
@@ -40,37 +37,36 @@ def print_test_message(quantity: int) -> bool:
         celery_log.info(f"Task {i} completed!")
     return True
 
-
-@celery_app.task(ignore_result=True)
+@celery_app.task(ignore_result=True, queue='emails')
 def send_email_async(
     email_to: str,
     subject_template: str = "",
     html_template: str = "",
     environment: Dict[str, Any] = {},
 ) -> None:
+    config = Config()
     """Send email asynchronously"""
-    assert settings.EMAILS_ENABLED, "no provided configuration for email variables"
+    assert config.EMAILS_ENABLED, "no provided configuration for email variables"
     message = emails.Message(
         subject=JinjaTemplate(subject_template),
         html=JinjaTemplate(html_template),
-        mail_from=(settings.EMAILS_FROM_NAME, settings.EMAILS_FROM_EMAIL),
+        mail_from=(config.EMAILS_FROM_NAME, config.EMAILS_FROM_EMAIL),
     )
-    smtp_options = {"host": settings.SMTP_HOST, "port": settings.SMTP_PORT}
-    if settings.SMTP_TLS:
+    smtp_options = {"host": config.SMTP_HOST, "port": config.SMTP_PORT}
+    if config.SMTP_TLS:
         smtp_options["tls"] = True
-    if settings.SMTP_USER:
-        smtp_options["user"] = settings.SMTP_USER
-    if settings.SMTP_PASSWORD:
-        smtp_options["password"] = settings.SMTP_PASSWORD
+    if config.SMTP_USER:
+        smtp_options["user"] = config.SMTP_USER
+    if config.SMTP_PASSWORD:
+        smtp_options["password"] = config.SMTP_PASSWORD
     message.send(to=email_to, render=environment, smtp=smtp_options)
 
-
-@celery_app.task(bind=True, ignore_result=True)
+@celery_app.task(bind=True, ignore_result=True, queue='heavy_tasks')
 def process_video(self: Task,
                   task_id: str,
                   workspace_path:str,
                   img_dir: str,
-                  num_iterations: int = 10,
+                  num_iterations: int = 1000,
                   ) -> Any:
     db = SessionLocal()
     """Process video to generate 3D Gaussian Splatting model"""
@@ -95,29 +91,13 @@ def process_video(self: Task,
         # Create output directory
         output_dir = workspace_path
 
-        # Update task state
-        # self.update_state(state="PROGRESS",
-        #                   meta={"status": "Extracting frames from video"})
-        
-        # splat_in = schemas.SplatUpdate(status = "PROGRESS")
-        # splat = crud.splat.get(db, id= task_id)
-        # crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
-
-        # Run the shell script step by step
-        # 1. Create images directory
-        # img_dir = os.path.join(dataset_path, "images")
-        # os.makedirs(img_dir, exist_ok=True)
-
-        # # 2. Extract frames using ffmpeg
-        # cmd = [
-        #     "ffmpeg", "-i", video_path, "-vf", "fps=1",
-        #     os.path.join(img_dir, "output_%04d.png")
-        # ]
-        # run_command(cmd)
-
         # 3. Run COLMAP feature extraction
         self.update_state(state="PROGRESS",
                           meta={"status": "Running COLMAP feature extraction"})
+        
+        splat_in = schemas.SplatUpdate(status = "PROGRESS")
+        splat = crud.splat.get(db, id= task_id)
+        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         cmd = [
             "colmap", "feature_extractor",
@@ -224,22 +204,6 @@ def process_video(self: Task,
             celery_log.info(f"Model saved to {dst_path}")
         else:
             raise Exception(f"Expected output file {src_path} not found")
-        
-        # # 13. Compress the PLY file using splat-transform
-        # self.update_state(state="PROGRESS",
-        #                   meta={"status": "Compressing the output model"})
-        
-        # # Define the compressed output path
-        # compressed_output = f"{task_id}_model.compressed.ply"
-        # compressed_dst_path = os.path.join(output_dir, compressed_output)
-        
-        # # Run the compression
-        # cmd = [
-        #     "splat-transform",
-        #     dst_path,
-        #     compressed_dst_path
-        # ]
-        # run_command(cmd)
         
         # Check if compression was successful
         if os.path.exists(dst_path):

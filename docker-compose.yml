@@ -1,4 +1,4 @@
-version: "3.8"
+# version: "3.8"
 
 x-linux-container-environment:
   &common-linux-container-environment-variables
@@ -25,15 +25,17 @@ x-fastapi-app-environment:
   FIRST_SUPERUSER_FIRST_NAME: ${FIRST_SUPERUSER_FIRST_NAME}
   FIRST_SUPERUSER_LAST_NAME: ${FIRST_SUPERUSER_LAST_NAME}
   FIRST_SUPERUSER_PASSWORD: ${FIRST_SUPERUSER_PASSWORD}
-  SMTP_USER: ${SMTP_USER}
-  SMTP_PASSWORD: ${SMTP_PASSWORD}
-  EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
+  # SMTP_USER: ${SMTP_USER}
+  # SMTP_PASSWORD: ${SMTP_PASSWORD}
+  # EMAILS_FROM_EMAIL: ${EMAILS_FROM_EMAIL}
   SMTP_PORT: ${SMTP_PORT}
   SMTP_HOST: ${SMTP_HOST}
   EMAILS_FROM_NAME: ${EMAILS_FROM_NAME}
   MAIL_TLS: ${MAIL_TLS}
   CELERY_BROKER_URL: redis://3dscene-redis:6379/0
   CELERY_RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@3dscene-postgres:5432/${POSTGRES_DB}
+  # GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+  # GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
   GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
   GOOGLE_AUTH_CLIENT_SECRET: ${GOOGLE_AUTH_CLIENT_SECRET}
   # GPU Environment variables
@@ -57,7 +59,7 @@ services:
       <<: *common-linux-container-environment-variables
       CHOKIDAR_USEPOLLING: "true"
       REACT_APP_ENVIRONMENT: ${REACT_APP_ENVIRONMENT}
-      REACT_APP_GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
+      # REACT_APP_GOOGLE_AUTH_CLIENT_ID: ${GOOGLE_AUTH_CLIENT_ID}
       FRONTEND_PORT_INTERNAL: ${FRONTEND_PORT_INTERNAL}
     stdin_open: true
     restart: unless-stopped
@@ -104,7 +106,19 @@ services:
       <<: *common-linux-container-environment-variables
     restart: unless-stopped
 
-  3dscene-worker:
+  3dscene-worker-email:
+    image: "3dscene-api:latest"
+    environment:
+      <<: *common-fastapi-app-environment-variables
+    restart: unless-stopped
+    command: >-
+      celery --app app.celery.celery_app:celery_app worker --loglevel=info --uid=root --gid=nogroup -Q emails --concurrency=4
+    depends_on:
+      - 3dscene-api
+      - 3dscene-redis
+      - 3dscene-postgres
+  
+  3dscene-worker-heavy:
     image: "3dscene-api:latest"
     volumes:
       - ./backend/app/model_assets:/code/app/model_assets
@@ -112,7 +126,7 @@ services:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped
     command: >-
-      celery --app app.celery.celery_app:celery_app worker --loglevel=info --uid=root --gid=nogroup
+      celery --app app.celery.celery_app:celery_app worker --loglevel=info --uid=root --gid=nogroup -Q heavy_tasks --concurrency=1
     depends_on:
       - 3dscene-api
       - 3dscene-redis
@@ -135,7 +149,8 @@ services:
     depends_on:
       - 3dscene-api
       - 3dscene-redis
-      - 3dscene-worker
+      - 3dscene-worker-email
+      - 3dscene-worker-heavy
     command: celery --broker=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url_prefix=flower
     restart: unless-stopped
 

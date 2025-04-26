@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session  # type: ignore
 from app.crud.base import CRUDBase
 from app.models.payment import Payment
 from app.schemas.payment import PaymentCreate, PaymentUpdate
-from app.schemas.user import User
 
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta

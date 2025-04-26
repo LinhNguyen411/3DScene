@@ -7,29 +7,7 @@ import os
 
 
 class Settings(BaseSettings):
-    load_dotenv()
-    API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = os.environ["SECRET_KEY"]
-    # 60 minutes * 24 hours * 8 days = 8 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    SERVER_NAME: str = "3DScene App Server"
-    SERVER_HOST_FRONT: AnyHttpUrl = os.environ[  # type: ignore
-        "SERVER_HOST_FRONT"
-    ]
-    # BACKEND_CORS_ORIGINS is a JSON-formatted list of origins
-    # e.g: '["http://localhost", "http://localhost:4200", "http://localhost:3000", \
-    # "http://localhost:8080", "http://local.dockertoolbox.tiangolo.com"]'
-    BACKEND_CORS_ORIGINS: List = ["http://localhost:3000", "*"]  # type: ignore
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
-            return v
-        raise ValueError(v)
-
-    PROJECT_NAME: str = os.environ["PROJECT_NAME"]
     FIRST_SUPERUSER_EMAIL: str = os.environ["FIRST_SUPERUSER_EMAIL"]
     FIRST_SUPERUSER_FIRST_NAME: str = os.environ["FIRST_SUPERUSER_FIRST_NAME"]
     FIRST_SUPERUSER_LAST_NAME: str = os.environ["FIRST_SUPERUSER_FIRST_NAME"]
@@ -59,13 +37,41 @@ class Settings(BaseSettings):
         f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_TEST_DB}")
     POSTGRESQL_ADMIN_DATABASE_URI: Optional[str] = (
         f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/postgres")
-    # PostgresDsn.build(
-    #     scheme="postgresql",
-    #     user=POSTGRES_USER,
-    #     password=POSTGRES_PASSWORD,
-    #     host=f"{POSTGRES_HOST}:{POSTGRES_PORT}",
-    #     path=f"/{POSTGRES_TEST_DB or ''}",
-    # )
+
+    SECRET_KEY: str = os.environ["SECRET_KEY"]
+    # 60 minutes * 24 hours * 8 days = 8 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    API_V1_STR: str = "/api/v1"
+
+    BACKEND_CORS_ORIGINS: List = ["http://localhost:3000", "*"]  # type: ignore
+
+    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
+    
+    MODEL_ASSETS_DIR: str = "model_assets"
+    MODEL_THUMBNAILS_DIR: str = MODEL_ASSETS_DIR + "/thumnails"
+    MODEL_WORKSPACES_DIR: str = MODEL_ASSETS_DIR + "/workspaces"
+    PUBLIC_DIR:str = "public"
+    PROJECT_NAME: str = os.environ["PROJECT_NAME"]
+
+    EMAIL_CONFIRMATION_TOKEN_EXPIRE_HOURS: int = 24
+    USERS_OPEN_REGISTRATION: bool = True
+    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
+    EMAIL_TEMPLATES_DIR: str = "email-templates"
+
+class Config(BaseSettings):
+    load_dotenv(dotenv_path="/code/app/core/.backend.env", override=True)
+    PROJECT_NAME: str = os.environ["PROJECT_NAME"]
+    PROJECT_DESCRIPTION: str = os.environ["PROJECT_DESCRIPTION"]
+    PROJECT_KEYWORDS: str = os.environ["PROJECT_KEYWORDS"]
+    PROJECT_ICON: str = os.environ["PROJECT_ICON"]
+
+    SERVER_HOST_FRONT: AnyHttpUrl = os.environ["SERVER_HOST_FRONT"]
 
     SMTP_TLS: bool = True if os.environ["MAIL_TLS"].upper(
     ) == "TRUE" else False
@@ -84,10 +90,6 @@ class Settings(BaseSettings):
             return values["PROJECT_NAME"]
         return v
 
-    EMAIL_CONFIRMATION_TOKEN_EXPIRE_HOURS: int = 24
-    USERS_OPEN_REGISTRATION: bool = True
-    EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
-    EMAIL_TEMPLATES_DIR: str = "email-templates"
     EMAILS_ENABLED: bool = True
 
     @validator("EMAILS_ENABLED", pre=True)
@@ -98,20 +100,13 @@ class Settings(BaseSettings):
             and values.get("EMAILS_FROM_EMAIL")
         )
 
-    # Google OAuth2 authentication
     GOOGLE_AUTH_CLIENT_ID: str = os.environ["GOOGLE_AUTH_CLIENT_ID"]
     GOOGLE_AUTH_CLIENT_SECRET: str = os.environ["GOOGLE_AUTH_CLIENT_SECRET"]
 
-    MODEL_ASSETS_DIR: str = "model_assets"
-    MODEL_THUMBNAILS_DIR: str = MODEL_ASSETS_DIR + "/thumnails"
-    MODEL_WORKSPACES_DIR: str = MODEL_ASSETS_DIR + "/workspaces"
-
-
-
     STRIPE_API_KEY:str = os.environ.get("STRIPE_API_KEY")
-    FRONTEND_DOMAIN = "http://localhost:8081"
-    MONTHLY_ID = "price_1RCdEMIpv2OeX57hkx16Fs0g"
-    YEARLY_ID = "price_1RCdFSIpv2OeX57h2JIVsxpv"
-    SUPPORT_EMAIL = "3dscene@gmail.com"
+    STRIPE_PUBLIC_KEY:str = os.environ.get("STRIPE_PUBLIC_KEY")
+    STRIPE_MONTHLY_ID: str = os.environ.get("STRIPE_MONTHLY_ID")
+    STRIPE_YEARLY_ID: str = os.environ.get("STRIPE_YEARLY_ID")
+    SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL")
 
 settings: Settings = Settings()

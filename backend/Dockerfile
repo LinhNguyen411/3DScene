@@ -39,9 +39,7 @@ RUN apt-get update && apt-get install -y \
     ninja-build \
     curl \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
+    && rm -rf /var/lib/apt/lists/*
 
 # Download and install newer CMake version
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.sh \
@@ -113,6 +111,23 @@ RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat \
 # Create Python symlink
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
+
+# Install Go
+RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
+    rm -rf /usr/local/go && \
+    tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
+
+
+# Set Go environment
+ENV PATH="/usr/local/go/bin:$PATH"
+ENV PATH="/root/go/bin:$PATH"
+ENV GOPATH="/root/go"
+
+# Clone gsbox repo and build the app
+RUN git clone https://github.com/gotoeasy/gsbox.git gsbox && \
+    cd gsbox && \
+    go install .
+
 WORKDIR /code/app
 
 COPY ./requirements.txt /code/requirements.txt
@@ -123,8 +138,6 @@ COPY ./app /code/app
 ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
-
-RUN npm install -g @playcanvas/splat-transform
 
 EXPOSE 8000
 

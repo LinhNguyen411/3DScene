@@ -31,7 +31,7 @@ function Profile() {
 
   useEffect(() => {
     setProfileData(user);
-  }, []);
+  }, [user]);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;

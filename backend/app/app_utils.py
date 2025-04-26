@@ -1,19 +1,17 @@
-import math
 from fastapi_pagination.ext.sqlalchemy import _to_dict, paginate_query
 from fastapi_pagination.bases import AbstractPage, AbstractParams
 from fastapi_pagination.api import create_page, resolve_params
-from sqlalchemy.orm import Query  # type: ignore
+from sqlalchemy.orm import Query
 from typing import Optional
-import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import emails  # type: ignore
-from emails.template import JinjaTemplate  # type: ignore
-from jose import jwt  # type: ignore
+import emails
+from emails.template import JinjaTemplate
+from jose import jwt
 
-from app.core.config import settings
+from app.core.config import settings, Config
 from app.core.logging import logger
 from app.celery.celery_app import send_email_async
 
@@ -24,25 +22,27 @@ def send_email(
     html_template: str = "",
     environment: Dict[str, Any] = {},
 ) -> None:
-    assert settings.EMAILS_ENABLED, "no provided configuration for email variables"
+    config = Config()
+    assert config.EMAILS_ENABLED, "no provided configuration for email variables"
     message = emails.Message(
         subject=JinjaTemplate(subject_template),
         html=JinjaTemplate(html_template),
-        mail_from=(settings.EMAILS_FROM_NAME, settings.EMAILS_FROM_EMAIL),
+        mail_from=(config.EMAILS_FROM_NAME, config.EMAILS_FROM_EMAIL),
     )
-    smtp_options = {"host": settings.SMTP_HOST, "port": settings.SMTP_PORT}
-    if settings.SMTP_TLS:
+    smtp_options = {"host": config.SMTP_HOST, "port": config.SMTP_PORT}
+    if config.SMTP_TLS:
         smtp_options["tls"] = True
-    if settings.SMTP_USER:
-        smtp_options["user"] = settings.SMTP_USER
-    if settings.SMTP_PASSWORD:
-        smtp_options["password"] = settings.SMTP_PASSWORD
+    if config.SMTP_USER:
+        smtp_options["user"] = config.SMTP_USER
+    if config.SMTP_PASSWORD:
+        smtp_options["password"] = config.SMTP_PASSWORD
     response = message.send(to=email_to, render=environment, smtp=smtp_options)
     logger.error(f"send email result: {response}")
 
 
 def send_test_email(email_to: str) -> None:
-    project_name = settings.PROJECT_NAME
+    config = Config()
+    project_name = config.PROJECT_NAME
     subject = f"{project_name} - Test email"
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "test_email.html") as f:
         template_str = f.read()
@@ -50,73 +50,106 @@ def send_test_email(email_to: str) -> None:
         email_to=email_to,
         subject_template=subject,
         html_template=template_str,
-        environment={"project_name": settings.PROJECT_NAME, "email": email_to},
+        environment={"project_name": config.PROJECT_NAME, "email": email_to},
     )
 
 
+
 def send_reset_password_email(email_to: str, email: str, token: str) -> None:
-    project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - Password recovery for user {email}"
+    """
+    Send a password reset email to users who request to recover their password.
+    
+    Args:
+        email_to: Email address to send the reset link to
+        email: Email address associated with the account (may be the same as email_to)
+        token: Password reset verification token
+    """
+    config = Config()
+    project_name = config.PROJECT_NAME
+    subject = f"{project_name} - Password Reset Request"
+    
+    # Read email template
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "reset_password.html") as f:
         template_str = f.read()
-    server_host = settings.SERVER_HOST_FRONT
+    
+    # Generate password reset link with token
+    server_host = config.SERVER_HOST_FRONT
     link = f"{server_host}/reset-password?token={token}"
+    
+    # Send email asynchronously
     send_email_async.delay(
         email_to=email_to,
         subject_template=subject,
         html_template=template_str,
         environment={
-            "project_name": settings.PROJECT_NAME,
-            "email": email_to,
+            "project_name": config.PROJECT_NAME,
+            "email": email,
             "valid_hours": settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS,
             "link": link,
         },
     )
 
-
 def send_new_account_email(email_to: str, token: str) -> None:
-    project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - New account"
+    """
+    Send an email verification email to new users after account creation.
+    
+    Args:
+        email_to: Email address of the new user
+        token: Verification token for email confirmation
+    """
+    config = Config()
+    project_name = config.PROJECT_NAME
+    subject = f"{project_name} - Confirm Your Email Address"
+    
+    # Read email template
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_account.html") as f:
         template_str = f.read()
-    link = f"{settings.SERVER_HOST_FRONT}/confirm-email?token={token}"
+    
+    # Generate confirmation link with token
+    link = f"{config.SERVER_HOST_FRONT}/confirm-email?token={token}"
+    
+    # Send email asynchronously
     send_email_async.delay(
         email_to=email_to,
         subject_template=subject,
         html_template=template_str,
         environment={
-            "project_name": settings.PROJECT_NAME,
+            "project_name": config.PROJECT_NAME,
             "email": email_to,
             "link": link,
         },
     )
+
 def send_new_google_account_email(email_to: str) -> None:
-    project_name = settings.PROJECT_NAME
-    subject = f"{project_name} - Test email"
+    """
+    Send a confirmation email to users after connecting their Google account.
+    
+    Args:
+        email_to: Email address of the user who connected their Google account
+    """
+    config = Config()
+    project_name = config.PROJECT_NAME
+    subject = f"{project_name} - Google Account Connected"
+    
+    # Read email template
     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_google_account.html") as f:
         template_str = f.read()
+    
+    # Generate dashboard link
+    dashboard_link = f"{config.SERVER_HOST_FRONT}/dashboard"
+    
+    # Send email asynchronously
     send_email_async.delay(
         email_to=email_to,
         subject_template=subject,
         html_template=template_str,
-        environment={"project_name": settings.PROJECT_NAME, "email": email_to},
+        environment={
+            "project_name": config.PROJECT_NAME,
+            "email": email_to,
+            "dashboard_link": dashboard_link,
+            "support_email": config.SUPPORT_EMAIL,
+        },
     )
-
-# def send_new_google_account_email(email_to: str) -> None:
-#     project_name = settings.PROJECT_NAME
-#     subject = f"{project_name} - New account"
-#     with open(Path(settings.EMAIL_TEMPLATES_DIR) / "new_google_account.html") as f:
-#         template_str = f.read()
-#     send_email_async.delay(
-#         email_to=email_to,
-#         subject_template=subject,
-#         html_template=template_str,
-#         environment={
-#             "project_name": settings.PROJECT_NAME,
-#             "email": email_to,
-#             "dashboard_link": settings.FRONTEND_DOMAIN + "/dashboard",
-#         },
-#     )
 
 def send_subscription_success_email(
     email_to: str, 
@@ -137,7 +170,8 @@ def send_subscription_success_email(
         amount: Amount paid for the subscription
         currency: Currency of the payment (e.g., "usd")
     """
-    project_name = settings.PROJECT_NAME
+    config = Config()
+    project_name = config.PROJECT_NAME
     subject = f"{project_name} - Subscription Confirmation"
     
     # Read email template
@@ -145,7 +179,7 @@ def send_subscription_success_email(
         template_str = f.read()
     
     # Generate dashboard link
-    dashboard_link = f"{settings.SERVER_HOST_FRONT}/dashboard"
+    dashboard_link = f"{config.SERVER_HOST_FRONT}/dashboard"
     
     # Format currency for display
     formatted_amount = f"{amount:.2f}"
@@ -157,7 +191,7 @@ def send_subscription_success_email(
         subject_template=subject,
         html_template=template_str,
         environment={
-            "project_name": settings.PROJECT_NAME,
+            "project_name": config.PROJECT_NAME,
             "user_name": user_name,
             "email": email_to,
             "plan_name": plan_name,
@@ -166,7 +200,7 @@ def send_subscription_success_email(
             "dashboard_link": dashboard_link,
             "created_date": created_date.strftime("%Y-%m-%d %H:%M:%S"),
             "expired_date": expired_date.strftime("%Y-%m-%d %H:%M:%S"),
-            "support_email": settings.SUPPORT_EMAIL,
+            "support_email": config.SUPPORT_EMAIL,
         },
     )
 

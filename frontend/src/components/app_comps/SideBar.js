@@ -1,18 +1,34 @@
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from 'react';
-import { Box, Earth, MessageSquare, UploadCloud , CreditCard, UserCog} from 'lucide-react';
+import { Box, Earth, MessageSquare, UploadCloud, CreditCard, UserCog } from 'lucide-react';
 
-
-
-
-export default function SideBar(props) {
+export default function SideBar({supportEmail}) {
   const [currentPage, setCurrentPage] = useState('upload');
-  const isAuthenticated = localStorage.getItem("token") ? true : false;
-  let navigate = useNavigate();
   const location = useLocation();
+  useEffect(() => {
+    if (location.pathname.includes(RouterPath.DASHBOARD_UPLOAD)) {
+      setCurrentPage('upload');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_MY_MODEL)) {
+      setCurrentPage('models');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_EXPLORE)) {
+      setCurrentPage('explore');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_FEEDBACK)) {
+      setCurrentPage('feedback');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_BILLING)) {
+      setCurrentPage('billing');
+    } else if (location.pathname.includes(RouterPath.DASHBOARD_PROFILE)) {
+      setCurrentPage('profile');
+    }
+  }, [location.pathname]);
+
+  const handleContactUs = () => {
+    // Open Gmail compose with recipient email already filled in
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + supportEmail, '_blank');
+  };
+
   return (
-      <div className="w-60 bg-white shadow-md flex flex-col">
+    <div className="w-60 bg-white shadow-md flex flex-col">
       <div className="p-4">
         <Link to={RouterPath.DASHBOARD_UPLOAD}
           onClick={() => setCurrentPage('upload')}
@@ -89,10 +105,10 @@ export default function SideBar(props) {
     </nav>
       
       <div className="mt-auto p-4">
-        <button className="text-sky-400 font-medium w-full text-center py-2">
-          Download App
-        </button>
-        <button className="text-gray-600 w-full text-center py-2">
+        <button 
+          onClick={handleContactUs}
+          className="text-gray-600 hover:text-sky-500 w-full text-center py-2 transition-colors"
+        >
           Contact Us
         </button>
       </div>

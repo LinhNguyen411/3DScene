@@ -94,7 +94,7 @@ RUN git clone https://github.com/colmap/glomap.git \
     && cd ../..
 
 # Install PyTorch with CUDA
-RUN wget https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu124.zip \
+RUN curl -o libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu124.zip \
     && unzip libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip -d /usr/local/ \
     && rm libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip
 
@@ -116,7 +116,6 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
     rm -rf /usr/local/go && \
     tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
-
 
 # Set Go environment
 ENV PATH="/usr/local/go/bin:$PATH"

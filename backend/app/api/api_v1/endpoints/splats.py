@@ -267,6 +267,7 @@ async def create_splat(
     413: {"model": schemas.Detail, "description": "File too large (max 5GB)"},
     500: {"model": schemas.Detail, "description": "Internal server error during upload or compression"}
 })
+
 async def upload_splat(
     *,
     db: Session = Depends(deps.get_db),
@@ -280,31 +281,29 @@ async def upload_splat(
     Tải lên một mô hình và thumbnail của mô hình, và tạo một mục Splat trong cơ sở dữ liệu.
 
     **Yêu cầu Header:**
-    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+    - Cần xác thực người dùng qua token JWT trong header Authorization.
 
     **Đầu vào (Request Parameters):**
     - **title**: Tiêu đề của mô hình (dưới dạng Form data).
     - **is_public**: Xác định xem mô hình có công khai hay không (dưới dạng Form data).
-    - **model**: File mô hình (định dạng `.ply` hoặc `.splat`).
+    - **model**: File mô hình (định dạng .ply hoặc .splat).
     - **thumbnail**: File thumbnail cho mô hình.
 
     **Đầu ra (Response):**
     - 200 OK: Trả về đối tượng Splat vừa được tạo trong cơ sở dữ liệu.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu file không phải định dạng `.ply` hoặc `.splat`.
+    - 400 Bad Request: Nếu file không phải định dạng .ply hoặc .splat.
     - 413 Payload Too Large: Nếu kích thước file vượt quá giới hạn 5GB.
     - 500 Internal Server Error: Nếu có lỗi trong quá trình tải lên hoặc chuyển đổi file.
 
     **Giải thích:**
     - Endpoint này cho phép người dùng tải lên một mô hình 3D và thumbnail của mô hình.
-    - Mô hình có thể là file `.ply` hoặc `.splat`. Nếu là `.ply`, file sẽ được chuyển đổi thành `.splat` sử dụng công cụ Go (`gsbox`).
+    - Mô hình có thể là file .ply hoặc .splat. Nếu là .ply, file sẽ được chuyển đổi thành .splat sử dụng công cụ Go (gsbox).
     - Thumbnail sẽ được lưu trữ trong thư mục riêng biệt.
     - Sau khi tải lên và chuyển đổi (nếu cần), thông tin mô hình sẽ được lưu trữ trong cơ sở dữ liệu, bao gồm đường dẫn tới mô hình và thumbnail.
     - Kích thước của mô hình sẽ được tính toán và lưu trữ trong cơ sở dữ liệu.
     """
-    if model.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large (max 5GB)")
-
+    # Instead of checking model.size, we need to check the file size after it's saved
     if not (model.filename.endswith(".ply") or model.filename.endswith(".splat")):
         raise HTTPException(status_code=400, detail="Invalid file type (must be .ply or .splat)")
 
@@ -325,8 +324,14 @@ async def upload_splat(
         # Save the .ply file temporarily
         with open(model_path, "wb") as f:
             shutil.copyfileobj(model.file, f)
+        
+        # Check file size after saving
+        file_size = os.path.getsize(model_path)
+        if file_size > MAX_FILE_SIZE:
+            os.remove(model_path)  # Clean up the file
+            raise HTTPException(status_code=413, detail="File too large (max 5GB)")
 
-        # Convert the .ply to .splat using Go tool (adjust based on your Go command)
+        # Convert the .ply to .splat using Go tool
         splat_path = os.path.join(modeling_task_dir, f"{splat_id}.splat")
         try:
             subprocess.run(
@@ -345,11 +350,18 @@ async def upload_splat(
         # Save the .splat file directly
         with open(model_path, "wb") as f:
             shutil.copyfileobj(model.file, f)
+        
+        # Check file size after saving
+        file_size = os.path.getsize(model_path)
+        if file_size > MAX_FILE_SIZE:
+            os.remove(model_path)  # Clean up the file
+            raise HTTPException(status_code=413, detail="File too large (max 5GB)")
+            
         splat_path = model_path
 
     # --- Create Database Entry ---
     # Calculate model file size (in MB)
-    model_size = os.path.getsize(splat_path) / (1024 * 1024)
+    model_size = round(os.path.getsize(splat_path) / (1024 * 1024), 2)
 
     # Create the Splat entry in the database
     splat_in = schemas.SplatCreate(

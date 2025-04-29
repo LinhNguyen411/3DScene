@@ -8,7 +8,8 @@ import { useSnackbar } from '../../provider/SnackbarProvider';
 
 function AdminUser() {
   const { showSnackbar } = useSnackbar();
-
+  const [loading, setLoading] = useState(false);
+  
   let PageSize = 5;
   const initItem = {
     id: null,
@@ -30,12 +31,14 @@ function AdminUser() {
 
   const onRefresh = async () => {
     try {
-      console.log('Refreshing models...');
+      setLoading(true);
       const data = await DataService.getUsers(currentPage, PageSize);
       setItems(data.items);
       setTotal(data.total);
     } catch (error) {
       showSnackbar('Failed to get users', 'error')
+    } finally{
+      setLoading(false);
     }
   };
 
@@ -192,6 +195,13 @@ function AdminUser() {
             </tr>
           ))}
         </tbody>
+        {loading && (
+              <tr>
+                <td colSpan="7" className="py-4 text-center text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            )}
       </table>
       <Pagination
         className="pagination-bar"

@@ -222,7 +222,7 @@ def process_video(self: Task,
 
         # 12. Copy the result to output directory
         src_path = os.path.join(dataset_path, "outputs", output_model)
-        dst_path = os.path.join(output_dir, output_model)
+        dst_path = os.path.join(workspace_path, output_model)
 
         if os.path.exists(src_path):
             shutil.copy(src_path, dst_path)

@@ -16,6 +16,7 @@ import { useLoader } from '../../provider/LoaderProvider';
 function AdminSplat() {
   const { showSnackbar } = useSnackbar();
   const { showLoader, hideLoader } = useLoader();
+  const [loading, setLoading] = useState(false);
   let navigate = useNavigate();
 
 
@@ -63,12 +64,15 @@ function AdminSplat() {
 
   const onRefresh = async () => {
     try {
+      setLoading(true);
       console.log('Refreshing models...');
       const data = await DataService.getSplats(currentPage, PageSize);
       setItems(data.items);
       setTotal(data.total);
     } catch (error) {
       showSnackbar('Failed to get splats', 'error')
+    } finally{
+      setLoading(false)
     }
   };
 
@@ -295,6 +299,13 @@ function AdminSplat() {
             </tr>
           ))}
         </tbody>
+        {loading && (
+              <tr>
+                <td colSpan="7" className="py-4 text-center text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            )}
       </table>
       <Pagination
         className="pagination-bar"
@@ -376,7 +387,7 @@ function AdminSplat() {
                 <div className="mb-4">
                   <label className="block text-gray-700 mb-2">
                     Model File <span className="text-red-500">*</span> 
-                    <span className="text-sm text-gray-500 ml-2">(.compressed.ply and .ply files supported)</span>
+                    <span className="text-sm text-gray-500 ml-2">(.splat and .ply files supported)</span>
                   </label>
                   <div className="flex items-center">
                     <input

@@ -66,7 +66,7 @@ def process_video(self: Task,
                   task_id: str,
                   workspace_path:str,
                   img_dir: str,
-                  num_iterations: int = 8000,
+                  num_iterations: int = 10000,
                   ) -> Any:
     db = SessionLocal()
     """Process video to generate 3D Gaussian Splatting model"""

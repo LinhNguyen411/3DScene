@@ -7,7 +7,7 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 });
 
-const createSplatFromVideos = async (title, files, num_iterations = 8000) => {
+const createSplatFromVideos = async (title, files, num_iterations = 10000) => {
   const formData = new FormData();
   
   // Append all video files
@@ -36,7 +36,7 @@ const createSplatFromVideos = async (title, files, num_iterations = 8000) => {
   }
 };
 
-const createSplatFromImages = async (title, files, num_iterations = 8000) => {
+const createSplatFromImages = async (title, files, num_iterations = 10000) => {
   const formData = new FormData();
   
   // Append all image files

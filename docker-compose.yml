@@ -40,11 +40,12 @@ x-fastapi-app-environment:
   NVIDIA_VISIBLE_DEVICES: all
   DEBIAN_FRONTEND: noninteractive
   CUDSS_DIR: /usr/local/cudss
-  PATH: /usr/local/cudss/bin:/usr/local/bin:$PATH
+  PATH: /usr/local/cudss/bin:/usr/local/go/bin:/root/go/bin:/usr/local/bin:$PATH
   LD_LIBRARY_PATH: /usr/local/cudss/lib:/usr/local/libtorch/lib:$LD_LIBRARY_PATH
   CC: /usr/bin/gcc-10
   CXX: /usr/bin/g++-10
   CUDAHOSTCXX: /usr/bin/g++-10
+  GOPATH: /root/go
 
 services:
   3dscene-frontend:

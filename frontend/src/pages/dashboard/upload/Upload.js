@@ -191,14 +191,14 @@ function Upload(props) {
         response = await DataService.createSplatFromVideos(
           title,
           selectedFiles,
-          7000 // Higher number of iterations for video processing
+          10000 // Higher number of iterations for video processing
         );
       } else {
         // For image uploads, use the default iteration count
         response = await DataService.createSplatFromImages(
           title,
           selectedFiles,
-          7000 // Iterations suitable for image processing
+          10000 // Iterations suitable for image processing
         );
       }
 

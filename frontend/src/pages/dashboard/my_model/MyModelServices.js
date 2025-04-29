@@ -7,7 +7,7 @@ const getAuthHeaders = () => ({
   });
 
 
-const getSplats = async (page = 1, size = 10) => {
+const getSplats = async (page = 1, size = 100) => {
     try {
       const response = await axios.get(API_BASE_URL, {
         params: { page, size },

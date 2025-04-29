@@ -65,15 +65,15 @@ def send_email_async(
 def process_video(self: Task,
                   task_id: str,
                   workspace_path:str,
-                  img_dir: str,
+                  dataset_dir: str,
                   num_iterations: int = 1000,
                   ) -> Any:
     db = SessionLocal()
     """Process video to generate 3D Gaussian Splatting model"""
     try:
-        if not os.path.exists(img_dir):
-            raise FileNotFoundError(f"Video path does not exist: {img_dir}")
-        celery_log.info(f"Starting task {task_id} for video {img_dir}")
+        if not os.path.exists(dataset_dir):
+            raise FileNotFoundError(f"Dataset directory does not exist: {dataset_dir}")
+        celery_log.info(f"Starting task {task_id} for dataset {dataset_dir}")
 
         # Update task state to started
         self.update_state(state=states.STARTED,
@@ -84,12 +84,37 @@ def process_video(self: Task,
         crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         # Create workspace directory
-        dataset_path = os.path.join(
-            workspace_path, "workspace")
+        dataset_path = os.path.join(workspace_path, "workspace")
         os.makedirs(dataset_path, exist_ok=True)
 
         # Create output directory
-        output_dir = workspace_path
+        is_video_dir = "videos" in dataset_dir
+        img_dir = os.path.join(dataset_path, "images")
+        os.makedirs(img_dir, exist_ok=True)
+        
+         # If processing videos, extract frames with ffmpeg
+        if is_video_dir:
+            self.update_state(state="PROGRESS",
+                            meta={"status": "Extracting frames from videos"})
+            
+            video_files = [f for f in os.listdir(dataset_dir) if os.path.isfile(os.path.join(dataset_dir, f)) and 
+                           f.lower().endswith((".mp4", ".avi", ".mov", ".mkv"))]
+            
+            for i, video_file in enumerate(video_files):
+                video_path = os.path.join(dataset_dir, video_file)
+                output_pattern = os.path.join(img_dir, f"video{i+1}_%04d.png")
+                
+                # Extract frames at 2fps
+                cmd = [
+                    "ffmpeg", "-i", video_path, 
+                    "-vf", "fps=2", 
+                    "-q:v", "1",  # High quality
+                    output_pattern
+                ]
+                run_command(cmd)
+        else:
+            # If dataset_dir is already the images directory, use it directly
+            img_dir = dataset_dir
 
         # 3. Run COLMAP feature extraction
         self.update_state(state="PROGRESS",
@@ -212,11 +237,6 @@ def process_video(self: Task,
             # Calculate the size of the compressed model in MB
             size = round(os.path.getsize(dst_path) / (1024 * 1024), 2)
             
-            # # Delete the original uncompressed PLY file
-            # if os.path.exists(dst_path):
-            #     os.remove(dst_path)
-            #     celery_log.info(f"Deleted uncompressed model at {dst_path}")
-                        
             # Update the model_url to point to the compressed file and include model_size
             splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=dst_path, model_size=size)
             splat = crud.splat.get(db, id=task_id)

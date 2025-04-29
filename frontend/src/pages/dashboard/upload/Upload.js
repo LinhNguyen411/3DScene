@@ -3,9 +3,11 @@ import { Edit, UploadCloud, X, Image, Video, AlertTriangle, Plus } from 'lucide-
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import DataService from './UploadServices';
+import { useLoader } from '../../../provider/LoaderProvider';
 
 // Main App Component
 function Upload(props) {
+  const { showLoader, hideLoader } = useLoader()
   // Fix: Ensure proper destructuring with default empty array for useOutletContext
   const {user} = useOutletContext();
   
@@ -185,6 +187,7 @@ function Upload(props) {
     
     setIsProcessing(true);
     try {
+      showLoader()
       let response;
       if (uploadType === 'video') {
         // For video uploads, we'll use a higher default iteration count
@@ -215,6 +218,7 @@ function Upload(props) {
       setError(error.message || `Failed to process ${uploadType}s. Please try again.`);
     } finally {
       setIsProcessing(false);
+      hideLoader();
     }
   };
 

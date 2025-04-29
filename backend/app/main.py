@@ -17,6 +17,30 @@ def on_startup():
     db = SessionLocal()
     init_db(db)
 
+    # Check if .backend.env exists, create it if not
+    backend_env_path = "/code/app/core/.backend.env"
+    if not os.path.exists(backend_env_path):
+        with open(backend_env_path, "w") as env_file:
+            env_file.write("""
+                STRIPE_API_KEY=""
+                STRIPE_PUBLIC_KEY=""
+                STRIPE_MONTHLY_ID=""
+                STRIPE_YEARLY_ID=""
+
+                GOOGLE_AUTH_CLIENT_ID=""
+                GOOGLE_AUTH_CLIENT_SECRET=""
+
+                SMTP_USER=""
+                SMTP_PASSWORD=""
+                EMAILS_FROM_EMAIL=""
+                SUPPORT_EMAIL=""
+                SERVER_HOST_FRONT=""
+
+                PROJECT_NAME="3DScene"
+                PROJECT_DESCRIPTION="Transform videos into stunning 3D scenes with AI-powered Gaussian Splatting! Our app uses cutting-edge technology to automatically reconstruct high-quality 3D models from simple videos — fast, easy, and perfect for gaming, VR, and digital content creation."
+                PROJECT_KEYWORDS="3D asset generation from video, 3D Gaussian splatting from video, 3D Gaussian splatting software, 3D model creation AI, 3D reconstruction from video, 3D scene generation AI, AI 3D model creation, AI 3D scene reconstruction, automatic 3D reconstruction, Gaussian splatting 3D models, machine learning 3D reconstruction, NeRF alternative Gaussian splatting, real-time 3D Gaussian splatting, turn videos into 3D scenes, video-based 3D modeling, video to 3D model generator"
+                PROJECT_ICON="/public/logo.png"
+            """)
 
 # Set all CORS enabled origins
 if settings.BACKEND_CORS_ORIGINS:

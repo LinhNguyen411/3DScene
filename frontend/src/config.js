@@ -7,7 +7,7 @@ const development = {
     ENDPOINT: "http://localhost:8083",
   },
   frontend: {
-    FRONTEND_DOMAIN: "http://localhost:8081",
+    FRONTEND_DOMAIN: process.env.SERVER_HOST_FRONT,
   },
 };
 

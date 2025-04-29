@@ -3,9 +3,11 @@ import { Edit, UploadCloud, X, Image, Video, AlertTriangle, Plus } from 'lucide-
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import DataService from './UploadServices';
+import { useLoader } from '../../../provider/LoaderProvider';
 
 // Main App Component
 function Upload(props) {
+  const { showLoader, hideLoader } = useLoader()
   // Fix: Ensure proper destructuring with default empty array for useOutletContext
   const {user} = useOutletContext();
   
@@ -19,15 +21,17 @@ function Upload(props) {
   const [totalVideoDuration, setTotalVideoDuration] = useState(0);
   const [isPro, setIsPro] = useState(false)
   const [maxVideoDuration, setMaxVideoDuration] = useState(0)
+  const [isDragging, setIsDragging] = useState(false);
   const videoRefs = useRef({});
   const fileInputRef = useRef(null);
+  const dropAreaRef = useRef(null);
   const navigate = useNavigate();
 
   const maxImagesCount = 400; // Maximum 400 images
 
   useEffect(() => {
     setIsPro(user?.is_pro ?? false);
-    setMaxVideoDuration(user?.is_pro ? 5 * 60 : 3 * 60)
+    setMaxVideoDuration(user?.is_pro ? 7 * 60 : 3 * 60)
     
   }, [user]);
   // Update video duration when files are loaded
@@ -87,20 +91,43 @@ function Upload(props) {
     });
   };
 
+  // Improved file type validation
+  const isVideoFile = (file) => {
+    // Check if the file type starts with 'video/'
+    if (file.type.startsWith('video/')) {
+      return true;
+    }
+    
+    // Fallback for MOV files which might not be correctly identified by some browsers
+    const extension = file.name.split('.').pop().toLowerCase();
+    return ['mov', 'mp4', 'avi'].includes(extension);
+  };
+
+  const isImageFile = (file) => {
+    return file.type.startsWith('image/');
+  };
+
   // File selection handler
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
     
+    processFiles(files);
+  };
+
+  // Process files (common function for both input and drag-and-drop)
+  const processFiles = (files) => {
+    if (files.length === 0) return;
+    
     // Validate file types based on upload type
     let validFiles = [];
     if (uploadType === 'video') {
-      validFiles = files.filter(file => file.type.startsWith('video/'));
+      validFiles = files.filter(file => isVideoFile(file));
       if (validFiles.length !== files.length) {
         setError('Only video files are allowed in video mode.');
       }
     } else { // image mode
-      validFiles = files.filter(file => file.type.startsWith('image/'));
+      validFiles = files.filter(file => isImageFile(file));
       if (validFiles.length !== files.length) {
         setError('Only image files are allowed in image mode.');
       }
@@ -134,6 +161,41 @@ function Upload(props) {
     // Reset the file input so the same files can be selected again if needed
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only set dragging to false if we're leaving the drop area
+    // and not entering a child element
+    if (e.currentTarget === dropAreaRef.current) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFiles = Array.from(e.dataTransfer.files);
+      processFiles(droppedFiles);
     }
   };
 
@@ -185,6 +247,7 @@ function Upload(props) {
     
     setIsProcessing(true);
     try {
+      showLoader()
       let response;
       if (uploadType === 'video') {
         // For video uploads, we'll use a higher default iteration count
@@ -211,10 +274,11 @@ function Upload(props) {
       // Navigate to the dashboard
       navigate(RouterPath.DASHBOARD_MY_MODEL);
     } catch (error) {
-      console.error(`Error processing ${uploadType}s:`, error);
+      console.error(`Error processing ${uploadType}s:`, error.response?.data || error.message);
       setError(error.message || `Failed to process ${uploadType}s. Please try again.`);
     } finally {
       setIsProcessing(false);
+      hideLoader();
     }
   };
 
@@ -270,7 +334,7 @@ function Upload(props) {
           <input 
             ref={fileInputRef}
             type="file" 
-            accept={uploadType === 'video' ? "video/*" : "image/*"} 
+            accept={uploadType === 'video' ? "video/*, .mp4, .mov, .MOV" : "image/*"} 
             className="hidden" 
             onChange={handleFileSelect}
             multiple
@@ -320,12 +384,23 @@ function Upload(props) {
           )}
           
           {selectedFiles.length === 0 ? (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
+            <div 
+              ref={dropAreaRef}
+              className={`border-2 border-dashed ${isDragging ? 'border-sky-400 bg-sky-50' : 'border-gray-300'} rounded-lg p-12 text-center`}
+              onDragEnter={handleDragEnter}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <div className="flex flex-col items-center justify-center">
-                <div className="bg-gray-100 p-4 rounded-full mb-4">
-                  <UploadCloud size={48} className="text-gray-400" />
+                <div className={`${isDragging ? 'bg-sky-100' : 'bg-gray-100'} p-4 rounded-full mb-4`}>
+                  <UploadCloud size={48} className={`${isDragging ? 'text-sky-500' : 'text-gray-400'}`} />
                 </div>
-                <p className="text-lg font-medium mb-2">Click to upload or drag {uploadType} file(s) into this area</p>
+                <p className="text-lg font-medium mb-2">
+                  {isDragging 
+                    ? `Drop your ${uploadType} file(s) here` 
+                    : `Click to upload or drag ${uploadType} file(s) into this area`}
+                </p>
                 <p className="text-gray-500 mb-6">
                   Photogrammetry for professional 3D model quality,<br />
                   works for featureful objects or scenes

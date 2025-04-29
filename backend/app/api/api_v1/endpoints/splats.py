@@ -128,7 +128,6 @@ def read_gallery_splats(
     gallery_splats = crud.splat.get_multi_by_gallery(db=db)
     return paginate(gallery_splats, params)
 
-
 @router.post("/", response_model=schemas.Splat, responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
@@ -177,7 +176,9 @@ async def create_splat(
     task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat_id)
     os.makedirs(task_dir, exist_ok=True)
 
-    image_dir = os.path.join(task_dir,"workspace", "images")
+    video_dir = os.path.join(task_dir, "workspace", "videos")
+    image_dir = os.path.join(task_dir, "workspace", "images")
+    os.makedirs(video_dir, exist_ok=True)
     os.makedirs(image_dir, exist_ok=True)
 
     has_video = False
@@ -198,45 +199,47 @@ async def create_splat(
     if has_video and has_image:
         raise HTTPException(status_code=400, detail="Cannot upload both images and videos together.")
 
+    dataset_dir = None
+
     for file in files:
-        temp_path = os.path.join(task_dir, file.filename)
-        with open(temp_path, "wb") as buffer:
+        mime_type, _ = mimetypes.guess_type(file.filename)
+        target_dir = video_dir if mime_type.startswith("video") else image_dir
+        target_path = os.path.join(target_dir, file.filename)
+
+        with open(target_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        mime_type, _ = mimetypes.guess_type(file.filename)
-        if mime_type.startswith("video"):
-            cap = cv2.VideoCapture(temp_path)
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            interval = int(fps / 2) if fps > 0 else 15  # default interval
-
-            count = 0
-            frame_id = 0
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                if count % interval == 0:
-                    image_path = os.path.join(image_dir, f"{file.filename}_frame_{frame_id:04d}.jpg")
-                    cv2.imwrite(image_path, frame)
-                    frame_id += 1
-                count += 1
-            cap.release()
-            os.remove(temp_path)
-        elif mime_type.startswith("image"):
-            image_path = os.path.join(image_dir, file.filename)
-            shutil.move(temp_path, image_path)
-
-    # Create thumbnail from first image in image_dir
+    # Determine dataset_dir and generate thumbnail
     thumbnail_url = None
-    image_files = sorted([f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))])
-    if image_files:
-        first_image_path = os.path.join(image_dir, image_files[0])
-        os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
-        thumbnail_filename = f"{splat_id}_thumbnail.jpg"
-        thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
-        shutil.copy(first_image_path, thumbnail_path)
-        thumbnail_url = f"/thumbnails/{thumbnail_filename}"
+    thumbnail_filename = f"{splat_id}_thumbnail.jpg"
+    os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
+    thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
 
+    if has_video:
+        dataset_dir = video_dir
+        # Use the first video
+        video_files = sorted([f for f in os.listdir(video_dir) if f.lower().endswith((".mp4", ".avi", ".mov"))])
+        if video_files:
+            first_video_path = os.path.join(video_dir, video_files[0])
+            cap = cv2.VideoCapture(first_video_path)
+            ret, frame = cap.read()
+            if ret:
+                cv2.imwrite(thumbnail_path, frame)
+                thumbnail_url = f"/thumbnails/{thumbnail_filename}"
+            cap.release()
+    elif has_image:
+        dataset_dir = image_dir
+        # Use the first image
+        image_files = sorted([f for f in os.listdir(image_dir) if f.lower().endswith((".jpg", ".jpeg", ".png"))])
+        if image_files:
+            first_image_path = os.path.join(image_dir, image_files[0])
+            shutil.copy(first_image_path, thumbnail_path)
+            thumbnail_url = f"/thumbnails/{thumbnail_filename}"
+
+    if not dataset_dir:
+        raise HTTPException(status_code=400, detail="No valid files uploaded.")
+
+    # Save to DB
     splat_in = schemas.SplatCreate(
         id=splat_id,
         title=title,
@@ -246,14 +249,16 @@ async def create_splat(
     splat: models.Splat = crud.splat.create_with_owner(
         db, obj_in=splat_in, owner_id=current_user.id)
 
+    # Start Celery Task
     celery_app.process_video.delay(
         task_id=splat.id,
         workspace_path=task_dir,
-        img_dir=image_dir,
+        dataset_dir=dataset_dir,
         num_iterations=num_iterations
     )
 
     return splat
+
 
 
 @router.post("/model-upload", response_model=schemas.Splat, responses={
@@ -262,6 +267,7 @@ async def create_splat(
     413: {"model": schemas.Detail, "description": "File too large (max 5GB)"},
     500: {"model": schemas.Detail, "description": "Internal server error during upload or compression"}
 })
+
 async def upload_splat(
     *,
     db: Session = Depends(deps.get_db),
@@ -275,31 +281,29 @@ async def upload_splat(
     Tải lên một mô hình và thumbnail của mô hình, và tạo một mục Splat trong cơ sở dữ liệu.
 
     **Yêu cầu Header:**
-    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+    - Cần xác thực người dùng qua token JWT trong header Authorization.
 
     **Đầu vào (Request Parameters):**
     - **title**: Tiêu đề của mô hình (dưới dạng Form data).
     - **is_public**: Xác định xem mô hình có công khai hay không (dưới dạng Form data).
-    - **model**: File mô hình (định dạng `.ply` hoặc `.splat`).
+    - **model**: File mô hình (định dạng .ply hoặc .splat).
     - **thumbnail**: File thumbnail cho mô hình.
 
     **Đầu ra (Response):**
     - 200 OK: Trả về đối tượng Splat vừa được tạo trong cơ sở dữ liệu.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu file không phải định dạng `.ply` hoặc `.splat`.
+    - 400 Bad Request: Nếu file không phải định dạng .ply hoặc .splat.
     - 413 Payload Too Large: Nếu kích thước file vượt quá giới hạn 5GB.
     - 500 Internal Server Error: Nếu có lỗi trong quá trình tải lên hoặc chuyển đổi file.
 
     **Giải thích:**
     - Endpoint này cho phép người dùng tải lên một mô hình 3D và thumbnail của mô hình.
-    - Mô hình có thể là file `.ply` hoặc `.splat`. Nếu là `.ply`, file sẽ được chuyển đổi thành `.splat` sử dụng công cụ Go (`gsbox`).
+    - Mô hình có thể là file .ply hoặc .splat. Nếu là .ply, file sẽ được chuyển đổi thành .splat sử dụng công cụ Go (gsbox).
     - Thumbnail sẽ được lưu trữ trong thư mục riêng biệt.
     - Sau khi tải lên và chuyển đổi (nếu cần), thông tin mô hình sẽ được lưu trữ trong cơ sở dữ liệu, bao gồm đường dẫn tới mô hình và thumbnail.
     - Kích thước của mô hình sẽ được tính toán và lưu trữ trong cơ sở dữ liệu.
     """
-    if model.size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=413, detail="File too large (max 5GB)")
-
+    # Instead of checking model.size, we need to check the file size after it's saved
     if not (model.filename.endswith(".ply") or model.filename.endswith(".splat")):
         raise HTTPException(status_code=400, detail="Invalid file type (must be .ply or .splat)")
 
@@ -320,8 +324,14 @@ async def upload_splat(
         # Save the .ply file temporarily
         with open(model_path, "wb") as f:
             shutil.copyfileobj(model.file, f)
+        
+        # Check file size after saving
+        file_size = os.path.getsize(model_path)
+        if file_size > MAX_FILE_SIZE:
+            os.remove(model_path)  # Clean up the file
+            raise HTTPException(status_code=413, detail="File too large (max 5GB)")
 
-        # Convert the .ply to .splat using Go tool (adjust based on your Go command)
+        # Convert the .ply to .splat using Go tool
         splat_path = os.path.join(modeling_task_dir, f"{splat_id}.splat")
         try:
             subprocess.run(
@@ -340,11 +350,18 @@ async def upload_splat(
         # Save the .splat file directly
         with open(model_path, "wb") as f:
             shutil.copyfileobj(model.file, f)
+        
+        # Check file size after saving
+        file_size = os.path.getsize(model_path)
+        if file_size > MAX_FILE_SIZE:
+            os.remove(model_path)  # Clean up the file
+            raise HTTPException(status_code=413, detail="File too large (max 5GB)")
+            
         splat_path = model_path
 
     # --- Create Database Entry ---
     # Calculate model file size (in MB)
-    model_size = os.path.getsize(splat_path) / (1024 * 1024)
+    model_size = round(os.path.getsize(splat_path) / (1024 * 1024), 2)
 
     # Create the Splat entry in the database
     splat_in = schemas.SplatCreate(

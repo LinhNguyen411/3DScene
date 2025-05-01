@@ -14,7 +14,7 @@ const development = {
 /* Configuration is hardcoded here and is used if npm build is used */
 const production = {
   api: {
-    ENDPOINT: "",
+    ENDPOINT: "http://localhost:8083",
   },
   frontend: {
     FRONTEND_DOMAIN: "http://todo.gnetkov.com",

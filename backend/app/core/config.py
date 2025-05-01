@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, EmailStr, HttpUrl, PostgresDsn, validator, Field
 
 from dotenv import load_dotenv
 import os
@@ -65,34 +65,41 @@ class Settings(BaseSettings):
     EMAIL_TEMPLATES_DIR: str = "email-templates"
 
 class Config(BaseSettings):
-    load_dotenv(dotenv_path="/code/app/core/.backend.env", override=True)
-    PROJECT_NAME: str = os.environ["PROJECT_NAME"]
-    PROJECT_DESCRIPTION: str = os.environ["PROJECT_DESCRIPTION"]
-    PROJECT_KEYWORDS: str = os.environ["PROJECT_KEYWORDS"]
-    PROJECT_ICON: str = os.environ["PROJECT_ICON"]
+    PROJECT_NAME: str = Field(..., env="PROJECT_NAME")
+    PROJECT_DESCRIPTION: str = Field(..., env="PROJECT_DESCRIPTION")
+    PROJECT_KEYWORDS: str = Field(..., env="PROJECT_KEYWORDS")
+    PROJECT_ICON: str = Field(..., env="PROJECT_ICON")
 
-    SERVER_HOST_FRONT: AnyHttpUrl = os.environ["SERVER_HOST_FRONT"]
+    SERVER_HOST_FRONT: str = Field(..., env="SERVER_HOST_FRONT")
 
-    SMTP_TLS: bool = True if os.environ["MAIL_TLS"].upper(
-    ) == "TRUE" else False
-    SMTP_PORT: int = int(os.environ["SMTP_PORT"])
-    SMTP_HOST: str = os.environ["SMTP_HOST"]
-    SMTP_USER: str = os.environ["SMTP_USER"]
-    SMTP_PASSWORD: str = os.environ["SMTP_PASSWORD"]
-    EMAILS_FROM_EMAIL: EmailStr = os.environ[  # type: ignore
-        "EMAILS_FROM_EMAIL"
-    ]
-    EMAILS_FROM_NAME: str = os.environ["EMAILS_FROM_NAME"]
+    SMTP_TLS: bool = Field(..., env="MAIL_TLS")
+    SMTP_PORT: int = Field(..., env="SMTP_PORT")
+    SMTP_HOST: str = Field(..., env="SMTP_HOST")
+    SMTP_USER: str = Field(..., env="SMTP_USER")
+    SMTP_PASSWORD: str = Field(..., env="SMTP_PASSWORD")
+    EMAILS_FROM_EMAIL: str = Field(..., env="EMAILS_FROM_EMAIL")
+    EMAILS_FROM_NAME: Optional[str] = Field(None, env="EMAILS_FROM_NAME")
 
-    @validator("EMAILS_FROM_NAME")
-    def get_project_name(cls, v: Optional[str], values: Dict[str, Any]) -> str:
-        if not v:
-            return values["PROJECT_NAME"]
-        return v
+    EMAILS_ENABLED: Optional[bool] = True
 
-    EMAILS_ENABLED: bool = True
+    GOOGLE_AUTH_CLIENT_ID: str = Field(..., env="GOOGLE_AUTH_CLIENT_ID")
+    GOOGLE_AUTH_CLIENT_SECRET: str = Field(..., env="GOOGLE_AUTH_CLIENT_SECRET")
 
-    @validator("EMAILS_ENABLED", pre=True)
+    STRIPE_API_KEY: Optional[str] = Field(None, env="STRIPE_API_KEY")
+    STRIPE_PUBLIC_KEY: Optional[str] = Field(None, env="STRIPE_PUBLIC_KEY")
+    STRIPE_MONTHLY_ID: Optional[str] = Field(None, env="STRIPE_MONTHLY_ID")
+    STRIPE_YEARLY_ID: Optional[str] = Field(None, env="STRIPE_YEARLY_ID")
+    SUPPORT_EMAIL: Optional[str] = Field(None, env="SUPPORT_EMAIL")
+
+    @validator("SMTP_TLS", pre=True)
+    def parse_bool(cls, v):
+        return v.upper() == "TRUE" if isinstance(v, str) else bool(v)
+
+    @validator("EMAILS_FROM_NAME", always=True)
+    def default_from_name(cls, v, values: Dict[str, Any]) -> str:
+        return v or values.get("PROJECT_NAME", "")
+
+    @validator("EMAILS_ENABLED", always=True)
     def get_emails_enabled(cls, v: bool, values: Dict[str, Any]) -> bool:
         return bool(
             values.get("SMTP_HOST")
@@ -100,13 +107,8 @@ class Config(BaseSettings):
             and values.get("EMAILS_FROM_EMAIL")
         )
 
-    GOOGLE_AUTH_CLIENT_ID: str = os.environ["GOOGLE_AUTH_CLIENT_ID"]
-    GOOGLE_AUTH_CLIENT_SECRET: str = os.environ["GOOGLE_AUTH_CLIENT_SECRET"]
-
-    STRIPE_API_KEY:str = os.environ.get("STRIPE_API_KEY")
-    STRIPE_PUBLIC_KEY:str = os.environ.get("STRIPE_PUBLIC_KEY")
-    STRIPE_MONTHLY_ID: str = os.environ.get("STRIPE_MONTHLY_ID")
-    STRIPE_YEARLY_ID: str = os.environ.get("STRIPE_YEARLY_ID")
-    SUPPORT_EMAIL: str = os.environ.get("SUPPORT_EMAIL")
+    class Config:
+        env_file = "/code/app/core/.backend.env"
+        env_file_encoding = "utf-8"
 
 settings: Settings = Settings()

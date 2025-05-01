@@ -7,14 +7,14 @@ const development = {
     ENDPOINT: "http://localhost:8083",
   },
   frontend: {
-    FRONTEND_DOMAIN: process.env.SERVER_HOST_FRONT,
+    FRONTEND_DOMAIN: "http://localhost:8081",
   },
 };
 
 /* Configuration is hardcoded here and is used if npm build is used */
 const production = {
   api: {
-    ENDPOINT: "",
+    ENDPOINT: "http://localhost:8083",
   },
   frontend: {
     FRONTEND_DOMAIN: "http://todo.gnetkov.com",

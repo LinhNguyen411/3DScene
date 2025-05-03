@@ -37,7 +37,7 @@ A web application that converts videos to 3D Gaussian Splatting models, built wi
 
 - **CUDA**: version >= 12.4
 - **Docker**: latest stable version
-- **NVIDIA Docker Toolkit**: for GPU passthrough
+- **NVIDIA Container Toolkit**: for GPU passthrough
 
 ## Getting Started
 

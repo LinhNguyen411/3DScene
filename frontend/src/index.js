@@ -51,8 +51,6 @@ import Profile from "./pages/dashboard/profile/Profile";
 import Terms from "./pages/privacy/Terms";
 import Privacy from "./pages/privacy/Privacy";
 
-
-
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <LoaderProvider>

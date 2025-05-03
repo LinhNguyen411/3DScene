@@ -14,9 +14,24 @@ A web application that converts videos to 3D Gaussian Splatting models, built wi
 
 ## Tech Stack
 
-- **Backend**: FastAPI, Celery, Redis, Flower, PostgreSQL
-- **Frontend**: React.js, React Three Fiber, Stripe JS
-- **Infrastructure**: Docker, Docker Compose, NVIDIA Docker Toolkit
+- **Backend**:
+  - FastAPI
+  - Celery
+  - Redis
+  - Flower
+  - PostgreSQL
+- **Frontend**:
+  - React.js
+  - React Three Fiber
+  - Stripe JS
+  - Tailwind CSS
+  - Zustand
+- **3D Processing**:
+  - OpenSplat (3D Gaussian Splatting)
+  - COLMAP (SfM + MVS)
+- **Infrastructure**:
+  - Docker & Docker Compose
+  - NVIDIA Docker Toolkit (GPU passthrough)
 
 ## Prerequisites
 
@@ -29,8 +44,8 @@ A web application that converts videos to 3D Gaussian Splatting models, built wi
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/LinhNguyen411/3DScene.git
-cd 3DScene
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
 ```
 
 ### 2. Environment Variables
@@ -41,9 +56,9 @@ cd 3DScene
    ```
 2. Open `.env` and fill in the required values:
    - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-   - `SECRET_KEY`
-   - `STRIPE_API_KEY`
-   - `REACT_APP_API_ENDPOINT`, `REACT_APP_FRONTEND_DOMAIN`
+   - `REDIS_URL`
+   - `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SECRET`
+   - `VIDEO_STORAGE_PATH` etc.
 
 ### 3. Build and Start with Docker
 
@@ -68,9 +83,37 @@ https://<frontend_domain>/admin/settings
 and configure any remaining settings (e.g., default pricing, storage paths).
 
 ## Usage
-- http://localhost:8081/ - FrontEnd application
-- http://localhost:8083/docs - BackEnd Swagger documentions
-- http://localhost:8081/flower/ - Flower to view Celery Tasks
-- http://localhost:8085/ - MailHog to view mails sent by application
-- http://localhost:8086/ - PGAdmin to veiw DB tables and data
 
+- **Upload Video**: Navigate to the upload page and select a video file.
+- **View Progress**: Monitor background tasks in Flower at `https://<frontend_domain>/flower`.
+- **View Model**: Once processing completes, view the 3D model at `https://<frontend_domain>/models/<model_id>`.
+- **Payments**: Trigger payment flows via the Stripe integration on-demand.
+
+## Architecture Diagram
+
+```
+┌────────────┐        ┌──────────────┐        ┌──────────────┐
+│   Client   │◄──────►│   React App  │◄──────►│ React Three  │
+│  (Browser) │        └──────┬───────┘        │   Fiber      │
+└────────────┘               │                └────┬─────────┘
+                            ▼                      ▼
+                    ┌──────────────┐        ┌──────────────┐
+                    │    FastAPI   │◄──────►│ PostgreSQL DB│
+                    └──────┬───────┘        └──────────────┘
+                           ▼
+                    ┌──────────────┐
+                    │    Celery    │◄──────► Redis
+                    └──────┬───────┘
+                           ▼
+                    ┌──────────────┐
+                    │  OpenSplat   │
+                    └──────────────┘
+```
+
+
+## Acknowledgements
+
+- [OpenSplat](https://github.com/hikaru-inoue-cyber/opensplat) — for 3D Gaussian Splatting
+- [COLMAP](https://colmap.github.io/) — for Structure-from-Motion and MVS pipeline
+- [Git](https://git-scm.com/) — for version control
+- [todo-fastapi-reactjs](https://gitlab.com/FedorGN/todo-fastapi-reactjs) — for the initial project template

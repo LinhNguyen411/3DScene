@@ -93,11 +93,11 @@ and configure any remaining settings (e.g., default pricing, storage paths).
 ## Architecture Diagram
 
 ```
-┌────────────┐        ┌──────────────┐        ┌──────────────┐
-│   Client   │◄──────►│   React App  │◄──────►│ React Three  │
-│  (Browser) │        └──────┬───────┘        │   Fiber      │
-└────────────┘               │                └────┬─────────┘
-                            ▼                      ▼
+┌────────────┐        ┌──────────────┐
+│   Client   │◄──────►│   React App  │
+│  (Browser) │        └──────┬───────┘  
+└────────────┘               │    
+                            ▼                      
                     ┌──────────────┐        ┌──────────────┐
                     │    FastAPI   │◄──────►│ PostgreSQL DB│
                     └──────┬───────┘        └──────────────┘

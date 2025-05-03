@@ -84,10 +84,11 @@ and configure any remaining settings (e.g., default pricing, storage paths).
 
 ## Usage
 
-- **Upload Video**: Navigate to the upload page and select a video file.
-- **View Progress**: Monitor background tasks in Flower at `https://<frontend_domain>/flower`.
-- **View Model**: Once processing completes, view the 3D model at `https://<frontend_domain>/models/<model_id>`.
-- **Payments**: Trigger payment flows via the Stripe integration on-demand.
+- http://localhost:8081/ - FrontEnd application
+- http://localhost:8083/docs - BackEnd Swagger documentions
+- http://localhost:8081/flower/ - Flower to view Celery Tasks
+- http://localhost:8085/ - MailHog to view mails sent by application
+- http://localhost:8086/ - PGAdmin to veiw DB tables and data
 
 ## Architecture Diagram
 

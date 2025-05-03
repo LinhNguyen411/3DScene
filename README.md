@@ -113,7 +113,7 @@ and configure any remaining settings (e.g., default pricing, storage paths).
 
 ## Acknowledgements
 
-- [OpenSplat](https://github.com/hikaru-inoue-cyber/opensplat) — for 3D Gaussian Splatting
+- [OpenSplat](https://github.com/pierotofy/opensplat) — for 3D Gaussian Splatting
 - [COLMAP](https://colmap.github.io/) — for Structure-from-Motion and MVS pipeline
 - [Git](https://git-scm.com/) — for version control
 - [todo-fastapi-reactjs](https://gitlab.com/FedorGN/todo-fastapi-reactjs) — for the initial project template

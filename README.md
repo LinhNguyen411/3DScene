@@ -31,7 +31,7 @@ A web application that converts videos to 3D Gaussian Splatting models, built wi
   - COLMAP (SfM + MVS)
 - **Infrastructure**:
   - Docker & Docker Compose
-  - NVIDIA Docker Toolkit (GPU passthrough)
+  - NVIDIA Container Toolkit (GPU passthrough)
 
 ## Prerequisites
 

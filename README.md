@@ -44,8 +44,8 @@ A web application that converts videos to 3D Gaussian Splatting models, built wi
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/LinhNguyen411/3DScene.git
+cd 3DScene
 ```
 
 ### 2. Environment Variables

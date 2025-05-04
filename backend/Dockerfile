@@ -54,7 +54,8 @@ RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_install
     && dpkg -i cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb \
     && cp /var/cudss-local-repo-ubuntu2204-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ \
     && apt-get update \
-    && apt-get -y install cudss
+    && apt-get -y install cudss \
+    && rm cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb
 
 # Set environment variables
 ENV CUDSS_DIR=/usr/local/cudss \
@@ -75,7 +76,8 @@ RUN git clone --recursive https://github.com/ceres-solver/ceres-solver.git \
     && mkdir build && cd build \
     && cmake -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_CUDA_ARCHITECTURES="86" .. -GNinja \
     && ninja && ninja install \
-    && cd ../..
+    && cd ../.. \
+    && rm -rf ceres-solver
 
 # Install COLMAP with CUDA support
 RUN git clone https://github.com/colmap/colmap.git \
@@ -83,7 +85,8 @@ RUN git clone https://github.com/colmap/colmap.git \
     && mkdir build && cd build \
     && cmake -DCMAKE_CUDA_ARCHITECTURES="86" .. -GNinja \
     && ninja && ninja install \
-    && cd ../..
+    && cd ../.. \
+    && rm -rf colmap
 
 # Install GloMap
 RUN git clone https://github.com/colmap/glomap.git \
@@ -91,7 +94,8 @@ RUN git clone https://github.com/colmap/glomap.git \
     && mkdir build && cd build \
     && cmake -DCMAKE_CUDA_ARCHITECTURES="86" .. -GNinja \
     && ninja && ninja install \
-    && cd ../..
+    && cd ../.. \
+    && rm -rf glomap
 
 # Install PyTorch with CUDA
 RUN curl -o libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu124.zip \
@@ -106,16 +110,18 @@ RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat \
     && mkdir build && cd build \
     && cmake -DUSE_CUDSS=ON -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ -DCMAKE_CUDA_ARCHITECTURES="86" .. \
     && make -j$(nproc) \
-    && make install
+    && make install \
+    && cd ../.. \
+    && rm -rf OpenSplat
 
 # Create Python symlink
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-
 # Install Go
-RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz && \
-    rm -rf /usr/local/go && \
-    tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
+RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz \
+    && rm -rf /usr/local/go \
+    && tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz \
+    && rm go1.24.2.linux-amd64.tar.gz
 
 # Set Go environment
 ENV PATH="/usr/local/go/bin:$PATH"
@@ -123,9 +129,11 @@ ENV PATH="/root/go/bin:$PATH"
 ENV GOPATH="/root/go"
 
 # Clone gsbox repo and build the app
-RUN git clone https://github.com/gotoeasy/gsbox.git gsbox && \
-    cd gsbox && \
-    go install .
+RUN git clone https://github.com/gotoeasy/gsbox.git gsbox \
+    && cd gsbox \
+    && go install . \
+    && cd .. \
+    && rm -rf gsbox
 
 WORKDIR /code/app
 
@@ -137,10 +145,6 @@ COPY ./app /code/app
 ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
-
-RUN rm -rf /ceres-solver /colmap /glomap /OpenSplat /gsbox \
-    && rm -rf /go1.24.2.linux-amd64.tar.gz \
-    && rm -rf /cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb
 
 EXPOSE 8000
 

@@ -100,6 +100,10 @@ ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
 
+RUN rm -rf /ceres-solver /colmap /glomap /OpenSplat /gsbox \
+    && rm -rf /go1.24.2.linux-amd64.tar.gz \
+    && rm -rf /cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb
+
 EXPOSE 8000
 
 #CMD ["uvicorn", "main:app", "--reload", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]

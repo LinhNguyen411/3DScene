@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from sqlalchemy.orm import Session  # type: ignore
 from app.api import deps
 from app import schemas
@@ -313,7 +313,8 @@ async def upload_splat(
 
     # Path where the model and thumbnail will be stored
     model_path = os.path.join(modeling_task_dir, model.filename)
-    thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail.filename)
+    thumbnail_filename = f"{splat_id}_thumbnail.jpg"
+    thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
 
     # Save the thumbnail file
     with open(thumbnail_path, "wb") as f:
@@ -362,12 +363,12 @@ async def upload_splat(
     # --- Create Database Entry ---
     # Calculate model file size (in MB)
     model_size = round(os.path.getsize(splat_path) / (1024 * 1024), 2)
-
+    thumbnail_url = f"/thumbnails/{thumbnail_filename}"
     # Create the Splat entry in the database
     splat_in = schemas.SplatCreate(
         id=splat_id,
         title=title,
-        image_url=thumbnail_path,
+        image_url=thumbnail_url,
         model_url=splat_path,
         is_public=is_public,
         status='SUCCESS',
@@ -390,7 +391,9 @@ def update_splat(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     id: str,
-    splat_in: schemas.SplatUpdate,
+    title: str = Form(...),
+    is_public: bool = Form(...),
+    thumbnail: Optional[UploadFile] = File(None),
 ) -> Any:
     """
     Cập nhật thông tin của một splat.
@@ -417,6 +420,20 @@ def update_splat(
         raise HTTPException(status_code=404, detail="Splat not found")
     if not current_user.is_superuser and (splat.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
+    
+    if thumbnail is not None:
+        print("update thumbnail")
+        thumbnail_filename = f"{splat.id}_thumbnail.jpg"
+        thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
+        with open(thumbnail_path, "wb") as f:
+            shutil.copyfileobj(thumbnail.file, f)
+            print(f"File {thumbnail_path} has been updated.")
+
+
+    splat_in = schemas.SplatUpdate(
+        title=title,
+        is_public=is_public,
+    )
     splat = crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
     return splat
 
@@ -465,7 +482,6 @@ def delete_splat(
 
     thumbnail_filename = f"{splat.id}_thumbnail.jpg"
     thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
-    print(thumbnail_path)
     if os.path.exists(thumbnail_path):
         try:
             os.remove(thumbnail_path)

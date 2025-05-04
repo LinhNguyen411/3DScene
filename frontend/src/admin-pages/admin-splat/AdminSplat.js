@@ -122,24 +122,15 @@ function AdminSplat() {
   const handleEdit = async () => {
     try {
       setIsUploading(true);
-      
-      const updateItem = {
-        title: editingItem.title,
-        is_public: editingItem.is_public
-      };
-      
       // Create FormData for file upload if we have a new image
+      const formData = new FormData();
+      formData.append('title', editingItem.title);
+      formData.append('is_public', editingItem.is_public);
+      
       if (imageFile) {
-        const formData = new FormData();
         formData.append('thumbnail', imageFile);
-        formData.append('title', editingItem.title);
-        formData.append('is_public', editingItem.is_public);
-        
-        await DataService.updateSplatWithImage(editingItem.id, formData);
-      } else {
-        // Regular update without image
-        await DataService.updateSplat(editingItem.id, updateItem);
       }
+      await DataService.updateSplat(editingItem.id, formData);
       
       onRefresh();
       showSnackbar('Splat updated successfully', 'success');

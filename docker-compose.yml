@@ -33,7 +33,7 @@ x-fastapi-app-environment:
 
 services:
   3dscene-frontend:
-    image: "3dscene-frontend:latest"
+    image: "linhnguyen411/3dscene-frontend:latest"
     depends_on:
       - 3dscene-api
     ports:
@@ -49,7 +49,7 @@ services:
     restart: unless-stopped
 
   3dscene-api:
-    image: "3dscene-api:latest"
+    image: "linhnguyen411/3dscene-api:cpu"
     ports:
       - ${API_PORT}:${API_PORT_INTERNAL}
     environment:
@@ -85,7 +85,7 @@ services:
     restart: unless-stopped
 
   3dscene-worker-email:
-    image: "3dscene-api:latest"
+    image: "linhnguyen411/3dscene-api:cpu"
     environment:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped
@@ -97,7 +97,7 @@ services:
       - 3dscene-postgres
   
   3dscene-worker-heavy:
-    image: "3dscene-api:latest"
+    image: "linhnguyen411/3dscene-api:cpu"
     volumes:
       - ./backend/app/model_assets:/code/app/model_assets
     environment:

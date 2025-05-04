@@ -8,17 +8,17 @@
 services:
   # react application
   3dscene-frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    # build:
+    #   context: ./frontend
+    #   dockerfile: Dockerfile
     volumes:
       - ./frontend:/app
 
   # FastApi application
   3dscene-api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    # build:
+    #   context: ./backend
+    #   dockerfile: Dockerfile
     volumes:
       - ./backend/:/code
 

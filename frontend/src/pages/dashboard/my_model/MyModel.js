@@ -25,8 +25,10 @@ function MyModel(props){
 
   const handleUpdateModel = async () => {
     try {
-      const data = {title: model.title, is_public: model.is_public};
-      await DataService.updateSplat(model.id, data);
+      const formData = new FormData();
+      formData.append('title', model.title);
+      formData.append('is_public', model.is_public);
+      await DataService.updateSplat(model.id, formData);
       setIsEditModalOpen(false);
       onRefresh(); // Refresh the model list
       // onUpdate(model.id, title);

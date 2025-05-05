@@ -74,7 +74,7 @@ RUN sed -i 's/#include_next /#include /g' /usr/include/c++/10/cmath \
 RUN git clone --recursive https://github.com/ceres-solver/ceres-solver.git \
     && cd ceres-solver \
     && mkdir build && cd build \
-    && cmake -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_CUDA_ARCHITECTURES=all .. -GNinja \
+    && cmake -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. -GNinja \
     && ninja && ninja install \
     && cd ../.. \
     && rm -rf ceres-solver
@@ -83,7 +83,7 @@ RUN git clone --recursive https://github.com/ceres-solver/ceres-solver.git \
 RUN git clone https://github.com/colmap/colmap.git \
     && cd colmap \
     && mkdir build && cd build \
-    && cmake -DCMAKE_CUDA_ARCHITECTURES=all .. -GNinja \
+    && cmake -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. -GNinja \
     && ninja && ninja install \
     && cd ../.. \
     && rm -rf colmap
@@ -92,7 +92,7 @@ RUN git clone https://github.com/colmap/colmap.git \
 RUN git clone https://github.com/colmap/glomap.git \
     && cd glomap \
     && mkdir build && cd build \
-    && cmake -DCMAKE_CUDA_ARCHITECTURES=all .. -GNinja \
+    && cmake -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. -GNinja \
     && ninja && ninja install \
     && cd ../.. \
     && rm -rf glomap
@@ -108,7 +108,7 @@ ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:$LD_LIBRARY_PATH
 RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat \
     && cd OpenSplat \
     && mkdir build && cd build \
-    && cmake -DUSE_CUDSS=ON -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ -DCMAKE_CUDA_ARCHITECTURES=all .. \
+    && cmake -DUSE_CUDSS=ON -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. \
     && make -j$(nproc) \
     && make install \
     && cd ../.. \

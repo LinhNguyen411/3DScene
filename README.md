@@ -1,4 +1,4 @@
-# 2D Scene Reconstruction Web App
+# 3D Scene Reconstruction Web App
 
 A web application that converts videos to 3D Gaussian Splatting models, built with FastAPI, Celery, Redis, Flower, PostgreSQL, React.js, Stripe, React Three Fiber, and Docker.
 

@@ -98,8 +98,6 @@ services:
   
   3dscene-worker-heavy:
     image: "linhnguyen411/3dscene-api:cpu"
-    volumes:
-      - ./backend/app/model_assets:/code/app/model_assets
     environment:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped

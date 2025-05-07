@@ -22,6 +22,14 @@ services:
     volumes:
       - ./backend/:/code
 
+  3dscene-worker-heavy:
+    volumes:
+      - ./backend/:/code
+  
+  3dscene-worker-email:
+    volumes:
+      - ./backend/:/code
+
   # reverse proxy for frontend/backend (fixes problems with CORS and simpler to deploy)
   3dscene-reverse-proxy:
     build:

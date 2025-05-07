@@ -114,8 +114,6 @@ services:
   
   3dscene-worker-heavy:
     image: "3dscene-api:latest"
-    volumes:
-      - ./backend/app/model_assets:/code/app/model_assets
     environment:
       <<: *common-fastapi-app-environment-variables
     restart: unless-stopped

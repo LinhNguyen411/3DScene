@@ -90,26 +90,6 @@ http {
             proxy_read_timeout 600;
             send_timeout 600;
         }
-
-        # @see https://docs.humio.com/integrations/proxies/nginx/
-        # @see https://github.com/python-restx/flask-restx/issues/58
-        location /mailhog/ {
-            proxy_pass http://3dscene-mailhog:${MAILHOG_PORT_INTERNAL}/;
-            proxy_redirect off;
-
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Scheme $scheme;
-
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
-            # proxy_set_header X-Forwarded-Prefix /mailhog/;
-
-            proxy_connect_timeout 600;
-            proxy_send_timeout 600;
-            proxy_read_timeout 600;
-            send_timeout 600;
-        }
         
         location /flower/ {
             rewrite ^/flower/(.*)$ /$1 break;

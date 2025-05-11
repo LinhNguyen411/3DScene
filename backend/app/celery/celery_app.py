@@ -16,6 +16,8 @@ from app import crud
 from app import schemas
 from app.db.session import SessionLocal
 
+from app.utils.export_to_json import process_colmap_model
+
 celery_app = Celery('tasks')
 celery_app.conf.broker_url = os.environ.get(
     "CELERY_BROKER_URL", "redis://localhost:6379")
@@ -117,50 +119,63 @@ def process_video(self: Task,
             img_dir = dataset_dir
 
         # 3. Run COLMAP feature extraction
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP feature extraction"})
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP feature extraction"})
         
-        splat_in = schemas.SplatUpdate(status = "PROGRESS")
-        splat = crud.splat.get(db, id= task_id)
-        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        # splat_in = schemas.SplatUpdate(status = "PROGRESS")
+        # splat = crud.splat.get(db, id= task_id)
+        # crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
-        cmd = [
-            "colmap", "feature_extractor",
-            "--database_path", os.path.join(dataset_path, "database.db"),
-            "--image_path", img_dir,
-            "--SiftExtraction.use_gpu", "0",
-            "--ImageReader.single_camera", "1"
-        ]
-        run_command(cmd)
+        # cmd = [
+        #     "colmap", "feature_extractor",
+        #     "--database_path", os.path.join(dataset_path, "database.db"),
+        #     "--image_path", img_dir,
+        #     "--SiftExtraction.use_gpu", "0",
+        #     "--ImageReader.single_camera", "1"
+        # ]
+        # run_command(cmd)
 
-        # 4. Run COLMAP sequential matcher
+        # # 4. Run COLMAP sequential matcher
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP matcher"})
+
+        # cmd = [
+        #     "colmap", "exhaustive_matcher",
+        #     "--database_path", os.path.join(dataset_path, "database.db"),
+        #     "--SiftMatching.use_gpu", "0"
+        # ]
+        # run_command(cmd)
+
+        # # 5. Create sparse directory
+        # sparse_dir = os.path.join(dataset_path, "sparse")
+        # os.makedirs(sparse_dir, exist_ok=True)
+
+        # # 6. Run COLMAP mapper
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP mapper"})
+
+        # cmd = [
+        #     "colmap", "mapper",
+        #     "--database_path", os.path.join(dataset_path, "database.db"),
+        #     "--image_path", img_dir,
+        #     "--output_path", sparse_dir,
+        #     "--Mapper.ba_use_gpu", "0",
+        #     "--Mapper.ba_global_function_tolerance", "0.000001"
+        # ]
+        # run_command(cmd)
+
         self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP matcher"})
-
+                          meta={"status": "Running COLMAP automatic reconstructor"})
         cmd = [
-            "colmap", "exhaustive_matcher",
-            "--database_path", os.path.join(dataset_path, "database.db"),
-            "--SiftMatching.use_gpu", "0"
+            "colmap", "automatic_reconstructor",
+            "--workspace_path", dataset_path,
+            "--image_path", img_dir,
+            "--use_gpu", "0",
+            "--dense", "0" 
         ]
         run_command(cmd)
-
-        # 5. Create sparse directory
         sparse_dir = os.path.join(dataset_path, "sparse")
-        os.makedirs(sparse_dir, exist_ok=True)
 
-        # 6. Run COLMAP mapper
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP mapper"})
-
-        cmd = [
-            "colmap", "mapper",
-            "--database_path", os.path.join(dataset_path, "database.db"),
-            "--image_path", img_dir,
-            "--output_path", sparse_dir,
-            "--Mapper.ba_use_gpu", "0",
-            "--Mapper.ba_global_function_tolerance", "0.000001"
-        ]
-        run_command(cmd)
 
         # 7. Create dense directory
         dense_dir = os.path.join(dataset_path, "dense")
@@ -221,6 +236,11 @@ def process_video(self: Task,
         os.chdir(current_dir)
 
         # 12. Copy the result to output directory
+        process_colmap_model(opensplat_dir, ".bin", workspace_path)
+        shutil.copytree(os.path.join(opensplat_dir, "images"),
+                        os.path.join(settings.MODEL_IMAGES_DIR, task_id),
+                        dirs_exist_ok=True)
+
         src_path = os.path.join(dataset_path, "outputs", output_model)
         dst_path = os.path.join(workspace_path, output_model)
 
@@ -261,6 +281,13 @@ def process_video(self: Task,
         splat_in = schemas.SplatUpdate(status = "FAILURE")
         splat = crud.splat.get(db, id= task_id)
         crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        
+        images_path = os.path.join(settings.MODEL_IMAGES_DIR, splat.id)    
+        try:
+            shutil.rmtree(images_path)
+            print(f"Directory {images_path} has been removed.")
+        except Exception as e:
+            print(f"Error removing directory {images_path}: {str(e)}")
         raise Ignore()
     finally:
         # Clean up the workspace after processing
@@ -275,6 +302,7 @@ def process_video(self: Task,
 def run_command(cmd):
     """Run a shell command and handle errors"""
     try:
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
         celery_log.info(f"Running command: {' '.join(cmd)}")
         result = subprocess.run(
             cmd,

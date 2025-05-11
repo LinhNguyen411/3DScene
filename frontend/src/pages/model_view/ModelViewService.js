@@ -113,12 +113,25 @@ const getAuth = async (viewer) => {
     return null
   }
 };
+
+const getColmapData = async (id, viewer) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/${id}/metadata`, {
+        headers: getAuthHeaders(viewer),
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error('Failed to colmap data');
+    }
+}
+
 const DataService = {
   getAuth,
   getSplat,
   downloadSplat,
   downloadPLY,
   getModel,
+  getColmapData,
 };
 
 

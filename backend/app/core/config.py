@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     
     MODEL_ASSETS_DIR: str = "model_assets"
     MODEL_THUMBNAILS_DIR: str = MODEL_ASSETS_DIR + "/thumnails"
+    MODEL_IMAGES_DIR: str = MODEL_ASSETS_DIR + "/images"
     MODEL_WORKSPACES_DIR: str = MODEL_ASSETS_DIR + "/workspaces"
     PUBLIC_DIR:str = "public"
     PROJECT_NAME: str = os.environ["PROJECT_NAME"]

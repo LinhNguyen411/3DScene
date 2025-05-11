@@ -10,7 +10,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination import Params, Page
 from fastapi import (APIRouter,  Depends, HTTPException,
                      File, UploadFile, Form, BackgroundTasks)
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import os
 import uuid
 from app.core.config import settings
@@ -480,6 +480,13 @@ def delete_splat(
     except Exception as e:
         print(f"Error removing directory {dir_path}: {str(e)}")
 
+    images_path = os.path.join(settings.MODEL_IMAGES_DIR, splat.id)
+    try:
+        shutil.rmtree(images_path)
+        print(f"Directory {images_path} has been removed.")
+    except Exception as e:
+        print(f"Error removing directory {images_path}: {str(e)}")
+
     thumbnail_filename = f"{splat.id}_thumbnail.jpg"
     thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
     if os.path.exists(thumbnail_path):
@@ -687,3 +694,100 @@ async def download_ply(
         media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={os.path.basename(output_path)}"}
     )
+
+import json
+@router.get("/{id}/metadata", responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
+})
+async def get_splat_metadata(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
+    id: str,
+) -> Any:
+    """
+    Lấy metadata bao gồm cameras.json, points.json và images_url từ thư mục của file .splat.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần lấy metadata (dưới dạng URL parameter).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về JSON chứa dữ liệu từ cameras.json, points.json và danh sách images_url.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
+    - 404 Not Found: Nếu splat không tồn tại.
+    - 500 Internal Server Error: Nếu có lỗi trong quá trình đọc hoặc xử lý file.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng lấy metadata liên quan đến file `.splat`.
+    - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể truy cập metadata.
+    - File `.splat` cần có trạng thái `SUCCESS` và tồn tại trên hệ thống.
+    - Endpoint sẽ tìm và đọc file cameras.json, points.json, và liệt kê đường dẫn images trong cùng thư mục với file splat.
+    """
+    # Kiểm tra splat có tồn tại
+    splat = crud.splat.get(db=db, id=id)
+    if not splat:
+        raise HTTPException(status_code=404, detail="Splat not found")
+
+    # Kiểm tra quyền truy cập
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # Kiểm tra trạng thái
+    if splat.status != 'SUCCESS':
+        raise HTTPException(
+            status_code=404,
+            detail=f"Result not ready or task failed. Current state: {splat.status}"
+        )
+
+    # Lấy đường dẫn thư mục từ model_url
+    splat_file_path = splat.model_url
+    if not splat_file_path or not os.path.exists(splat_file_path):
+        raise HTTPException(status_code=400, detail="Input .splat file not found")
+
+    # Lấy thư mục chứa splat file
+    dir_path = os.path.dirname(splat_file_path)
+    
+    # Đường dẫn đến các file metadata
+    cameras_json_path = os.path.join(dir_path, 'cameras.json')
+    points_json_path = os.path.join(dir_path, 'points.json')
+    
+    # Đọc dữ liệu từ các file JSON
+    try:
+        cameras_data = {}
+        if os.path.exists(cameras_json_path):
+            with open(cameras_json_path, 'r') as f:
+                cameras_data = json.load(f)
+        else:
+            cameras_data = {"error": "cameras.json not found"}
+            
+        points_data = {}
+        if os.path.exists(points_json_path):
+            with open(points_json_path, 'r') as f:
+                points_data = json.load(f)
+        else:
+            points_data = {"error": "points.json not found"}
+            
+        # Tìm tất cả các file hình ảnh trong thư mục
+        images_url =  "/images/" + id
+                
+        # Tạo response JSON kết hợp
+        combined_response = {
+            "cameras": cameras_data,
+            "points": points_data,
+            "images": images_url,
+        }
+        
+        return JSONResponse(content=combined_response)
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error parsing JSON metadata files")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving metadata: {str(e)}")

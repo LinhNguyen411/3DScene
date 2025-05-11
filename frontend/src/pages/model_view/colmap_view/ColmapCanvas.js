@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Grid, OrbitControls } from "@react-three/drei";
@@ -25,6 +25,9 @@ const ColmapCanvas = ({colmap_data}) => {
     imageUrl: "",
     imageName: ""
   });
+  
+  // Create a ref to store the OrbitControls
+  const orbitControlsRef = useRef();
 
   const handleImageClick = (camera, imageUrl) => {
     setPopupState({
@@ -49,14 +52,24 @@ const ColmapCanvas = ({colmap_data}) => {
         <group rotation={[Math.PI, 0, 0]}>
           <Cameras 
             imageBasePath={myAppConfig.api.ENDPOINT + colmap_data.images}
-            cameras ={colmap_data.cameras}
+            cameras={colmap_data.cameras}
             onImageClick={handleImageClick}
           />
           <PointCloud points={colmap_data.points}/>
-
         </group>
         <Axes />
-        <OrbitControls makeDefault />
+        <OrbitControls 
+          ref={orbitControlsRef}
+          makeDefault 
+          // Store the controls reference in the camera's userData for access in other components
+          onUpdate={(controls) => {
+            // This will run when OrbitControls updates
+            // Store the controls in the camera's userData for access in Cameras.js
+            if (controls.object) {
+              controls.object.userData.controls = controls;
+            }
+          }}
+        />
         <Grid
           position={[0, -1.5, 0]}
           args={[50, 50]}

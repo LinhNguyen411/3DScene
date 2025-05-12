@@ -80,6 +80,20 @@ function MyModel(props){
       setLoading(false);
     }
   };
+  const handleExportColmap = async () => {
+    try {
+      setLoading(true);
+      await DataService.downloadColmap(model.id);
+      setIsExportModalOpen(false);
+      showSnackbar("Exported COLMAP files successfully!", "success");
+    } catch (error) {
+      console.error("Error exporting COLMAP files:", error);
+      showSnackbar("Failed to export COLMAP files", "error");
+    }
+    finally{
+      setLoading(false);
+    }
+  };
 
   // Simulate fetching models from API
   const onRefresh = async () => {
@@ -161,13 +175,18 @@ function MyModel(props){
                 {filteredModels.map((model) => (
                     <div className="bg-white rounded-lg shadow">
                       <div className="relative">
-                        <Link to={RouterPath.MODEL_VIEW + "?id=" + model.id + "&viewer=user"} key={model.id}>
-                            <img 
-                            src={myAppConfig.api.ENDPOINT  + model.image_url} 
+                        <Link 
+                          to={RouterPath.MODEL_VIEW + "?id=" + model.id + "&viewer=user"} 
+                          key={model.id} 
+                          style={model.status !== 'SUCCESS' ? { pointerEvents: 'none', opacity: 0.5 } : {}}
+                          className={model.status !== 'SUCCESS' ? 'cursor-not-allowed' : ''}
+                          onClick={(e) => model.status !== 'SUCCESS' && e.preventDefault()}
+                        >
+                          <img 
+                            src={myAppConfig.api.ENDPOINT + model.image_url} 
                             alt={model.title} 
                             className="w-full h-48 object-cover"
-                            />
-                        
+                          />
                         </Link>
                           <div className="absolute bottom-2 left-2">
                           <span className={`px-3 py-1 rounded-full text-sm ${
@@ -342,6 +361,10 @@ function MyModel(props){
             </div>
           ) : (
             <div className="space-y-3">
+              <button
+                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+                    onClick={handleExportColmap}
+              >Export colmap .zip (includes images)</button>
               <button
                 className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
                 onClick={handleExportSplat}

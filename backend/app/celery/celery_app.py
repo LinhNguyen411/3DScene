@@ -118,54 +118,14 @@ def process_video(self: Task,
             # If dataset_dir is already the images directory, use it directly
             img_dir = dataset_dir
 
-        # 3. Run COLMAP feature extraction
-        # self.update_state(state="PROGRESS",
-        #                   meta={"status": "Running COLMAP feature extraction"})
-        
-        # splat_in = schemas.SplatUpdate(status = "PROGRESS")
-        # splat = crud.splat.get(db, id= task_id)
-        # crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
-
-        # cmd = [
-        #     "colmap", "feature_extractor",
-        #     "--database_path", os.path.join(dataset_path, "database.db"),
-        #     "--image_path", img_dir,
-        #     "--SiftExtraction.use_gpu", "0",
-        #     "--ImageReader.single_camera", "1"
-        # ]
-        # run_command(cmd)
-
-        # # 4. Run COLMAP sequential matcher
-        # self.update_state(state="PROGRESS",
-        #                   meta={"status": "Running COLMAP matcher"})
-
-        # cmd = [
-        #     "colmap", "exhaustive_matcher",
-        #     "--database_path", os.path.join(dataset_path, "database.db"),
-        #     "--SiftMatching.use_gpu", "0"
-        # ]
-        # run_command(cmd)
-
-        # # 5. Create sparse directory
-        # sparse_dir = os.path.join(dataset_path, "sparse")
-        # os.makedirs(sparse_dir, exist_ok=True)
-
-        # # 6. Run COLMAP mapper
-        # self.update_state(state="PROGRESS",
-        #                   meta={"status": "Running COLMAP mapper"})
-
-        # cmd = [
-        #     "colmap", "mapper",
-        #     "--database_path", os.path.join(dataset_path, "database.db"),
-        #     "--image_path", img_dir,
-        #     "--output_path", sparse_dir,
-        #     "--Mapper.ba_use_gpu", "0",
-        #     "--Mapper.ba_global_function_tolerance", "0.000001"
-        # ]
-        # run_command(cmd)
-
+        # 4. Run COLMAP automatic reconstructor
         self.update_state(state="PROGRESS",
                           meta={"status": "Running COLMAP automatic reconstructor"})
+        
+        splat_in = schemas.SplatUpdate(status = "PROGRESS")
+        splat = crud.splat.get(db, id= task_id)
+        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+
         cmd = [
             "colmap", "automatic_reconstructor",
             "--workspace_path", dataset_path,

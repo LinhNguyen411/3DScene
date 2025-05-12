@@ -1,6 +1,6 @@
-import React, { useEffect, useState, Suspense, useMemo } from 'react';
+import React, { useEffect, useState, Suspense, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { useLoader, useThree } from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
 import PyramidOutlineComponent from './PyramidOutline';
 
 // TextureCache to prevent redundant loading
@@ -33,7 +33,9 @@ const CameraInstance = ({
   viewerPosition
 }) => {
   const { gl, camera } = useThree();
-  const [textureLoaded, setTextureLoaded] = useState(false);
+  // Ref for texture loaded state to avoid re-renders
+  const textureLoadedRef = useRef(false);
+  const [textureVisible, setTextureVisible] = useState(false);
   
   useEffect(() => {
     if (isHovered) {
@@ -41,16 +43,24 @@ const CameraInstance = ({
     }
   }, [isHovered, item.name, item.uniqueId]);
 
+  let width, height, aspectRatio;
   // Use provided camera dimensions
-  const width = 0.2;
-  const aspectRatio = cameraHeight / cameraWidth;
-  const height = aspectRatio * width;
+  if (cameraWidth > cameraHeight){
+    width = 0.2;
+    aspectRatio = cameraHeight / cameraWidth;
+    height = aspectRatio * width;
+  }
+  else{
+    height = 0.2;
+    aspectRatio = cameraWidth / cameraHeight;
+    width = aspectRatio * height;
+  }
   const pyramidSize = useMemo(() => new THREE.Vector3(width / 2, 0.05, height / 2), [width, height]);
 
   const pyramidColor = isHovered ? 0xffff00 : 0xffffff;
   const baseOpacity = isHovered ? 0.1 : 0;
   
-  // Calculate optimal texture size based on distance
+  // Calculate optimal texture size based on distance - moved outside of texture loading
   const optimalSize = useMemo(() => {
     return viewerPosition ? calculateOptimalTextureSize(item, viewerPosition) : 256;
   }, [item, viewerPosition]);
@@ -63,7 +73,13 @@ const CameraInstance = ({
     const cacheKey = `${imagePath}_${optimalSize}`;
     
     if (textureCache.has(cacheKey)) {
-      setTextureLoaded(true);
+      if (!textureLoadedRef.current) {
+        textureLoadedRef.current = true;
+        // Use requestAnimationFrame to avoid state update during rendering
+        requestAnimationFrame(() => {
+          setTextureVisible(true);
+        });
+      }
       return textureCache.get(cacheKey);
     }
     
@@ -93,8 +109,13 @@ const CameraInstance = ({
         loadedTexture.image = canvas;
         loadedTexture.needsUpdate = true;
         
-        // Update loaded state
-        setTextureLoaded(true);
+        // Update loaded state using ref first, then state
+        textureLoadedRef.current = true;
+        
+        // Use requestAnimationFrame to avoid state update during rendering
+        requestAnimationFrame(() => {
+          setTextureVisible(true);
+        });
       },
       undefined,
       (error) => console.error('Error loading texture:', error)
@@ -108,32 +129,36 @@ const CameraInstance = ({
   const [w, x, y, z] = item.quaternion;
 
   // Handle camera focus and zoom on click
-  const handleClick = (e) => {
+   const handleClick = (e) => {
     e.stopPropagation();
 
-    // Get camera quaternion (inverse of image quaternion since scene is rotated)
-    const imageQuaternion = new THREE.Quaternion(x, y, z, -w);
+    // Get the current world matrix from the mesh to account for all parent transformations
+    const mesh = e.object;
+    mesh.updateWorldMatrix(true, false);
     
-    // Get the world position of this camera
-    const worldPosition = new THREE.Vector3(...item.position);
+    // Get the world position of this camera (including all parent transformations)
+    const worldPosition = new THREE.Vector3();
+    mesh.getWorldPosition(worldPosition);
     
-    // Apply scene rotation to the world position and direction calculations
-    // Since the group is rotated 180 degrees around X-axis (Math.PI, 0, 0)
-    const sceneRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI, 0, 0));
+    // Get world quaternion (including all parent transformations)
+    const worldQuaternion = new THREE.Quaternion();
+    mesh.getWorldQuaternion(worldQuaternion);
     
-    // Adjusted world position accounting for scene rotation
-    const adjustedWorldPosition = worldPosition.clone().applyQuaternion(sceneRotation);
+    // Create a direction vector based on the camera orientation
+    const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(worldQuaternion);
     
-    // Adjusted camera quaternion considering parent rotation
-    const adjustedQuaternion = new THREE.Quaternion().multiplyQuaternions(sceneRotation, imageQuaternion);
-    
-    // Create a direction vector based on the adjusted camera orientation
-    const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(adjustedQuaternion);
+    // Get the world scale to adjust the viewing distance
+    const worldScale = new THREE.Vector3();
+    mesh.getWorldScale(worldScale);
+    // Use the average scale factor
+    const scaleFactor = (worldScale.x + worldScale.y + worldScale.z) / 3;
     
     // Calculate the position to place the viewing camera
-    // Move it 1.5 units away from the camera in the opposite direction
-    const targetPosition = new THREE.Vector3().copy(adjustedWorldPosition).add(
-      direction.multiplyScalar(-0.5)
+    // Adjust distance based on scale to maintain consistent view size
+    const baseDistance = 0.3;
+    const adjustedDistance = baseDistance * scaleFactor;
+    const targetPosition = new THREE.Vector3().copy(worldPosition).add(
+      direction.multiplyScalar(adjustedDistance)
     );
     
     // Create a temporary object to animate to
@@ -175,11 +200,11 @@ const CameraInstance = ({
       camera.position.y = initialPositionY + (targetPositionY - initialPositionY) * easeProgress;
       camera.position.z = initialPositionZ + (targetPositionZ - initialPositionZ) * easeProgress;
       
-      // Interpolate orbit controls target to the adjusted camera position
+      // Interpolate orbit controls target to the world position
       if (camera.userData.controls) {
-        camera.userData.controls.target.x = initialTargetX + (adjustedWorldPosition.x - initialTargetX) * easeProgress;
-        camera.userData.controls.target.y = initialTargetY + (adjustedWorldPosition.y - initialTargetY) * easeProgress;
-        camera.userData.controls.target.z = initialTargetZ + (adjustedWorldPosition.z - initialTargetZ) * easeProgress;
+        camera.userData.controls.target.x = initialTargetX + (worldPosition.x - initialTargetX) * easeProgress;
+        camera.userData.controls.target.y = initialTargetY + (worldPosition.y - initialTargetY) * easeProgress;
+        camera.userData.controls.target.z = initialTargetZ + (worldPosition.z - initialTargetZ) * easeProgress;
         camera.userData.controls.update();
       }
       
@@ -192,9 +217,10 @@ const CameraInstance = ({
     // Start animation
     animateCamera();
   
-  // Also call the original click handler to show the popup
-    // Also call the original click handler to show the popup
-    // onCameraClick(item, `${imageBasePath}/${item.name}`);
+    // Also call the original click handler to show the popup if needed
+    // if (onCameraClick) {
+    //   onCameraClick(item, `${imageBasePath}/${item.name}`);
+    // }
   };
 
   return (
@@ -217,7 +243,7 @@ const CameraInstance = ({
             side={THREE.DoubleSide}
             transparent
             alphaTest={0.5}
-            opacity={textureLoaded ? 1 : 0}
+            opacity={textureVisible ? 0.7 : 0}
           />
         </mesh>
       )}
@@ -229,21 +255,35 @@ const CameraInstance = ({
 const LODCameraInstance = (props) => {
   const { camera } = useThree();
   const [distance, setDistance] = useState(0);
+  const distanceRef = useRef(0);
+  const requestRef = useRef(null);
   
+  // Use refs to avoid multiple state updates
   useEffect(() => {
     const updateDistance = () => {
       const cameraPosition = new THREE.Vector3(...props.item.position);
       const viewerPosition = camera.position;
       const dist = cameraPosition.distanceTo(viewerPosition);
-      setDistance(dist);
+      
+      // Only update state if the distance has changed significantly
+      if (Math.abs(distanceRef.current - dist) > 1) {
+        distanceRef.current = dist;
+        setDistance(dist);
+      }
+      
+      // Schedule next update
+      requestRef.current = requestAnimationFrame(updateDistance);
     };
     
-    // Initial calculation
-    updateDistance();
+    // Start updates
+    requestRef.current = requestAnimationFrame(updateDistance);
     
-    // Add to render loop for continuous updates
-    const interval = setInterval(updateDistance, 500);
-    return () => clearInterval(interval);
+    // Cleanup
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
   }, [props.item.position, camera]);
   
   // Skip rendering if too far away
@@ -257,6 +297,7 @@ const Cameras = ({ cameras, imageBasePath = '/images/', onImageClick }) => {
   const [cameraData, setCameraData] = useState([]);
   const [hoveredCameraId, setHoveredCameraId] = useState(null);
   const { camera } = useThree();
+  const processedRef = useRef(false);
   
   // Store the OrbitControls reference in camera.userData
   useEffect(() => {
@@ -271,6 +312,9 @@ const Cameras = ({ cameras, imageBasePath = '/images/', onImageClick }) => {
   }, [camera]);
 
   useEffect(() => {
+    // Prevent duplicate processing
+    if (processedRef.current) return;
+    
     // Process camera data
     const processedData = cameras.map((item, index) => ({
       ...item,
@@ -278,7 +322,9 @@ const Cameras = ({ cameras, imageBasePath = '/images/', onImageClick }) => {
       img_w: item.image_width || 480, // Fallback to default width
       img_h: item.image_height || 480, // Fallback to default height
     }));
+    
     setCameraData(processedData);
+    processedRef.current = true;
   }, [cameras]);
 
   const handleCameraClick = (camera, imageUrl) => {

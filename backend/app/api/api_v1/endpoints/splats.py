@@ -22,6 +22,9 @@ import mimetypes
 from fastapi.responses import StreamingResponse
 import asyncio
 
+import zipfile
+from io import BytesIO
+
 MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024  # 5GB in bytes
 
 def delete_file(path: str):
@@ -791,3 +794,99 @@ async def get_splat_metadata(
         raise HTTPException(status_code=500, detail="Error parsing JSON metadata files")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving metadata: {str(e)}")
+    
+
+@router.get("/{id}/download-colmap", responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
+})
+async def download_colmap_files(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
+    id: str,
+) -> Any:
+    """
+    Tải xuống các file COLMAP (cameras.bin, images.bin, points3D.bin) và thư mục images dưới dạng file zip.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần tải xuống các file COLMAP (dưới dạng URL parameter).
+    - **background_tasks**: Được sử dụng để lên lịch dọn dẹp file sau khi tải xuống.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về file ZIP chứa các file COLMAP và thư mục images.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
+    - 404 Not Found: Nếu splat không tồn tại hoặc thư mục COLMAP không tồn tại.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng tải xuống các file COLMAP liên quan đến splat dưới dạng file ZIP.
+    - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể tải xuống.
+    - File ZIP sẽ chứa: cameras.bin, images.bin, points3D.bin và thư mục images.
+    - File ZIP được tạo trong bộ nhớ và gửi đi mà không lưu trữ tạm thời trên ổ đĩa.
+    """
+    # Kiểm tra splat có tồn tại
+    splat = crud.splat.get(db=db, id=id)
+    if not splat:
+        raise HTTPException(status_code=404, detail="Splat not found")
+
+    # Kiểm tra quyền truy cập
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # Kiểm tra trạng thái
+    if splat.status != 'SUCCESS':
+        raise HTTPException(
+            status_code=404,
+            detail=f"Result not ready or task failed. Current state: {splat.status}"
+        )
+
+    # Tìm thư mục colmap
+    user_id = splat.owner_id
+    colmap_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(user_id), splat.id, "colmap")
+    
+    if not os.path.exists(colmap_dir):
+        raise HTTPException(status_code=404, detail="COLMAP directory not found")
+
+    # Tạo file ZIP trong bộ nhớ
+    zip_buffer = BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        # Thêm các file .bin
+        bin_files = ['cameras.bin', 'images.bin', 'points3D.bin']
+        for bin_file in bin_files:
+            bin_path = os.path.join(colmap_dir, bin_file)
+            if os.path.exists(bin_path):
+                zip_file.write(bin_path, arcname=bin_file)
+            else:
+                raise HTTPException(status_code=404, detail=f"{bin_file} not found")
+        
+        # Thêm thư mục images và các file bên trong
+        images_dir = os.path.join(colmap_dir, "images")
+        if os.path.exists(images_dir):
+            for root, dirs, files in os.walk(images_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Tạo đường dẫn tương đối cho file trong zip
+                    arcname = os.path.relpath(file_path, colmap_dir)
+                    zip_file.write(file_path, arcname=arcname)
+        else:
+            raise HTTPException(status_code=404, detail="Images directory not found")
+    
+    # Di chuyển con trỏ về đầu buffer
+    zip_buffer.seek(0)
+    
+    # Trả về file ZIP dưới dạng streaming response
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename=colmap_files_{id}.zip"
+        }
+    )

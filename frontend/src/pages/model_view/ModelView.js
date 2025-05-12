@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import SplatCanvas from './splat_view/SplatCanvas';
 import { ChevronLeft, Share, Download, Loader, Copy, Info, EyeIcon, Grid3X3 } from 'lucide-react';
 import { useNavigate, useOutletContext, useSearchParams, Link } from "react-router-dom";
 import DataService from './ModelViewService';
@@ -10,7 +9,7 @@ import myAppConfig from '../../config';
 import LinkNotValid from "../link_not_valid/LinkNotValid";
 import SideBar from '../../components/app_comps/SideBar';
 import NavBarTop from '../../components/app_comps/NavBarTop';
-import ColmapCanvas from './colmap_view/ColmapCanvas';
+import ModelCanvas from './ModelCanvas';
 
 export default function ModelView() {
     const { showSnackbar } = useSnackbar();
@@ -57,6 +56,20 @@ export default function ModelView() {
         } catch (error) {
           console.error("Error exporting .ply:", error);
           showSnackbar("Failed to export .ply file", "error");
+        }
+        finally{
+          setLoading(false);
+        }
+    };
+    const handleExportColmap = async () => {
+        try {
+          setLoading(true);
+          await DataService.downloadColmap(model.id, viewer);
+          setIsExportModalOpen(false);
+          showSnackbar("Exported COLMAP files successfully!", "success");
+        } catch (error) {
+          console.error("Error exporting COLMAP files:", error);
+          showSnackbar("Failed to export COLMAP files", "error");
         }
         finally{
           setLoading(false);
@@ -248,13 +261,12 @@ export default function ModelView() {
                 </div>
             </nav>
             <div className='flex-1 relative'>
-                {/* Keep both components mounted but toggle visibility */}
-                <div className={`absolute inset-0 ${viewMode === 'splat' ? 'z-10 visible' : 'z-0 invisible'}`}>
-                    {splatUrl && <SplatCanvas key={canvasKey} splatUrl={splatUrl} />}
-                </div>
-                <div className={`absolute inset-0 ${viewMode === 'colmap' ? 'z-10 visible' : 'z-0 invisible'}`}>
-                    {colmapData && <ColmapCanvas colmap_data={colmapData} />}
-                </div>
+               <ModelCanvas
+                    key={canvasKey}
+                    viewMode={viewMode}
+                    splatUrl={splatUrl}
+                    colmapData={colmapData}
+                />
             </div>
             
             {/* Export Modal */}
@@ -276,6 +288,13 @@ export default function ModelView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
+                                <button
+                                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+                                    onClick={handleExportColmap}
+                                >
+                                    Export colmap .zip (includes images)
+                                </button>
+                        
                                 <button
                                     className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
                                     onClick={handleExportSplat}

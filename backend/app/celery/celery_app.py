@@ -217,6 +217,31 @@ def process_video(self: Task,
         shutil.copy(os.path.join(dense_dir, "sparse", "points3D.bin"),
                     os.path.join(opensplat_dir, "points3D.bin"))
 
+        #Save colmap metadata to JSON
+        process_colmap_model(opensplat_dir, ".bin", workspace_path)
+        
+        colmap_folder = os.path.join(workspace_path, "colmap")
+        os.makedirs(colmap_folder, exist_ok=True)
+
+        # Copy COLMAP binary files to the colmap folder
+        shutil.copy(os.path.join(opensplat_dir, "cameras.bin"),
+                    os.path.join(colmap_folder, "cameras.bin"))
+        shutil.copy(os.path.join(opensplat_dir, "images.bin"),
+                    os.path.join(colmap_folder, "images.bin"))
+        shutil.copy(os.path.join(opensplat_dir, "points3D.bin"),
+                    os.path.join(colmap_folder, "points3D.bin"))
+
+        # Copy images directory to the colmap folder
+        shutil.copytree(os.path.join(opensplat_dir, "images"),
+                        os.path.join(colmap_folder, "images"),
+                        dirs_exist_ok=True)
+
+        # Keep the existing copy to MODEL_IMAGES_DIR
+        shutil.copytree(os.path.join(opensplat_dir, "images"),
+                        os.path.join(settings.MODEL_IMAGES_DIR, task_id),
+                        dirs_exist_ok=True)
+        
+
         # 11. Run opensplat
         self.update_state(state="PROGRESS",
                           meta={"status": "Running OpenSplat"})
@@ -236,10 +261,6 @@ def process_video(self: Task,
         os.chdir(current_dir)
 
         # 12. Copy the result to output directory
-        process_colmap_model(opensplat_dir, ".bin", workspace_path)
-        shutil.copytree(os.path.join(opensplat_dir, "images"),
-                        os.path.join(settings.MODEL_IMAGES_DIR, task_id),
-                        dirs_exist_ok=True)
 
         src_path = os.path.join(dataset_path, "outputs", output_model)
         dst_path = os.path.join(workspace_path, output_model)

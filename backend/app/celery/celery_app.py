@@ -131,7 +131,6 @@ def process_video(self: Task,
             "--database_path", os.path.join(dataset_path, "database.db"),
             "--image_path", img_dir,
             "--SiftExtraction.use_gpu", "1",
-            "--ImageReader.single_camera", "1"
         ]
         run_command(cmd)
 

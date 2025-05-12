@@ -16,6 +16,8 @@ from app import crud
 from app import schemas
 from app.db.session import SessionLocal
 
+from app.utils.export_to_json import process_colmap_model
+
 celery_app = Celery('tasks')
 celery_app.conf.broker_url = os.environ.get(
     "CELERY_BROKER_URL", "redis://localhost:6379")
@@ -143,8 +145,6 @@ def process_video(self: Task,
             "--SiftMatching.use_gpu", "1"
         ]
         run_command(cmd)
-
-        # 5. Create sparse directory
         sparse_dir = os.path.join(dataset_path, "sparse")
         os.makedirs(sparse_dir, exist_ok=True)
 
@@ -163,6 +163,7 @@ def process_video(self: Task,
             "--TrackEstablishment.max_num_tracks", str(max_num_tracks)
         ]
         run_command(cmd)
+
 
         # 7. Create dense directory
         dense_dir = os.path.join(dataset_path, "dense")
@@ -204,6 +205,31 @@ def process_video(self: Task,
         shutil.copy(os.path.join(dense_dir, "sparse", "points3D.bin"),
                     os.path.join(opensplat_dir, "points3D.bin"))
 
+        #Save colmap metadata to JSON
+        process_colmap_model(opensplat_dir, ".bin", workspace_path)
+        
+        colmap_folder = os.path.join(workspace_path, "colmap")
+        os.makedirs(colmap_folder, exist_ok=True)
+
+        # Copy COLMAP binary files to the colmap folder
+        shutil.copy(os.path.join(opensplat_dir, "cameras.bin"),
+                    os.path.join(colmap_folder, "cameras.bin"))
+        shutil.copy(os.path.join(opensplat_dir, "images.bin"),
+                    os.path.join(colmap_folder, "images.bin"))
+        shutil.copy(os.path.join(opensplat_dir, "points3D.bin"),
+                    os.path.join(colmap_folder, "points3D.bin"))
+
+        # Copy images directory to the colmap folder
+        shutil.copytree(os.path.join(opensplat_dir, "images"),
+                        os.path.join(colmap_folder, "images"),
+                        dirs_exist_ok=True)
+
+        # Keep the existing copy to MODEL_IMAGES_DIR
+        shutil.copytree(os.path.join(opensplat_dir, "images"),
+                        os.path.join(settings.MODEL_IMAGES_DIR, task_id),
+                        dirs_exist_ok=True)
+        
+
         # 11. Run opensplat
         self.update_state(state="PROGRESS",
                           meta={"status": "Running OpenSplat"})
@@ -235,6 +261,7 @@ def process_video(self: Task,
         os.chdir(current_dir)
 
         # 12. Copy the result to output directory
+
         src_path = os.path.join(dataset_path, "outputs", output_model)
         dst_path = os.path.join(workspace_path, output_model)
 
@@ -276,6 +303,13 @@ def process_video(self: Task,
         splat_in = schemas.SplatUpdate(status = "FAILURE")
         splat = crud.splat.get(db, id= task_id)
         crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        
+        images_path = os.path.join(settings.MODEL_IMAGES_DIR, splat.id)    
+        try:
+            shutil.rmtree(images_path)
+            print(f"Directory {images_path} has been removed.")
+        except Exception as e:
+            print(f"Error removing directory {images_path}: {str(e)}")
         raise Ignore()
     finally:
         # Clean up the workspace after processing
@@ -290,6 +324,7 @@ def process_video(self: Task,
 def run_command(cmd):
     """Run a shell command and handle errors"""
     try:
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
         celery_log.info(f"Running command: {' '.join(cmd)}")
         result = subprocess.run(
             cmd,

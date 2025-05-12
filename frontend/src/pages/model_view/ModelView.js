@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import SplatCanvas from './SplatCanvas';
-import { ChevronLeft, Share, Download, Loader, Copy, Info } from 'lucide-react';
+import { ChevronLeft, Share, Download, Loader, Copy, Info, EyeIcon, Grid3X3 } from 'lucide-react';
 import { useNavigate, useOutletContext, useSearchParams, Link } from "react-router-dom";
 import DataService from './ModelViewService';
 import { useLoader } from '../../provider/LoaderProvider';
@@ -10,6 +9,7 @@ import myAppConfig from '../../config';
 import LinkNotValid from "../link_not_valid/LinkNotValid";
 import SideBar from '../../components/app_comps/SideBar';
 import NavBarTop from '../../components/app_comps/NavBarTop';
+import ModelCanvas from './ModelCanvas';
 
 export default function ModelView() {
     const { showSnackbar } = useSnackbar();
@@ -26,6 +26,8 @@ export default function ModelView() {
     const [model, setModel] = useState(null);
     const [currenUser, setCurrentUser] = useState(null);
     const [modelNotFound, setModelNotFound] = useState(false);
+    const [colmapData, setColmapData] = useState(null);
+    const [viewMode, setViewMode] = useState('colmap'); // 'colmap' or 'splat'
     
     // Create a unique key for each model to reset Leva controls
     const canvasKey = `model-${id}`;
@@ -59,6 +61,20 @@ export default function ModelView() {
           setLoading(false);
         }
     };
+    const handleExportColmap = async () => {
+        try {
+          setLoading(true);
+          await DataService.downloadColmap(model.id, viewer);
+          setIsExportModalOpen(false);
+          showSnackbar("Exported COLMAP files successfully!", "success");
+        } catch (error) {
+          console.error("Error exporting COLMAP files:", error);
+          showSnackbar("Failed to export COLMAP files", "error");
+        }
+        finally{
+          setLoading(false);
+        }
+    };
 
     const handleCopyLink = () => {
         const url = window.location.href;
@@ -86,51 +102,71 @@ export default function ModelView() {
         return `${size.toFixed(2)} MB`;
     };
 
-    useEffect(() => {
-        let objectUrl;
-        const fetchAndProcess = async () => {
+    const toggleViewMode = () => {
+        setViewMode(viewMode === 'colmap' ? 'splat' : 'colmap');
+    };
+
+    let objectUrl;
+    const fetchAndProcess = async () => {
+        try {
+            showLoader();
+            const user = await DataService.getAuth(viewer);
+            setCurrentUser(user);
+            
             try {
-                showLoader();
-                const user = await DataService.getAuth(viewer);
-                setCurrentUser(user);
-                
-                try {
-                    const splat = await DataService.getSplat(id, viewer);
-                    if (!splat) {
-                        setModelNotFound(true);
-                        hideLoader();
-                        return;
-                    }
-                    setModel(splat);
-                } catch (error) {
-                    console.error('Error fetching splat data:', error);
+                const splat = await DataService.getSplat(id, viewer);
+                if (!splat) {
                     setModelNotFound(true);
                     hideLoader();
                     return;
                 }
-                
-                try {
-                    const response = await DataService.getModel(id, viewer);
-                    if (!response || response.status !== 200) {
-                        throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
-                    }
-                    const arrayBuffer = await response.data.arrayBuffer();
-                    const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
-                    objectUrl = URL.createObjectURL(blob);
-                    setSplatUrl(objectUrl);
-                } catch (error) {
-                    console.error('Error processing .ply file:', error);
-                    setModelNotFound(true);
-                }
-                
-                hideLoader();
+                setModel(splat);
             } catch (error) {
-                console.error('Error in fetchAndProcess:', error);
+                console.error('Error fetching splat data:', error);
                 setModelNotFound(true);
                 hideLoader();
+                return;
             }
-        };
+            
+            try {
+                const colmap = await DataService.getColmapData(id, viewer);
+                if (!colmap) {
+                    setModelNotFound(true);
+                    hideLoader();
+                    return;
+                }
+                console.log('colmap data:', colmap.images);
+                setColmapData(colmap);
+            } catch (error) {
+                console.error('Error fetching colmap data:', error);
+                setModelNotFound(true);
+                hideLoader();
+                return;
+            }
+            
+            try {
+                const response = await DataService.getModel(id, viewer);
+                if (!response || response.status !== 200) {
+                    throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
+                }
+                const arrayBuffer = await response.data.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+                objectUrl = URL.createObjectURL(blob);
+                setSplatUrl(objectUrl);
+            } catch (error) {
+                console.error('Error processing .ply file:', error);
+                setModelNotFound(true);
+            }
+            
+            hideLoader();
+        } catch (error) {
+            console.error('Error in fetchAndProcess:', error);
+            setModelNotFound(true);
+            hideLoader();
+        }
+    };
 
+    useEffect(() => {
         fetchAndProcess();
 
         return () => {
@@ -149,21 +185,43 @@ export default function ModelView() {
         )
     }
 
+    const isDarkMode = viewMode === 'colmap';
+
     return (
         <div className='h-screen flex flex-col'>
-            <nav className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+            <nav className={`${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-200'} border-b px-4 py-2 flex items-center justify-between`}>
                 {/* Left section */}
                 <div className="flex items-center">
-                    <button className="h-8 w-8 flex items-center justify-center rounded-full border border-gray-300 mr-4" onClick={() => navigate(-1)}>
+                    <button className={`h-8 w-8 flex items-center justify-center rounded-full ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'} border mr-4`} onClick={() => navigate(-1)}>
                         <ChevronLeft size={16} /> 
                     </button>
+                </div>
+                
+                {/* Center section - View Toggle */}
+                <div className="flex items-center">
+                    <div className={`flex items-center p-1 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        <button 
+                            onClick={() => setViewMode('colmap')} 
+                            className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
+                        >
+                            <Grid3X3 size={16} className="mr-2" />
+                            <span>Colmap</span>
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('splat')} 
+                            className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
+                        >
+                            <EyeIcon size={16} className="mr-2" />
+                            <span>Splat</span>
+                        </button>
+                    </div>
                 </div>
                 
                 {/* Right section */}
                 <div className="flex items-center space-x-3">
                      <button 
-                            className="flex items-center text-gray-700 px-3 py-1 rounded-md hover:bg-gray-100"                        
-                            onClick={() => {
+                        className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}                        
+                        onClick={() => {
                             setIsShareModalOpen(false);
                             setIsDetailModalOpen(true);
                         }}
@@ -172,7 +230,7 @@ export default function ModelView() {
                         <span>View Details</span>
                     </button>
                     <button 
-                        className="flex items-center text-gray-700 px-3 py-1 rounded-md hover:bg-gray-100"
+                        className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
                         onClick={() => setIsShareModalOpen(true)}
                     >
                         <Share size={16} className="mr-2" />
@@ -180,13 +238,18 @@ export default function ModelView() {
                     </button>
                     
                     {currenUser ? (
-                        <button onClick={()=>setIsExportModalOpen(true)} className="flex items-center text-gray-700 px-3 py-1 rounded-md hover:bg-gray-100">
+                        <button 
+                            onClick={() => setIsExportModalOpen(true)} 
+                            className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                        >
                             <Download size={16} className="mr-2" />
                             <span>Download</span>
                         </button>
-
                     ) : (
-                        <Link to={RouterPath.LOGIN} className="flex items-center text-gray-700 px-3 py-1 rounded-md hover:bg-gray-100">
+                        <Link 
+                            to={RouterPath.LOGIN} 
+                            className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                        >
                             <span>Login to Download</span>
                         </Link>
                     )}
@@ -197,9 +260,13 @@ export default function ModelView() {
                     )}
                 </div>
             </nav>
-            <div className='flex-1'>
-                {/* Add key to force SplatCanvas to fully remount when the model changes */}
-                <SplatCanvas key={canvasKey} splatUrl={splatUrl} />
+            <div className='flex-1 relative'>
+               <ModelCanvas
+                    key={canvasKey}
+                    viewMode={viewMode}
+                    splatUrl={splatUrl}
+                    colmapData={colmapData}
+                />
             </div>
             
             {/* Export Modal */}
@@ -221,6 +288,13 @@ export default function ModelView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
+                                <button
+                                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+                                    onClick={handleExportColmap}
+                                >
+                                    Export colmap .zip (includes images)
+                                </button>
+                        
                                 <button
                                     className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
                                     onClick={handleExportSplat}

@@ -33,9 +33,11 @@ function AdminSplat() {
   const [editingItem, setEditingItem] = useState(initItem);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
+  const [openExportModal, setOpenExportModal] = useState(false);
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [imageFile, setImageFile] = useState(null);
   const [modelFile, setModelFile] = useState(null);
@@ -159,17 +161,45 @@ function AdminSplat() {
     }
   };
 
-  const handleDownloadModel = async (model) => {
-    if (model.model_url) {
-      showLoader();
-      const response = await DataService.downloadSplat(model.id, model.title);
-      if(response){
-        showSnackbar('Splat downloading', 'success');
-      }else{
-        showSnackbar('Failed to download splat', 'error')
-      }
-        
-      hideLoader();
+  const handleDownloadSplat = async () => {
+    try {
+      setIsExporting(true);
+      await DataService.downloadSplat(editingItem.id, editingItem.title);
+      showSnackbar('Exported .splat file successfully!', 'success');
+    } catch (error) {
+      console.error("Error exporting .splat:", error);
+      showSnackbar("Failed to export .splat file", "error");
+    } finally {
+      setIsExporting(false);
+      setOpenExportModal(false);
+    }
+  };
+
+  const handleDownloadPLY = async () => {
+    try {
+      setIsExporting(true);
+      await DataService.downloadPLY(editingItem.id, editingItem.title);
+      showSnackbar('Exported .ply file successfully!', 'success');
+    } catch (error) {
+      console.error("Error exporting .ply:", error);
+      showSnackbar("Failed to export .ply file", "error");
+    } finally {
+      setIsExporting(false);
+      setOpenExportModal(false);
+    }
+  };
+
+  const handleDownloadColmap = async () => {
+    try {
+      setIsExporting(true);
+      await DataService.downloadColmap(editingItem.id);
+      showSnackbar('Exported COLMAP files successfully!', 'success');
+    } catch (error) {
+      console.error("Error exporting COLMAP files:", error);
+      showSnackbar("Failed to export COLMAP files", "error");
+    } finally {
+      setIsExporting(false);
+      setOpenExportModal(false);
     }
   };
 
@@ -263,12 +293,13 @@ function AdminSplat() {
                       <MenuItem>
                         <button
                           onClick={() => {
-                            handleDownloadModel(item);
-                        }}
+                            setOpenExportModal(true);
+                            setEditingItem(item);
+                          }}
                           className="w-full flex gap-5 text-teal-500 block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 data-focus:text-gray-900 data-focus:outline-hidden"
                         >
                           <Download className="w-4 h-4 text-teal-500" />
-                          Download
+                          Export
                         </button>
                       </MenuItem>
                       <MenuItem>
@@ -483,6 +514,59 @@ function AdminSplat() {
                 </button>
               </div>
             </form>
+          </DialogPanel>
+        </div>
+      </div>
+    </Dialog>
+
+    {/* Modal for exporting models */}
+    <Dialog open={openExportModal} onClose={() => {}} className="relative z-10">
+      <DialogBackdrop
+        transition
+        className="fixed inset-0 bg-gray-500/75 transition-opacity data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
+      />
+
+      <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <DialogPanel
+            transition
+            className="p-4 relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all data-closed:translate-y-4 data-closed:opacity-0 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in sm:my-8 sm:w-full sm:max-w-lg data-closed:sm:translate-y-0 data-closed:sm:scale-95"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Export</h3>
+              <button onClick={() => setOpenExportModal(false)} className="text-gray-500">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            {isExporting ? (
+              <div className="flex items-center justify-center">
+                <Loader className="w-4 h-4 animate-spin mr-2" />
+                <div>Downloading...</div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  className="w-full py-3 bg-teal-500 text-white rounded-md font-medium"
+                  onClick={handleDownloadColmap}
+                >
+                  Export colmap .zip (includes images)
+                </button>
+                <button
+                  className="w-full py-3 bg-teal-500 text-white rounded-md font-medium"
+                  onClick={handleDownloadSplat}
+                >
+                  Export as .splat
+                </button>
+                <button
+                  className="w-full py-3 bg-teal-500 text-white rounded-md font-medium"
+                  onClick={handleDownloadPLY}
+                >
+                  Export as .ply
+                </button>
+              </div>
+            )}
           </DialogPanel>
         </div>
       </div>

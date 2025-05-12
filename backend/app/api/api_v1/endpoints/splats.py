@@ -10,7 +10,7 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from fastapi_pagination import Params, Page
 from fastapi import (APIRouter,  Depends, HTTPException,
                      File, UploadFile, Form, BackgroundTasks)
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import os
 import uuid
 from app.core.config import settings
@@ -21,6 +21,9 @@ import mimetypes
 
 from fastapi.responses import StreamingResponse
 import asyncio
+
+import zipfile
+from io import BytesIO
 
 MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024  # 5GB in bytes
 
@@ -480,6 +483,13 @@ def delete_splat(
     except Exception as e:
         print(f"Error removing directory {dir_path}: {str(e)}")
 
+    images_path = os.path.join(settings.MODEL_IMAGES_DIR, splat.id)
+    try:
+        shutil.rmtree(images_path)
+        print(f"Directory {images_path} has been removed.")
+    except Exception as e:
+        print(f"Error removing directory {images_path}: {str(e)}")
+
     thumbnail_filename = f"{splat.id}_thumbnail.jpg"
     thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
     if os.path.exists(thumbnail_path):
@@ -686,4 +696,197 @@ async def download_ply(
         open(output_path, 'rb'),
         media_type="application/octet-stream",
         headers={"Content-Disposition": f"attachment; filename={os.path.basename(output_path)}"}
+    )
+
+import json
+@router.get("/{id}/metadata", responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
+})
+async def get_splat_metadata(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
+    id: str,
+) -> Any:
+    """
+    Lấy metadata bao gồm cameras.json, points.json và images_url từ thư mục của file .splat.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần lấy metadata (dưới dạng URL parameter).
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về JSON chứa dữ liệu từ cameras.json, points.json và danh sách images_url.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
+    - 404 Not Found: Nếu splat không tồn tại.
+    - 500 Internal Server Error: Nếu có lỗi trong quá trình đọc hoặc xử lý file.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng lấy metadata liên quan đến file `.splat`.
+    - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể truy cập metadata.
+    - File `.splat` cần có trạng thái `SUCCESS` và tồn tại trên hệ thống.
+    - Endpoint sẽ tìm và đọc file cameras.json, points.json, và liệt kê đường dẫn images trong cùng thư mục với file splat.
+    """
+    # Kiểm tra splat có tồn tại
+    splat = crud.splat.get(db=db, id=id)
+    if not splat:
+        raise HTTPException(status_code=404, detail="Splat not found")
+
+    # Kiểm tra quyền truy cập
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # Kiểm tra trạng thái
+    if splat.status != 'SUCCESS':
+        raise HTTPException(
+            status_code=404,
+            detail=f"Result not ready or task failed. Current state: {splat.status}"
+        )
+
+    # Lấy đường dẫn thư mục từ model_url
+    splat_file_path = splat.model_url
+    if not splat_file_path or not os.path.exists(splat_file_path):
+        raise HTTPException(status_code=400, detail="Input .splat file not found")
+
+    # Lấy thư mục chứa splat file
+    dir_path = os.path.dirname(splat_file_path)
+    
+    # Đường dẫn đến các file metadata
+    cameras_json_path = os.path.join(dir_path, 'cameras.json')
+    points_json_path = os.path.join(dir_path, 'points.json')
+    
+    # Đọc dữ liệu từ các file JSON
+    try:
+        cameras_data = {}
+        if os.path.exists(cameras_json_path):
+            with open(cameras_json_path, 'r') as f:
+                cameras_data = json.load(f)
+        else:
+            cameras_data = {"error": "cameras.json not found"}
+            
+        points_data = {}
+        if os.path.exists(points_json_path):
+            with open(points_json_path, 'r') as f:
+                points_data = json.load(f)
+        else:
+            points_data = {"error": "points.json not found"}
+            
+        # Tìm tất cả các file hình ảnh trong thư mục
+        images_url =  "/images/" + id
+                
+        # Tạo response JSON kết hợp
+        combined_response = {
+            "cameras": cameras_data,
+            "points": points_data,
+            "images": images_url,
+        }
+        
+        return JSONResponse(content=combined_response)
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error parsing JSON metadata files")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving metadata: {str(e)}")
+    
+
+@router.get("/{id}/download-colmap", responses={
+    401: {"model": schemas.Detail, "description": "User unauthorized"}
+})
+async def download_colmap_files(
+    *,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_guess_user),
+    id: str,
+) -> Any:
+    """
+    Tải xuống các file COLMAP (cameras.bin, images.bin, points3D.bin) và thư mục images dưới dạng file zip.
+
+    **Yêu cầu Header:**
+    - Cần xác thực người dùng qua token JWT trong header `Authorization`.
+
+    **Đầu vào (Request Parameters):**
+    - **id**: ID của splat cần tải xuống các file COLMAP (dưới dạng URL parameter).
+    - **background_tasks**: Được sử dụng để lên lịch dọn dẹp file sau khi tải xuống.
+
+    **Đầu ra (Response):**
+    - 200 OK: Trả về file ZIP chứa các file COLMAP và thư mục images.
+    - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
+    - 404 Not Found: Nếu splat không tồn tại hoặc thư mục COLMAP không tồn tại.
+
+    **Giải thích:**
+    - Endpoint này cho phép người dùng tải xuống các file COLMAP liên quan đến splat dưới dạng file ZIP.
+    - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể tải xuống.
+    - File ZIP sẽ chứa: cameras.bin, images.bin, points3D.bin và thư mục images.
+    - File ZIP được tạo trong bộ nhớ và gửi đi mà không lưu trữ tạm thời trên ổ đĩa.
+    """
+    # Kiểm tra splat có tồn tại
+    splat = crud.splat.get(db=db, id=id)
+    if not splat:
+        raise HTTPException(status_code=404, detail="Splat not found")
+
+    # Kiểm tra quyền truy cập
+    if not current_user:
+        if not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+    # Kiểm tra trạng thái
+    if splat.status != 'SUCCESS':
+        raise HTTPException(
+            status_code=404,
+            detail=f"Result not ready or task failed. Current state: {splat.status}"
+        )
+
+    # Tìm thư mục colmap
+    user_id = splat.owner_id
+    colmap_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(user_id), splat.id, "colmap")
+    
+    if not os.path.exists(colmap_dir):
+        raise HTTPException(status_code=404, detail="COLMAP directory not found")
+
+    # Tạo file ZIP trong bộ nhớ
+    zip_buffer = BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        # Thêm các file .bin
+        bin_files = ['cameras.bin', 'images.bin', 'points3D.bin']
+        for bin_file in bin_files:
+            bin_path = os.path.join(colmap_dir, bin_file)
+            if os.path.exists(bin_path):
+                zip_file.write(bin_path, arcname=bin_file)
+            else:
+                raise HTTPException(status_code=404, detail=f"{bin_file} not found")
+        
+        # Thêm thư mục images và các file bên trong
+        images_dir = os.path.join(colmap_dir, "images")
+        if os.path.exists(images_dir):
+            for root, dirs, files in os.walk(images_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Tạo đường dẫn tương đối cho file trong zip
+                    arcname = os.path.relpath(file_path, colmap_dir)
+                    zip_file.write(file_path, arcname=arcname)
+        else:
+            raise HTTPException(status_code=404, detail="Images directory not found")
+    
+    # Di chuyển con trỏ về đầu buffer
+    zip_buffer.seek(0)
+    
+    # Trả về file ZIP dưới dạng streaming response
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename=colmap_files_{id}.zip"
+        }
     )

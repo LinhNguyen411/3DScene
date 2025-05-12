@@ -160,7 +160,7 @@ function AdminPayment() {
   };
 
   return (
-    <div className="flex-1 flex flex-col mt-14 mb-8 mr-8 ml-2">
+    <div className="flex-1 flex flex-col mt-14 pb-[5rem] mr-8 ml-2">
       <div className="flex w-fit justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{ENTITY_NAME} Management</h1>
       </div>

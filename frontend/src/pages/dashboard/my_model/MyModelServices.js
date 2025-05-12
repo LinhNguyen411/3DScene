@@ -108,6 +108,34 @@ const downloadPLY = async (id, title) => {
   }
 };
 
+const downloadColmap = async (id) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/${id}/download-colmap`, {
+      headers: getAuthHeaders(),
+      responseType: 'blob',
+    });
+
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+
+    // Use meaningful filename for COLMAP files
+    const filename = `colmap_files_${id}.zip`;
+
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    throw new Error('Failed to download COLMAP files');
+  }
+};
 
 
 const DataService = {
@@ -116,6 +144,7 @@ const DataService = {
     getSplats,
     downloadSplat,
     downloadPLY,
+    downloadColmap,
 };
 
 export default DataService;

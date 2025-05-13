@@ -37,5 +37,5 @@ services:
       dockerfile: Dockerfile
 
 
-  3dscene-flower:
-    image: mher/flower:0.9.4
+  # 3dscene-flower:
+  #   image: mher/flower:0.9.4

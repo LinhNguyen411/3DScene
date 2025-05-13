@@ -88,6 +88,14 @@ export default function ModelView() {
             });
     };
 
+    const handleBack = () => {
+        if (window.history.length > 1) {
+        navigate(-1);
+        } else {
+        navigate(RouterPath.HOME);
+        }
+    };
+
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -192,7 +200,7 @@ export default function ModelView() {
             <nav className={`${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-200'} border-b px-4 py-2 flex items-center justify-between`}>
                 {/* Left section */}
                 <div className="flex items-center">
-                    <button className={`h-8 w-8 flex items-center justify-center rounded-full ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'} border mr-4`} onClick={() => navigate(-1)}>
+                    <button className={`h-8 w-8 flex items-center justify-center rounded-full ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'} border mr-4`} onClick={handleBack}>
                         <ChevronLeft size={16} /> 
                     </button>
                 </div>
@@ -254,9 +262,9 @@ export default function ModelView() {
                         </Link>
                     )}
                     {currenUser && !currenUser?.is_pro && (
-                        <button className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600">
+                        <Link to={RouterPath.SUBSCRIPTION} className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600">
                             Go Pro
-                        </button>
+                        </Link>
                     )}
                 </div>
             </nav>

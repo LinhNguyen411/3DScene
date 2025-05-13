@@ -139,7 +139,7 @@ def update_user(
     
 
 
-@router.get("/", response_model=Page[schemas.User], responses={
+@router.get("", response_model=Page[schemas.User], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def read_users(
@@ -200,7 +200,7 @@ def get_user(
     return user
 
 
-@router.post("/", response_model=schemas.User, responses={
+@router.post("", response_model=schemas.User, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def create_user(

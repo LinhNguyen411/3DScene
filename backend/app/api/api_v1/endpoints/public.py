@@ -32,9 +32,11 @@ async def get_public_environment_variables(
     """
     public_keys = [
         "GOOGLE_AUTH_CLIENT_ID", 
-        "STRIPE_PUBLIC_KEY", 
-        "STRIPE_MONTHLY_ID",
-        "STRIPE_YEARLY_ID",
+        # "STRIPE_PUBLIC_KEY", 
+        # "STRIPE_MONTHLY_ID",
+        # "STRIPE_YEARLY_ID",
+        "PAYOS_MONTHLY_PRICE",
+        "PAYOS_YEARLY_PRICE",
         "PROJECT_NAME",
         "PROJECT_DESCRIPTION",
         "PROJECT_KEYWORDS",

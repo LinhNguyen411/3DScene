@@ -1,6 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import { StatsGl, Loader, Grid, OrbitControls, FirstPersonControls, PerspectiveCamera } from '@react-three/drei';
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import SplatViewer from './splat_view/SplatViewer';
 import PointCloud from './colmap_view/PointCloud';
 import Cameras from './colmap_view/Cameras';
@@ -25,26 +25,56 @@ const Axes = () => {
   return <primitive object={axesHelper} />;
 };
 
-function ModelCanvas({ viewMode, splatUrl, colmapData }) {
-    // Use the separated Leva controls
-    const orbitorbitControlsRef = useRef();
-    const position = usePositionControls(viewMode !== 'splat');
-    const rotate = useRotationControls(viewMode !== 'splat');
-    const camera = useCameraControls();
-    const grid = useGridControls();
-    const flyControls = useFlyControls(camera.mode === 'Fly');
+// Default camera settings
+const DEFAULT_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
+const DEFAULT_CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
+const DEFAULT_CAMERA_FOV = 50;
 
+function ModelCanvas({ viewMode, splatUrl, colmapData }) {
     // References
     const orbitControlsRef = useRef();
-    const prevFovRef = useRef(camera.fov);
+    const prevFovRef = useRef(DEFAULT_CAMERA_FOV);
     const cameraRef = useRef();
+    
+    // Reset view handler
+    const handleResetView = useCallback(() => {
+        if (!cameraRef.current || !orbitControlsRef.current) return;
+        
+        // Reset camera position and fov
+        cameraRef.current.position.copy(DEFAULT_CAMERA_POSITION);
+        cameraRef.current.lookAt(DEFAULT_CAMERA_TARGET);
+        cameraRef.current.fov = DEFAULT_CAMERA_FOV;
+        cameraRef.current.updateProjectionMatrix();
+        
+        // Reset orbit controls target
+        if (orbitControlsRef.current.target) {
+            orbitControlsRef.current.target.copy(DEFAULT_CAMERA_TARGET);
+            orbitControlsRef.current.update();
+        }
+        
+        // Update state references
+        prevFovRef.current = DEFAULT_CAMERA_FOV;
+        cameraStateRef.current = {
+            position: DEFAULT_CAMERA_POSITION.clone(),
+            quaternion: cameraRef.current.quaternion.clone(),
+            target: DEFAULT_CAMERA_TARGET.clone(),
+            fov: DEFAULT_CAMERA_FOV
+        };
+    }, []);
+
+    // Use the separated Leva controls
+    const position = usePositionControls(viewMode !== 'splat');
+    const rotate = useRotationControls(viewMode !== 'splat');
+    const camera = useCameraControls(handleResetView);
+    const grid = useGridControls();
+    const flyControls = useFlyControls(camera.mode === 'Fly');
     
     // Store camera state for each mode
     const cameraStateRef = useRef({
-        position: new THREE.Vector3(0, 0, 5),
+        position: DEFAULT_CAMERA_POSITION.clone(),
         quaternion: new THREE.Quaternion(),
-        target: new THREE.Vector3(0, 0, 0),
-        fov: 50
+        target: DEFAULT_CAMERA_TARGET.clone(),
+        fov: DEFAULT_CAMERA_FOV
     });
 
     // Colmap specific state

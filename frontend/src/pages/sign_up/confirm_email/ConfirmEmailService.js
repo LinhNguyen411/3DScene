@@ -3,7 +3,7 @@ import myAppConfig from "../../../config";
 
 const postConfirmEmail = (token) => {
   return axios
-    .post(myAppConfig.api.ENDPOINT + "/api/v1/users/confirm-email/" + token)
+    .post(myAppConfig.api.ENDPOINT + "/users/confirm-email" + token)
     .then((response) => {
       return response;
     });

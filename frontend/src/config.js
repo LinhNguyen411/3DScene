@@ -4,20 +4,20 @@
 /* Configuration is built based on the environment variables, they are available only if npm start / npm test is used */
 const development = {
   api: {
-    ENDPOINT: process.env.REACT_APP_API_ENDPOINT || "http://localhost:8083",
+    ENDPOINT: process.env.REACT_APP_DOMAIN + "/api/v1" || "http://localhost:8083",
   },
   frontend: {
-    FRONTEND_DOMAIN: process.env.REACT_APP_FRONTEND_DOMAIN || "http://localhost:8081",
+    FRONTEND_DOMAIN: process.env.REACT_APP_DOMAIN || "http://localhost:8081",
   },
 };
 
 /* Configuration is hardcoded here and is used if npm build is used */
 const production = {
   api: {
-    ENDPOINT: process.env.REACT_APP_API_ENDPOINT || "",
+    ENDPOINT: process.env.REACT_APP_DOMAIN || "",
   },
   frontend: {
-    FRONTEND_DOMAIN: process.env.REACT_APP_FRONTEND_DOMAIN || "http://todo.gnetkov.com",
+    FRONTEND_DOMAIN: process.env.REACT_APP_DOMAIN || "",
   }, 
 };
 

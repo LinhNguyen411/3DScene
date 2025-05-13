@@ -3,7 +3,7 @@ import myAppConfig from "../../../config";
 
 const postResetPassword = (send) => {
   return axios
-    .post(myAppConfig.api.ENDPOINT + "/api/v1/login/reset-password/", send)
+    .post(myAppConfig.api.ENDPOINT + "/login/reset-password", send)
     .then((response) => {
       return response;
     });

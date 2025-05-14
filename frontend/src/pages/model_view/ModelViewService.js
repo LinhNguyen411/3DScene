@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from '../../config';
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1/splats";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/splats";
 const getAuthHeaders = (viewer) => {
   const tokenKey = viewer === 'admin' ? 'supertoken' : 'token';
   const token = localStorage.getItem(tokenKey);
@@ -102,7 +102,7 @@ const getModel = async (id, viewer) => {
 const getAuth = async (viewer) => {
   try { 
     const response = await axios.post(
-      myAppConfig.api.ENDPOINT + "/api/v1/login/get-my-info",
+      myAppConfig.api.ENDPOINT + "/login/get-my-info",
       {},
       {
         headers: getAuthHeaders(viewer),

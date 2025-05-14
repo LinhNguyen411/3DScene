@@ -1,19 +1,26 @@
-import { useState } from 'react';
+import { useState , useEffect} from 'react';
 import {  Shield, MessageSquare, ChartLine, Video, Box, Download, Lock, Settings,ImageUp,Component } from 'lucide-react';
 import DataService from './SubscriptionServices';
-import { loadStripe } from '@stripe/stripe-js';
+// import { loadStripe } from '@stripe/stripe-js';
 import { useSnackbar } from '../../provider/SnackbarProvider';
-import { useOutletContext } from 'react-router-dom';
-
+import { useNavigate, useOutletContext } from 'react-router-dom';
+import { RouterPath } from '../../assets/dictionary/RouterPath';
 function Subscription() {
     const { showSnackbar } = useSnackbar();
-    const {user, stripeMonthlyId, stripePublicKey, stripeYearlyId } = useOutletContext();
-    const stripePromise = loadStripe(stripePublicKey);
+    const {user, payosMonthlyPrice, payosYearlyPrice } = useOutletContext();
+    // const stripePromise = loadStripe(stripePublicKey);
 
     const [loading, setLoading] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
-  
-    const handleSubscribe = async (plan, priceId) => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user && user.is_pro) {
+            navigate(RouterPath.DASHBOARD);
+        }
+    }, [user, navigate]);
+
+    const handleSubscribe = async (plan, price) => {
         if (plan === 'free-membership') {
             showSnackbar('Free membership activated!', 'success');
             return;
@@ -23,12 +30,16 @@ function Subscription() {
         setSelectedPlan(plan);
         
         try {
-            const stripe = await stripePromise;
-            const response = await DataService.createCheckoutSession(priceId);
+            // const stripe = await stripePromise;
+            const response = await DataService.createCheckoutSession(price);
 
-            stripe.redirectToCheckout({
-                sessionId: response.sessionId
-            });
+            // stripe.redirectToCheckout({
+            //     sessionId: response.sessionId
+            // });
+            if (response.checkoutUrl) {
+                window.location.href = response.checkoutUrl;
+            }
+            setLoading(false);
         } catch (error) {
             setLoading(false);
             setSelectedPlan(null);
@@ -54,9 +65,8 @@ function Subscription() {
             cta: 'Start Free'
         },
         {
-            priceId: stripeMonthlyId,
             name: 'Monthly Membership',
-            price: 15,
+            price: payosMonthlyPrice,
             period: 'month',
             features: [
                 { icon: <Video size={20} />, text: 'Up to 5 minutes/project' },
@@ -69,9 +79,8 @@ function Subscription() {
             cta: 'Subscribe Now'
         },
         {
-            priceId: stripeYearlyId,
             name: 'Yearly Membership',
-            price: 129,
+            price: payosYearlyPrice,
             period: 'year',
             features: [
                 { icon: <Video size={20} />, text: 'Up to 5 minutes/project' },
@@ -103,7 +112,7 @@ function Subscription() {
                             )}
                             <h2 className="text-2xl font-bold mb-4">{plan.name}</h2>
                             <div className="flex items-end mb-6">
-                                <span className="text-4xl font-bold">${plan.price}</span>
+                                <span className="text-4xl font-md">{plan.price}₫</span>
                                 <span className="text-gray-500 ml-1">/{plan.period}</span>
                             </div>
                             
@@ -117,7 +126,7 @@ function Subscription() {
                             </div>
                             
                             <button
-                                onClick={() => handleSubscribe(plan.name.toLowerCase().replace(' ', '-'), plan.priceId)}
+                                onClick={() => handleSubscribe(plan.name.toLowerCase().replace(' ', '-'), plan.price)}
                                 disabled={loading && selectedPlan === plan.name.toLowerCase().replace(' ', '-')}
                                 className={`mt-auto w-full py-3 ${
                                     index === 0 

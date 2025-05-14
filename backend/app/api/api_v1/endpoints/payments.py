@@ -14,7 +14,7 @@ from fastapi import (APIRouter,  Depends, HTTPException)
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[schemas.Payment], responses={
+@router.get("", response_model=Page[schemas.Payment], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def read_payments(
@@ -95,7 +95,7 @@ def get_payment(
         raise HTTPException(status_code=400, detail="Not enough permissions")
     return payment
 
-@router.post("/", response_model=schemas.Payment, responses={
+@router.post("", response_model=schemas.Payment, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 async def create_payment(

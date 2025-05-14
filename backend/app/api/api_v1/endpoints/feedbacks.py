@@ -14,7 +14,7 @@ from fastapi import (APIRouter,  Depends, HTTPException)
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[schemas.Feedback], responses={
+@router.get("", response_model=Page[schemas.Feedback], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def read_feedbacks(
@@ -123,7 +123,7 @@ def get_feedback(
     return feedback
 
 
-@router.post("/", response_model=schemas.Feedback, responses={
+@router.post("", response_model=schemas.Feedback, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 async def create_feedback(

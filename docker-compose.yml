@@ -9,7 +9,7 @@ x-fastapi-app-environment:
   TZ: ${TZ}
   APP_UID: ${APP_UID:-1000}
   APP_GID: ${APP_GID:-1000}
-  API_PORT: ${API_PORT}
+  # API_PORT: ${API_PORT}
   API_PORT_INTERNAL: ${API_PORT_INTERNAL}
   POSTGRES_HOST: 3dscene-postgres
   POSTGRES_PORT: 5432
@@ -28,32 +28,34 @@ x-fastapi-app-environment:
   MAIL_TLS: ${MAIL_TLS}
   CELERY_BROKER_URL: redis://3dscene-redis:6379/0
   CELERY_RESULT_BACKEND: db+postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@3dscene-postgres:5432/${POSTGRES_DB}
+  REACT_APP_DOMAIN: ${REACT_APP_DOMAIN}
 
 services:
   3dscene-frontend:
     image: "linhnguyen411/3dscene-frontend:latest"
     depends_on:
       - 3dscene-api
-    ports:
-      - ${FRONTEND_PORT}:${FRONTEND_PORT_INTERNAL}
+    # ports:
+    #   - ${FRONTEND_PORT}:${FRONTEND_PORT_INTERNAL}
     environment:
       <<: *common-linux-container-environment-variables
       CHOKIDAR_USEPOLLING: "true"
       FRONTEND_PORT_INTERNAL: ${FRONTEND_PORT_INTERNAL}
       REACT_APP_ENVIRONMENT: ${REACT_APP_ENVIRONMENT}
-      REACT_APP_API_ENDPOINT: ${REACT_APP_API_ENDPOINT}
-      REACT_APP_FRONTEND_DOMAIN: ${REACT_APP_FRONTEND_DOMAIN}
+      REACT_APP_DOMAIN: ${REACT_APP_DOMAIN}
+      # REACT_APP_API_ENDPOINT: ${REACT_APP_API_ENDPOINT}
+      # REACT_APP_FRONTEND_DOMAIN: ${REACT_APP_FRONTEND_DOMAIN}
     stdin_open: true
     restart: unless-stopped
 
   3dscene-api:
     image: "linhnguyen411/3dscene-api:cpu"
-    ports:
-      - ${API_PORT}:${API_PORT_INTERNAL}
+    # ports:
+    #   - ${API_PORT}:${API_PORT_INTERNAL}
     environment:
       <<: *common-fastapi-app-environment-variables
-      STRIPE_API_KEY: ${STRIPE_API_KEY}
-    command: uvicorn main:app --reload --proxy-headers --host 0.0.0.0 --port 8000
+      # STRIPE_API_KEY: ${STRIPE_API_KEY}
+    command: uvicorn main:app --reload --proxy-headers --host 0.0.0.0 --port 8000 --root-path /api
     depends_on:
       3dscene-postgres:
         condition: service_healthy
@@ -70,7 +72,7 @@ services:
       <<: *common-linux-container-environment-variables
       API_PORT_INTERNAL: ${API_PORT_INTERNAL}
       FRONTEND_PORT_INTERNAL: ${FRONTEND_PORT_INTERNAL}
-      FLOWER_PORT_INTERNAL: ${FLOWER_PORT_INTERNAL}
+      # FLOWER_PORT_INTERNAL: ${FLOWER_PORT_INTERNAL}
     restart: unless-stopped
 
   3dscene-worker-email:
@@ -100,18 +102,18 @@ services:
   3dscene-redis:
     image: redis:6-alpine
 
-  3dscene-flower:
-    ports:
-      - ${FLOWER_PORT}:${FLOWER_PORT_INTERNAL}
-    environment:
-      - CELERY_BROKER_URL=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0
-    depends_on:
-      - 3dscene-api
-      - 3dscene-redis
-      - 3dscene-worker-email
-      - 3dscene-worker-heavy
-    command: celery --broker=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url_prefix=flower
-    restart: unless-stopped
+  # 3dscene-flower:
+  #   ports:
+  #     - ${FLOWER_PORT}:${FLOWER_PORT_INTERNAL}
+  #   environment:
+  #     - CELERY_BROKER_URL=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0
+  #   depends_on:
+  #     - 3dscene-api
+  #     - 3dscene-redis
+  #     - 3dscene-worker-email
+  #     - 3dscene-worker-heavy
+  #   command: celery --broker=redis://3dscene-redis:${REDIS_PORT_INTERNAL}/0 flower --port=${FLOWER_PORT_INTERNAL} --url_prefix=flower
+  #   restart: unless-stopped
 
   3dscene-postgres:
     image: "postgres:14.5-alpine"
@@ -145,17 +147,17 @@ services:
       GUNICORN_ACCESS_LOGFILE: /dev/null
     restart: unless-stopped
   
-  3dscene-stripe-cli:
-    image: stripe/stripe-cli:latest
-    environment:
-      <<: *common-linux-container-environment-variables
-      STRIPE_API_KEY: ${STRIPE_API_KEY}
-      STRIPE_DEVICE_NAME: ${STRIPE_DEVICE_NAME}
-    command:
-      listen --forward-to http://3dscene-api:${API_PORT_INTERNAL}/api/v1/stripe/webhook
-    depends_on:
-      - 3dscene-api
-    restart: unless-stopped
+  # 3dscene-stripe-cli:
+  #   image: stripe/stripe-cli:latest
+  #   environment:
+  #     <<: *common-linux-container-environment-variables
+  #     STRIPE_API_KEY: ${STRIPE_API_KEY}
+  #     STRIPE_DEVICE_NAME: ${STRIPE_DEVICE_NAME}
+  #   command:
+  #     listen --forward-to http://3dscene-api:${API_PORT_INTERNAL}/api/v1/stripe/webhook
+  #   depends_on:
+  #     - 3dscene-api
+  #   restart: unless-stopped
 
 volumes:
   3dscene-postgres-data:

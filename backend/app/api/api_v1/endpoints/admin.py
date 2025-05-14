@@ -179,7 +179,10 @@ async def get_environment_variables(
     sensitive_keys = [
         "SMTP_PASSWORD", 
         "GOOGLE_AUTH_CLIENT_SECRET", 
-        "STRIPE_API_KEY"
+        "PAYOS_CLIENT_ID",
+        "PAYOS_API_KEY",
+        "PAYOS_CHECKSUM_KEY",
+        # "STRIPE_API_KEY"
     ]
     order_keys = [
         "PROJECT_NAME",
@@ -190,10 +193,16 @@ async def get_environment_variables(
         "GOOGLE_AUTH_CLIENT_ID",
         "GOOGLE_AUTH_CLIENT_SECRET",
 
-        "STRIPE_PUBLIC_KEY",
-        "STRIPE_API_KEY",
-        "STRIPE_MONTHLY_ID",
-        "STRIPE_YEARLY_ID",
+        # "STRIPE_PUBLIC_KEY",
+        # "STRIPE_API_KEY",
+        # "STRIPE_MONTHLY_ID",
+        # "STRIPE_YEARLY_ID",
+
+        "PAYOS_CLIENT_ID",
+        "PAYOS_API_KEY",
+        "PAYOS_CHECKSUM_KEY",
+        "PAYOS_MONTHLY_PRICE",
+        "PAYOS_YEARLY_PRICE",
 
         "SMTP_USER",
         "SMTP_PASSWORD",

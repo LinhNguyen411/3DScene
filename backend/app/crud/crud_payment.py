@@ -50,6 +50,15 @@ class CRUDPayment(CRUDBase[Payment, PaymentCreate, PaymentUpdate]):
             .options(joinedload(self.model.payer))
             .order_by(Payment.id.desc())
         )
+    def get_by_order_id(
+        self, db: Session, *, order_id: int
+    ) -> Payment:
+        return (
+            db.query(self.model)
+            .filter(Payment.order_id == order_id)
+            .options(joinedload(self.model.payer))
+            .first()
+        )
     def get_multi(
         self, db: Session
     ) -> List[Payment]:

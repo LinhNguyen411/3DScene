@@ -50,6 +50,7 @@ import Billing from "./pages/dashboard/billing/Billing";
 import Profile from "./pages/dashboard/profile/Profile";
 import Terms from "./pages/privacy/Terms";
 import Privacy from "./pages/privacy/Privacy";
+import AdminOrder from "./admin-pages/admin-order/AdminOrder";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -165,6 +166,7 @@ root.render(
             <Route path={RouterPath.ADMIN_SETTINGS} element={<AdminSetting />} />
             <Route path={RouterPath.ADMIN_SPLAT} element={<AdminSplat />} />
             <Route path={RouterPath.ADMIN_USER} element={<AdminUser />} />
+            <Route path={RouterPath.ADMIN_ORDERS} element={<AdminOrder />} />
             <Route path={RouterPath.ADMIN_PAYMENT} element={<AdminPayment />} />
           </Route>
         </Routes>

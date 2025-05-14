@@ -36,7 +36,7 @@ def delete_file(path: str):
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[schemas.Splat], responses={
+@router.get("", response_model=Page[schemas.Splat], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def read_splats(
@@ -131,7 +131,7 @@ def read_gallery_splats(
     gallery_splats = crud.splat.get_multi_by_gallery(db=db)
     return paginate(gallery_splats, params)
 
-@router.post("/", response_model=schemas.Splat, responses={
+@router.post("", response_model=schemas.Splat, responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
 async def create_splat(
@@ -612,8 +612,6 @@ def download_splat(
     )
 
 
-
-
 @router.get("/{id}/download-ply", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
@@ -753,7 +751,7 @@ async def get_splat_metadata(
     # Lấy đường dẫn thư mục từ model_url
     splat_file_path = splat.model_url
     if not splat_file_path or not os.path.exists(splat_file_path):
-        raise HTTPException(status_code=400, detail="Input .splat file not found")
+        raise HTTPException(status_code=404, detail="Input .splat file not found")
 
     # Lấy thư mục chứa splat file
     dir_path = os.path.dirname(splat_file_path)

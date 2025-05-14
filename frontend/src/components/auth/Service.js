@@ -4,7 +4,7 @@ import myAppConfig from "../../config";
 const getAuth = async () => {
   try { 
     const response = await axios.post(
-      myAppConfig.api.ENDPOINT + "/api/v1/login/get-my-info",
+      myAppConfig.api.ENDPOINT + "/login/get-my-info",
       {},
       {
         headers: {
@@ -22,7 +22,7 @@ const getAuth = async () => {
 const getEnv = async () => {
   try{
     const response = await axios.get(
-      myAppConfig.api.ENDPOINT + "/api/v1/public/env",
+      myAppConfig.api.ENDPOINT + "/public/env",
       {},
       );
       console.log(response); 

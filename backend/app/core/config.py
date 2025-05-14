@@ -7,6 +7,8 @@ import os
 
 
 class Settings(BaseSettings):
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    API_V1_STR: str = "/v1"
 
     FIRST_SUPERUSER_EMAIL: str = os.environ["FIRST_SUPERUSER_EMAIL"]
     FIRST_SUPERUSER_FIRST_NAME: str = os.environ["FIRST_SUPERUSER_FIRST_NAME"]
@@ -40,8 +42,6 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = os.environ["SECRET_KEY"]
     # 60 minutes * 24 hours * 8 days = 8 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    API_V1_STR: str = "/api/v1"
 
     BACKEND_CORS_ORIGINS: List = ["http://localhost:3000", "*"]  # type: ignore
 
@@ -85,12 +85,18 @@ class Config(BaseSettings):
 
     GOOGLE_AUTH_CLIENT_ID: str = Field(..., env="GOOGLE_AUTH_CLIENT_ID")
     GOOGLE_AUTH_CLIENT_SECRET: str = Field(..., env="GOOGLE_AUTH_CLIENT_SECRET")
-
-    STRIPE_API_KEY: Optional[str] = Field(None, env="STRIPE_API_KEY")
-    STRIPE_PUBLIC_KEY: Optional[str] = Field(None, env="STRIPE_PUBLIC_KEY")
-    STRIPE_MONTHLY_ID: Optional[str] = Field(None, env="STRIPE_MONTHLY_ID")
-    STRIPE_YEARLY_ID: Optional[str] = Field(None, env="STRIPE_YEARLY_ID")
     SUPPORT_EMAIL: Optional[str] = Field(None, env="SUPPORT_EMAIL")
+
+    # STRIPE_API_KEY: Optional[str] = Field(None, env="STRIPE_API_KEY")
+    # STRIPE_PUBLIC_KEY: Optional[str] = Field(None, env="STRIPE_PUBLIC_KEY")
+    # STRIPE_MONTHLY_ID: Optional[str] = Field(None, env="STRIPE_MONTHLY_ID")
+    # STRIPE_YEARLY_ID: Optional[str] = Field(None, env="STRIPE_YEARLY_ID")
+
+    PAYOS_CLIENT_ID: Optional[str] = Field(None, env="PAYOS_CLIENT_ID")
+    PAYOS_API_KEY: Optional[str] = Field(None, env="PAYOS_API_KEY")
+    PAYOS_CHECKSUM_KEY: Optional[str] = Field(None, env="PAYOS_CHECKSUM_KEY")
+    PAYOS_MONTHLY_PRICE: Optional[int] = Field(None, env="PAYOS_MONTHLY_PRICE")
+    PAYOS_YEARLY_PRICE: Optional[int] = Field(None, env="PAYOS_YEARLY_PRICE")
 
     @validator("SMTP_TLS", pre=True)
     def parse_bool(cls, v):

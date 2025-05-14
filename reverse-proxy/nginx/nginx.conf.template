@@ -74,7 +74,6 @@ http {
         # @see https://docs.humio.com/integrations/proxies/nginx/
         # @see https://github.com/python-restx/flask-restx/issues/58
         location /api/ {
-            rewrite ^/api(/.*)$ $1 break;
             proxy_pass http://3dscene-api:${API_PORT_INTERNAL}/;
             proxy_redirect off;
 

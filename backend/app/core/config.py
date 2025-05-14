@@ -95,8 +95,8 @@ class Config(BaseSettings):
     PAYOS_CLIENT_ID: Optional[str] = Field(None, env="PAYOS_CLIENT_ID")
     PAYOS_API_KEY: Optional[str] = Field(None, env="PAYOS_API_KEY")
     PAYOS_CHECKSUM_KEY: Optional[str] = Field(None, env="PAYOS_CHECKSUM_KEY")
-    PAYOS_MONTHLY_PRICE: Optional[str] = Field(None, env="PAYOS_MONTHLY_PRICE")
-    PAYOS_YEARLY_PRICE: Optional[str] = Field(None, env="PAYOS_YEARLY_PRICE")
+    PAYOS_MONTHLY_PRICE: Optional[int] = Field(None, env="PAYOS_MONTHLY_PRICE")
+    PAYOS_YEARLY_PRICE: Optional[int] = Field(None, env="PAYOS_YEARLY_PRICE")
 
     @validator("SMTP_TLS", pre=True)
     def parse_bool(cls, v):

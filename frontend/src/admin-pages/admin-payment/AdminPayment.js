@@ -47,8 +47,13 @@ function AdminPayment() {
 
   // Format currency
   const formatCurrency = (amount) => {
-    return `$${Number(amount).toFixed(2)}`;
-  };
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    currencyDisplay: 'code'
+  }).format(amount).replace('VND', '').trim() + ' ₫';
+};
 
   const loadChartData = async (period = 'week') => {
     try {

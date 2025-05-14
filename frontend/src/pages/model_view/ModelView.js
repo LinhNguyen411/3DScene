@@ -7,8 +7,6 @@ import { useSnackbar } from '../../provider/SnackbarProvider';
 import { RouterPath } from '../../assets/dictionary/RouterPath';
 import myAppConfig from '../../config';
 import LinkNotValid from "../link_not_valid/LinkNotValid";
-import SideBar from '../../components/app_comps/SideBar';
-import NavBarTop from '../../components/app_comps/NavBarTop';
 import ModelCanvas from './ModelCanvas';
 
 export default function ModelView() {
@@ -89,11 +87,24 @@ export default function ModelView() {
     };
 
     const handleBack = () => {
-        if (window.history.length > 1) {
-        navigate(-1);
+    if (window.history.length > 1) {
+        // Check if previous page is from the same domain
+        try {
+        const previousUrl = document.referrer;
+        const currentDomain = window.location.hostname;
+        
+        if (previousUrl && previousUrl.includes(currentDomain)) {
+            navigate(-1);
         } else {
+            navigate(RouterPath.HOME);
+        }
+        } catch (error) {
+        // In case of any issues with checking the domain, fallback to home
         navigate(RouterPath.HOME);
         }
+    } else {
+        navigate(RouterPath.HOME);
+    }
     };
 
     const formatDate = (dateString) => {

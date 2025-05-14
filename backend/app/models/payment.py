@@ -13,3 +13,6 @@ class Payment(Base):
 
     payer_id = Column(Integer, ForeignKey('user.id'), nullable=False)
     payer = relationship("User", back_populates="payments")
+
+    order_id = Column(Integer, nullable=False, unique=True)
+

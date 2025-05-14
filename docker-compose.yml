@@ -9,7 +9,7 @@ x-fastapi-app-environment:
   TZ: ${TZ}
   APP_UID: ${APP_UID:-1000}
   APP_GID: ${APP_GID:-1000}
-  API_PORT: ${API_PORT}
+  # API_PORT: ${API_PORT}
   API_PORT_INTERNAL: ${API_PORT_INTERNAL}
   POSTGRES_HOST: 3dscene-postgres
   POSTGRES_PORT: 5432

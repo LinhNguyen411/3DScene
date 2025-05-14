@@ -182,8 +182,18 @@ def send_subscription_success_email(
     dashboard_link = f"{config.SERVER_HOST_FRONT}/dashboard"
     
     # Format currency for display
-    formatted_amount = f"{amount:.2f}"
+    formatted_amount = f"{amount:,.0f}"
     currency_upper = currency.upper()
+    
+    # Define currency symbols
+    currency_symbols = {
+        'VND': '₫',
+        'USD': '$',
+        'EUR': '€',
+        # Add more currencies as needed
+    }
+    
+    symbol = currency_symbols.get(currency_upper, currency_upper)
     
     # Send email asynchronously
     send_email_async.delay(
@@ -196,7 +206,7 @@ def send_subscription_success_email(
             "email": email_to,
             "plan_name": plan_name,
             "amount": formatted_amount,
-            "currency": currency_upper,
+            "currency": symbol,
             "dashboard_link": dashboard_link,
             "created_date": created_date.strftime("%Y-%m-%d %H:%M:%S"),
             "expired_date": expired_date.strftime("%Y-%m-%d %H:%M:%S"),

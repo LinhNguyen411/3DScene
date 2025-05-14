@@ -53,9 +53,10 @@ function AdminDashboard() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
+      currency: 'VND',
+      minimumFractionDigits: 0,
+      currencyDisplay: 'code'
+    }).format(amount).replace('VND', '').trim() + ' ₫';
   };
 
   // Process models data for chart

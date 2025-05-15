@@ -5,10 +5,8 @@ from app import schemas
 from app import models
 from app import crud
 
-from fastapi import (APIRouter,  Depends, HTTPException, Request)
+from fastapi import (APIRouter,  Depends, HTTPException)
 from core.config import Config,settings
-import stripe
-import json
 from app.app_utils import send_subscription_success_email
 from app.schemas import OrderCreate, OrderUpdate
 from app import crud

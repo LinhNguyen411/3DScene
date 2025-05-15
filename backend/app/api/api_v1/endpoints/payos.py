@@ -6,7 +6,7 @@ from app import models
 from app import crud
 
 from fastapi import (APIRouter,  Depends, HTTPException, Request)
-from core.config import Config
+from core.config import Config,settings
 import stripe
 import json
 from app.app_utils import send_subscription_success_email
@@ -69,8 +69,8 @@ async def create_checkout_session(
                                   items=[item],
                                   amount=price, 
                                   description="demo",
-                                  cancelUrl=config.SERVER_HOST_FRONT + "/cancel",
-                                  returnUrl=config.SERVER_HOST_FRONT + "/success",
+                                  cancelUrl=settings.REACT_APP_DOMAIN + "/cancel",
+                                  returnUrl=settings.REACT_APP_DOMAIN + "/success",
                                   )
         payosCreatePayment = payOS.createPaymentLink(paymentData)
 

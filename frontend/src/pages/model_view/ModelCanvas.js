@@ -1,6 +1,6 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { StatsGl, Loader, Grid, OrbitControls, FirstPersonControls, PerspectiveCamera } from '@react-three/drei';
-import { useMemo, useRef, useEffect, useState } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import SplatViewer from './splat_view/SplatViewer';
 import PointCloud from './colmap_view/PointCloud';
 import Cameras from './colmap_view/Cameras';
@@ -25,26 +25,98 @@ const Axes = () => {
   return <primitive object={axesHelper} />;
 };
 
-function ModelCanvas({ viewMode, splatUrl, colmapData }) {
-    // Use the separated Leva controls
-    const orbitorbitControlsRef = useRef();
-    const position = usePositionControls(viewMode !== 'splat');
-    const rotate = useRotationControls(viewMode !== 'splat');
-    const camera = useCameraControls();
-    const grid = useGridControls();
-    const flyControls = useFlyControls(camera.mode === 'Fly');
+// Default camera settings
+const DEFAULT_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
+const DEFAULT_CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
+const DEFAULT_CAMERA_FOV = 50;
 
+function ModelCanvas({ viewMode, splatUrl, colmapData }) {
     // References
     const orbitControlsRef = useRef();
-    const prevFovRef = useRef(camera.fov);
+    const prevFovRef = useRef(DEFAULT_CAMERA_FOV);
     const cameraRef = useRef();
+    
+    // Reset view handler
+    const handleResetView = useCallback(() => {
+        if (!cameraRef.current || !orbitControlsRef.current) return;
+        
+        const camera = cameraRef.current;
+        const controls = orbitControlsRef.current;
+        
+        // Store initial values
+        const initialPosition = camera.position.clone();
+        const initialFov = camera.fov;
+        const initialTarget = new THREE.Vector3();
+        if (controls.target) {
+            initialTarget.copy(controls.target);
+        }
+        
+        // Animation parameters
+        const duration = 1500; // 1.5 seconds, same as the GSAP version
+        const startTime = Date.now();
+        
+        // Animation function
+        function animateReset() {
+            const elapsedTime = Date.now() - startTime;
+            const progress = Math.min(elapsedTime / duration, 1);
+            
+            // Easing function for smooth animation (ease-in-out)
+            const easeProgress = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+            
+            // Interpolate camera position
+            camera.position.x = initialPosition.x + (DEFAULT_CAMERA_POSITION.x - initialPosition.x) * easeProgress;
+            camera.position.y = initialPosition.y + (DEFAULT_CAMERA_POSITION.y - initialPosition.y) * easeProgress;
+            camera.position.z = initialPosition.z + (DEFAULT_CAMERA_POSITION.z - initialPosition.z) * easeProgress;
+            
+            // Interpolate field of view
+            camera.fov = initialFov + (DEFAULT_CAMERA_FOV - initialFov) * easeProgress;
+            camera.updateProjectionMatrix();
+            
+            // Interpolate orbit controls target
+            if (controls.target) {
+                controls.target.x = initialTarget.x + (DEFAULT_CAMERA_TARGET.x - initialTarget.x) * easeProgress;
+                controls.target.y = initialTarget.y + (DEFAULT_CAMERA_TARGET.y - initialTarget.y) * easeProgress;
+                controls.target.z = initialTarget.z + (DEFAULT_CAMERA_TARGET.z - initialTarget.z) * easeProgress;
+                
+                if (controls.update) {
+                    controls.update();
+                }
+            }
+            
+            // Update state references when animation completes
+            if (progress >= 1) {
+                prevFovRef.current = DEFAULT_CAMERA_FOV;
+                cameraStateRef.current = {
+                    position: DEFAULT_CAMERA_POSITION.clone(),
+                    quaternion: camera.quaternion.clone(),
+                    target: DEFAULT_CAMERA_TARGET.clone(),
+                    fov: DEFAULT_CAMERA_FOV
+                };
+            } else {
+                // Continue animation if not done
+                requestAnimationFrame(animateReset);
+            }
+        }
+        
+        // Start animation
+        animateReset();
+    }, []);
+
+    // Use the separated Leva controls
+    const position = usePositionControls(viewMode !== 'splat');
+    const rotate = useRotationControls(viewMode !== 'splat');
+    const camera = useCameraControls(handleResetView);
+    const grid = useGridControls();
+    const flyControls = useFlyControls(camera.mode === 'Fly');
     
     // Store camera state for each mode
     const cameraStateRef = useRef({
-        position: new THREE.Vector3(0, 0, 5),
+        position: DEFAULT_CAMERA_POSITION.clone(),
         quaternion: new THREE.Quaternion(),
-        target: new THREE.Vector3(0, 0, 0),
-        fov: 50
+        target: DEFAULT_CAMERA_TARGET.clone(),
+        fov: DEFAULT_CAMERA_FOV
     });
 
     // Colmap specific state
@@ -122,9 +194,32 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                     .subVectors(cameraObj.position, target)
                     .normalize();
                 const newPosition = target.clone().add(direction.multiplyScalar(newDistance));
-                cameraObj.position.copy(newPosition);
-
-                controls.update();
+                
+                // Animate to new position for a smoother transition
+                const initialPosition = cameraObj.position.clone();
+                const duration = 500; // 0.5 seconds
+                const startTime = Date.now();
+                
+                function animateDolly() {
+                    const elapsedTime = Date.now() - startTime;
+                    const progress = Math.min(elapsedTime / duration, 1);
+                    
+                    // Simple ease-out function
+                    const easeProgress = 1 - Math.pow(1 - progress, 2);
+                    
+                    // Interpolate position
+                    cameraObj.position.x = initialPosition.x + (newPosition.x - initialPosition.x) * easeProgress;
+                    cameraObj.position.y = initialPosition.y + (newPosition.y - initialPosition.y) * easeProgress;
+                    cameraObj.position.z = initialPosition.z + (newPosition.z - initialPosition.z) * easeProgress;
+                    
+                    controls.update();
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateDolly);
+                    }
+                }
+                
+                animateDolly();
                 prevFovRef.current = newFov;
             }
         }

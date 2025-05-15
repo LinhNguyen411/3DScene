@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from "../../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1";
+const API_BASE_URL = myAppConfig.api.ENDPOINT;
 
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,

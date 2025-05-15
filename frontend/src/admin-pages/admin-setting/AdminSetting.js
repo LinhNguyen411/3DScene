@@ -68,7 +68,7 @@ function AdminSetting() {
     const groups = {
       application: [],
       google: [],
-      stripe: [],
+      payos: [],
       smtp: [],
       other: []
     };
@@ -78,8 +78,8 @@ function AdminSetting() {
       
       if (key.includes('google')) {
         groups.google.push(variable);
-      } else if (key.includes('stripe')) {
-        groups.stripe.push(variable);
+      } else if (key.includes('payos')) {
+        groups.payos.push(variable);
       } else if (key.includes('smtp') || key.includes('email') || key.includes('mail') || key.includes('host')) {
         groups.smtp.push(variable);
       } else if (key.includes('project')) {
@@ -649,10 +649,10 @@ function AdminSetting() {
                     Google Auth
                   </button>
                   <button
-                    className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'stripe' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}
-                    onClick={() => setActiveEnvGroup('stripe')}
+                    className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'payos' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}
+                    onClick={() => setActiveEnvGroup('payos')}
                   >
-                    Stripe
+                    Payos
                   </button>
                   <button
                     className={`px-3 py-1 rounded text-sm ${activeEnvGroup === 'smtp' ? 'bg-teal-500 text-white' : 'bg-gray-200'}`}

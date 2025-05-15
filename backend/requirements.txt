@@ -96,6 +96,4 @@ wcwidth==0.2.5
 websockets==10.1
 wrapt==1.13.3
 zipp==3.7.0
-opencv-python==4.11.0.86
-stripe==6.6.0
 payos==0.1.8

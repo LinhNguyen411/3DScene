@@ -8,6 +8,8 @@ from app.core.config import settings
 from app.db.session import SessionLocal
 from app.db.init_db import init_db
 import os
+from fastapi.openapi.docs import get_swagger_ui_html
+from starlette.requests import Request
 
     # Check if .backend.env exists, create it if not
 backend_env_path = "/code/app/core/.backend.env"
@@ -26,16 +28,22 @@ SMTP_USER=""
 SMTP_PASSWORD=""
 EMAILS_FROM_EMAIL=""
 SUPPORT_EMAIL=""
-SERVER_HOST_FRONT=""
 
 PROJECT_NAME="3DScene"
 PROJECT_DESCRIPTION="Transform videos into stunning 3D scenes with AI-powered Gaussian Splatting! Our app uses cutting-edge technology to automatically reconstruct high-quality 3D models from simple videos — fast, easy, and perfect for gaming, VR, and digital content creation."
 PROJECT_KEYWORDS="3D asset generation from video, 3D Gaussian splatting from video, 3D Gaussian splatting software, 3D model creation AI, 3D reconstruction from video, 3D scene generation AI, AI 3D model creation, AI 3D scene reconstruction, automatic 3D reconstruction, Gaussian splatting 3D models, machine learning 3D reconstruction, NeRF alternative Gaussian splatting, real-time 3D Gaussian splatting, turn videos into 3D scenes, video-based 3D modeling, video to 3D model generator"
 PROJECT_ICON="/public/logo.png"
+                       
+PAYOS_CLIENT_ID=""
+PAYOS_API_KEY=""
+PAYOS_CHECKSUM_KEY=""
+PAYOS_MONTHLY_PRICE=2000
+PAYOS_YEARLY_PRICE=2000
+
             """)
 
 app = FastAPI(
-    title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    title=settings.PROJECT_NAME
 )
 @app.on_event("startup")
 def on_startup():
@@ -60,11 +68,18 @@ os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
 os.makedirs(settings.MODEL_WORKSPACES_DIR, exist_ok=True)
 os.makedirs(settings.MODEL_IMAGES_DIR, exist_ok=True)
 os.makedirs(settings.PUBLIC_DIR, exist_ok=True)
-app.mount("/thumbnails", StaticFiles(directory=settings.MODEL_THUMBNAILS_DIR), name="thumbnails")
-app.mount("/images", StaticFiles(directory=settings.MODEL_IMAGES_DIR), name="images")
-app.mount("/public", StaticFiles(directory=settings.PUBLIC_DIR), name="public")
+app.mount(f"{settings.API_V1_STR}/thumbnails", StaticFiles(directory=settings.MODEL_THUMBNAILS_DIR), name="thumbnails")
+app.mount(f"{settings.API_V1_STR}/images", StaticFiles(directory=settings.MODEL_IMAGES_DIR), name="images")
+app.mount(f"{settings.API_V1_STR}/public", StaticFiles(directory=settings.PUBLIC_DIR), name="public")
 
-
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html(req: Request):
+    root_path = req.scope.get("root_path", "").rstrip("/")
+    openapi_url = root_path + app.openapi_url
+    return get_swagger_ui_html(
+        openapi_url=openapi_url,
+        title="API",
+    )
 
 @app.get("/")
 async def root():

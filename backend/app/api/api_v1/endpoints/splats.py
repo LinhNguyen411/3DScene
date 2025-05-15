@@ -15,7 +15,6 @@ import os
 import uuid
 from app.core.config import settings
 import shutil
-import cv2
 import subprocess
 import mimetypes
 
@@ -36,7 +35,7 @@ def delete_file(path: str):
 router = APIRouter()
 
 
-@router.get("/", response_model=Page[schemas.Splat], responses={
+@router.get("", response_model=Page[schemas.Splat], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
 def read_splats(
@@ -131,7 +130,7 @@ def read_gallery_splats(
     gallery_splats = crud.splat.get_multi_by_gallery(db=db)
     return paginate(gallery_splats, params)
 
-@router.post("/", response_model=schemas.Splat, responses={
+@router.post("", response_model=schemas.Splat, responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
 async def create_splat(
@@ -224,12 +223,35 @@ async def create_splat(
         video_files = sorted([f for f in os.listdir(video_dir) if f.lower().endswith((".mp4", ".avi", ".mov"))])
         if video_files:
             first_video_path = os.path.join(video_dir, video_files[0])
-            cap = cv2.VideoCapture(first_video_path)
-            ret, frame = cap.read()
-            if ret:
-                cv2.imwrite(thumbnail_path, frame)
-                thumbnail_url = f"/thumbnails/{thumbnail_filename}"
-            cap.release()
+            
+            # Use subprocess to call ffmpeg to extract the first frame
+            try:
+                ffmpeg_cmd = [
+                    'ffmpeg',
+                    '-i', first_video_path,    # Input file
+                    '-vframes', '1',           # Extract only 1 frame
+                    '-an',                     # Disable audio
+                    '-ss', '0',                # Start from the beginning
+                    '-y',                      # Overwrite output file if it exists
+                    thumbnail_path             # Output file
+                ]
+                
+                # Run the FFmpeg command
+                result = subprocess.run(
+                    ffmpeg_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True
+                )
+                
+                # If successful, set the thumbnail URL
+                if os.path.exists(thumbnail_path):
+                    thumbnail_url = f"/thumbnails/{thumbnail_filename}"
+            except subprocess.CalledProcessError as e:
+                print(f"Error generating thumbnail with FFmpeg: {e}")
+                print(f"FFmpeg stderr: {e.stderr.decode() if e.stderr else 'None'}")
+            except Exception as e:
+                print(f"Unexpected error generating thumbnail: {e}")
     elif has_image:
         dataset_dir = image_dir
         # Use the first image
@@ -612,8 +634,6 @@ def download_splat(
     )
 
 
-
-
 @router.get("/{id}/download-ply", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
@@ -753,7 +773,7 @@ async def get_splat_metadata(
     # Lấy đường dẫn thư mục từ model_url
     splat_file_path = splat.model_url
     if not splat_file_path or not os.path.exists(splat_file_path):
-        raise HTTPException(status_code=400, detail="Input .splat file not found")
+        raise HTTPException(status_code=404, detail="Input .splat file not found")
 
     # Lấy thư mục chứa splat file
     dir_path = os.path.dirname(splat_file_path)

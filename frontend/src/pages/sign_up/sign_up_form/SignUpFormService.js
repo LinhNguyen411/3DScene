@@ -3,7 +3,7 @@ import myAppConfig from "../../../config";
 
 const postSignUp = (send) => {
   return axios
-    .post(myAppConfig.api.ENDPOINT + "/api/v1/users/signup", send)
+    .post(myAppConfig.api.ENDPOINT + "/users/signup", send)
     .then((response) => {
       return response;
     });
@@ -12,7 +12,7 @@ const postSignUp = (send) => {
 
 const postLoginGoogle = (send) => {
   return axios
-    .post(myAppConfig.api.ENDPOINT + "/api/v1/login/google-auth", send)
+    .post(myAppConfig.api.ENDPOINT + "/login/google-auth", send)
     .then((response) => {
       return response;
     });

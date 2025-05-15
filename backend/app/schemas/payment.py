@@ -8,12 +8,14 @@ from app.schemas.user import User
 class PaymentBase(BaseModel):
     amount: float
     payment_plan: str
+    order_id: int
 
 
 # Properties to receive on Payment creation
 class PaymentCreate(BaseModel):
     amount: float
     payment_plan: str
+    order_id: int
 
 
 # Properties to receive on Payment deletion
@@ -34,6 +36,7 @@ class PaymentInDBBase(PaymentBase):
     payment_plan: str
     created_at: datetime
     expired_at: datetime
+    order_id: int
     payer_id: int
 
     class Config:

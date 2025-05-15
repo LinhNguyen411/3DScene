@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useControls } from 'leva';
+import { useMemo, useCallback } from 'react';
+import { useControls, button } from 'leva';
 
 // Position controls
 export const usePositionControls = (collapsed = false) => {
@@ -29,13 +29,16 @@ export const useRotationControls = (collapsed = false) => {
 };
 
 // Camera controls
-export const useCameraControls = () => {
+export const useCameraControls = (onResetView = null) => {
     const cameraOptions = useMemo(() => {
         return {
             mode: { value: 'Orbit', options: ['Orbit', 'Fly'] },
             fov: { value: 50, min: 10, max: 120, step: 0.1 },
+            resetView: button(() => {
+                if (onResetView) onResetView();
+            }),
         };
-    }, []);
+    }, [onResetView]);
 
     return useControls('Camera', cameraOptions);
 };

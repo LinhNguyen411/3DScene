@@ -14,9 +14,8 @@ function App() {
   const [projectDescription, setProjectDescription] = useState("");
   const [projectKeywords, setProjectKeywords] = useState("");
   const [projectIcon, setProjectIcon] = useState("");
-  const [stripeMonthlyId, setStripeMonthlyId] = useState("");
-  const [stripePublicKey, setStripePublicKey] = useState("");
-  const [stripeYearlyId, setStripeYearlyId] = useState("");
+  const [payosMonthlyPrice, setPayosMonthlyPrice] = useState("");
+  const [payosYearlyPrice, setPayosYearlyPrice] = useState("");
   const [supportEmail, setSupportEmail] = useState("");
   
   const fetchAuthData = async () => {
@@ -31,14 +30,14 @@ function App() {
   const fetchEnvData = async () => {
     try {
       const response = await DataService.getEnv();
+      console.log("Environment variables:", response);
       setProjectName(response.find(item => item.key === "PROJECT_NAME").value);
       setProjectDescription(response.find(item => item.key === "PROJECT_DESCRIPTION").value);
       setProjectKeywords(response.find(item => item.key === "PROJECT_KEYWORDS").value);
       setProjectIcon(myAppConfig.api.ENDPOINT + response.find(item => item.key === "PROJECT_ICON").value);
       setGoogleClientId(response.find(item => item.key === "GOOGLE_AUTH_CLIENT_ID").value);
-      setStripeMonthlyId(response.find(item => item.key === "STRIPE_MONTHLY_ID").value);
-      setStripePublicKey(response.find(item => item.key === "STRIPE_PUBLIC_KEY").value);
-      setStripeYearlyId(response.find(item => item.key === "STRIPE_YEARLY_ID").value);
+      setPayosMonthlyPrice(response.find(item => item.key === "PAYOS_MONTHLY_PRICE").value);
+      setPayosYearlyPrice(response.find(item => item.key === "PAYOS_YEARLY_PRICE").value);
       setSupportEmail(response.find(item => item.key === "SUPPORT_EMAIL").value);
       return response;
     } catch (error) {
@@ -83,9 +82,8 @@ function App() {
           fetchAuthData,
           projectName,
           projectIcon,
-          stripeMonthlyId,
-          stripePublicKey,
-          stripeYearlyId,
+          payosMonthlyPrice,
+          payosYearlyPrice,
           supportEmail
         }}/>
       </GoogleOAuthProvider>

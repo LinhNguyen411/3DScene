@@ -264,7 +264,7 @@ def recover_password(email: str, db: Session = Depends(deps.get_db)) -> Any:
     return {"msg": "Password recovery email sent"}
 
 
-@router.post("/login/reset-password/", response_model=schemas.Msg, responses={
+@router.post("/login/reset-password", response_model=schemas.Msg, responses={
     400: {"model": schemas.Detail, "description": "Invalid token"},
     404: {"model": schemas.Detail, "description": "The user with this username does not exist in the system."},
 })

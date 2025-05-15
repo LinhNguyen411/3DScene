@@ -56,6 +56,12 @@ function Sidebar({user, setUser}) {
           </Link>
         </li>
         <li>
+          <Link to={RouterPath.ADMIN_ORDERS} className={`text-teal-500 flex items-center px-4 py-2 text-gray-700 rounded ${isActive(RouterPath.ADMIN_PAYMENT) ? "bg-gray-200" : "hover:bg-gray-100"}`}>
+          <CircleDollarSign className="w-5 h-5 mr-3" />
+          Orders
+          </Link>
+        </li>
+        <li>
           <Link to={RouterPath.ADMIN_PAYMENT} className={`text-teal-500 flex items-center px-4 py-2 text-gray-700 rounded ${isActive(RouterPath.ADMIN_PAYMENT) ? "bg-gray-200" : "hover:bg-gray-100"}`}>
           <CircleDollarSign className="w-5 h-5 mr-3" />
           Payments

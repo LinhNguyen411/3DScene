@@ -4,7 +4,7 @@ import myAppConfig from "../../config";
 const getAuth = async () => {
   try {
     const response = await axios.post(
-      myAppConfig.api.ENDPOINT + "/api/v1/login/verify-supertoken",
+      myAppConfig.api.ENDPOINT + "/login/verify-supertoken",
       {},
       {
         headers: {

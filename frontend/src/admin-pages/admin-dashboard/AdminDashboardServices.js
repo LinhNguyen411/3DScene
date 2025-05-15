@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from "../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/api/v1";
+const API_BASE_URL = myAppConfig.api.ENDPOINT;
 const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('supertoken')}`,
 });
@@ -64,7 +64,7 @@ const getModelsLast24Hours = async () => {
 // Get recent feedback
 const getRecentFeedback = async (page = 1, size = 10) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/feedbacks/`, {
+    const response = await axios.get(`${API_BASE_URL}/feedbacks`, {
       params: { page, size },
       headers: getAuthHeaders(),
     });

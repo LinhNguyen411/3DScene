@@ -97,3 +97,4 @@ websockets==10.1
 wrapt==1.13.3
 zipp==3.7.0
 payos==0.1.8
+numpy==2.2.5

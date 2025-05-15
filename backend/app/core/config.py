@@ -64,14 +64,14 @@ class Settings(BaseSettings):
     USERS_OPEN_REGISTRATION: bool = True
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
     EMAIL_TEMPLATES_DIR: str = "email-templates"
+    REACT_APP_DOMAIN: str = Field(..., env="REACT_APP_DOMAIN")
+
 
 class Config(BaseSettings):
     PROJECT_NAME: str = Field(..., env="PROJECT_NAME")
     PROJECT_DESCRIPTION: str = Field(..., env="PROJECT_DESCRIPTION")
     PROJECT_KEYWORDS: str = Field(..., env="PROJECT_KEYWORDS")
     PROJECT_ICON: str = Field(..., env="PROJECT_ICON")
-
-    SERVER_HOST_FRONT: str = Field(..., env="SERVER_HOST_FRONT")
 
     SMTP_TLS: bool = Field(..., env="MAIL_TLS")
     SMTP_PORT: int = Field(..., env="SMTP_PORT")

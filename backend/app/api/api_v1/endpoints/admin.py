@@ -209,8 +209,6 @@ async def get_environment_variables(
         "EMAILS_FROM_EMAIL",
         "EMAILS_FROM_NAME",
         "SUPPORT_EMAIL",
-        "SERVER_HOST_FRONT",
-
     ]
     env_vars = []
     

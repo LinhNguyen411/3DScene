@@ -73,7 +73,7 @@ def send_reset_password_email(email_to: str, email: str, token: str) -> None:
         template_str = f.read()
     
     # Generate password reset link with token
-    server_host = config.SERVER_HOST_FRONT
+    server_host = settings.REACT_APP_DOMAIN
     link = f"{server_host}/reset-password?token={token}"
     
     # Send email asynchronously
@@ -106,7 +106,7 @@ def send_new_account_email(email_to: str, token: str) -> None:
         template_str = f.read()
     
     # Generate confirmation link with token
-    link = f"{config.SERVER_HOST_FRONT}/confirm-email?token={token}"
+    link = f"{settings.REACT_APP_DOMAIN}/confirm-email?token={token}"
     
     # Send email asynchronously
     send_email_async.delay(
@@ -136,7 +136,7 @@ def send_new_google_account_email(email_to: str) -> None:
         template_str = f.read()
     
     # Generate dashboard link
-    dashboard_link = f"{config.SERVER_HOST_FRONT}/dashboard"
+    dashboard_link = f"{settings.REACT_APP_DOMAIN}/dashboard"
     
     # Send email asynchronously
     send_email_async.delay(
@@ -179,7 +179,7 @@ def send_subscription_success_email(
         template_str = f.read()
     
     # Generate dashboard link
-    dashboard_link = f"{config.SERVER_HOST_FRONT}/dashboard"
+    dashboard_link = f"{settings.REACT_APP_DOMAIN}/dashboard"
     
     # Format currency for display
     formatted_amount = f"{amount:,.0f}"

@@ -28,7 +28,6 @@ SMTP_USER=""
 SMTP_PASSWORD=""
 EMAILS_FROM_EMAIL=""
 SUPPORT_EMAIL=""
-SERVER_HOST_FRONT=""
 
 PROJECT_NAME="3DScene"
 PROJECT_DESCRIPTION="Transform videos into stunning 3D scenes with AI-powered Gaussian Splatting! Our app uses cutting-edge technology to automatically reconstruct high-quality 3D models from simple videos — fast, easy, and perfect for gaming, VR, and digital content creation."

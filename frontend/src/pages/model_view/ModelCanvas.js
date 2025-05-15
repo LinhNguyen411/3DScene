@@ -30,7 +30,7 @@ const DEFAULT_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
 const DEFAULT_CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
 const DEFAULT_CAMERA_FOV = 50;
 
-function ModelCanvas({ viewMode, splatUrl, colmapData }) {
+function ModelCanvas({ viewMode, colmapData }) {
     // References
     const orbitControlsRef = useRef();
     const prevFovRef = useRef(DEFAULT_CAMERA_FOV);
@@ -270,14 +270,14 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                     fov={camera.fov} 
                 />
                 <StatsGl trackGPU={true} className="stats absolute bottom-[60px]" />
-                {viewMode === 'splat' && splatUrl && (
+                {/* {viewMode === 'splat' && splatUrl && (
                     <SplatViewer
                         splatUrl={splatUrl}
                         position={[position.x, position.y, position.z]}
                         rotation={[rotate.x, -rotate.y, -rotate.z]}
                         scale={rotate.scale + 5}
                     />
-                )}
+                )} */}
                 {viewMode === 'colmap' && colmapData && (
                     <>
                         <ambientLight intensity={1} />

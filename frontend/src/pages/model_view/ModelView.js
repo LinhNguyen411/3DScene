@@ -16,7 +16,7 @@ export default function ModelView() {
     const [searchParams] = useSearchParams();
     const id = searchParams.get('id');
     const viewer = searchParams.get('viewer');
-    const [splatUrl, setSplatUrl] = useState(null);
+    // const [splatUrl, setSplatUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -30,35 +30,35 @@ export default function ModelView() {
     // Create a unique key for each model to reset Leva controls
     const canvasKey = `model-${id}`;
 
-    const handleExportSplat = async () => {
-        try {
-          setLoading(true);
-          await DataService.downloadSplat(model.id, model.title);
-          setIsExportModalOpen(false);
-          showSnackbar("Exported .splat file successfully!", "success");
-        } catch (error) {
-          console.error("Error exporting .splat:", error);
-          showSnackbar("Failed to export .splat file", "error");
-        }
-        finally{
-          setLoading(false);
-        }
-    };
+    // const handleExportSplat = async () => {
+    //     try {
+    //       setLoading(true);
+    //       await DataService.downloadSplat(model.id, model.title);
+    //       setIsExportModalOpen(false);
+    //       showSnackbar("Exported .splat file successfully!", "success");
+    //     } catch (error) {
+    //       console.error("Error exporting .splat:", error);
+    //       showSnackbar("Failed to export .splat file", "error");
+    //     }
+    //     finally{
+    //       setLoading(false);
+    //     }
+    // };
     
-    const handleExportPLY = async () => {
-        try {
-          setLoading(true);
-          await DataService.downloadPLY(model.id, model.title);
-          setIsExportModalOpen(false);
-          showSnackbar("Exported .ply file successfully!", "success");
-        } catch (error) {
-          console.error("Error exporting .ply:", error);
-          showSnackbar("Failed to export .ply file", "error");
-        }
-        finally{
-          setLoading(false);
-        }
-    };
+    // const handleExportPLY = async () => {
+    //     try {
+    //       setLoading(true);
+    //       await DataService.downloadPLY(model.id, model.title);
+    //       setIsExportModalOpen(false);
+    //       showSnackbar("Exported .ply file successfully!", "success");
+    //     } catch (error) {
+    //       console.error("Error exporting .ply:", error);
+    //       showSnackbar("Failed to export .ply file", "error");
+    //     }
+    //     finally{
+    //       setLoading(false);
+    //     }
+    // };
     const handleExportColmap = async () => {
         try {
           setLoading(true);
@@ -154,7 +154,7 @@ export default function ModelView() {
                     hideLoader();
                     return;
                 }
-                console.log('colmap data:', colmap.images);
+                console.log('colmap data:', colmap);
                 setColmapData(colmap);
             } catch (error) {
                 console.error('Error fetching colmap data:', error);
@@ -163,19 +163,19 @@ export default function ModelView() {
                 return;
             }
             
-            try {
-                const response = await DataService.getModel(id, viewer);
-                if (!response || response.status !== 200) {
-                    throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
-                }
-                const arrayBuffer = await response.data.arrayBuffer();
-                const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
-                objectUrl = URL.createObjectURL(blob);
-                setSplatUrl(objectUrl);
-            } catch (error) {
-                console.error('Error processing .ply file:', error);
-                setModelNotFound(true);
-            }
+            // try {
+            //     const response = await DataService.getModel(id, viewer);
+            //     if (!response || response.status !== 200) {
+            //         throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
+            //     }
+            //     const arrayBuffer = await response.data.arrayBuffer();
+            //     const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+            //     objectUrl = URL.createObjectURL(blob);
+            //     setSplatUrl(objectUrl);
+            // } catch (error) {
+            //     console.error('Error processing .ply file:', error);
+            //     setModelNotFound(true);
+            // }
             
             hideLoader();
         } catch (error) {
@@ -226,13 +226,13 @@ export default function ModelView() {
                             <Grid3X3 size={16} className="mr-2" />
                             <span>Colmap</span>
                         </button>
-                        <button 
+                        {/* <button 
                             onClick={() => setViewMode('splat')} 
                             className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
                         >
                             <EyeIcon size={16} className="mr-2" />
                             <span>Splat</span>
-                        </button>
+                        </button> */}
                     </div>
                 </div>
                 
@@ -283,7 +283,7 @@ export default function ModelView() {
                <ModelCanvas
                     key={canvasKey}
                     viewMode={viewMode}
-                    splatUrl={splatUrl}
+                    // splatUrl={splatUrl}
                     colmapData={colmapData}
                 />
             </div>
@@ -307,26 +307,19 @@ export default function ModelView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                <button
-                                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-                                    onClick={handleExportColmap}
-                                >
-                                    Export colmap .zip (includes images)
-                                </button>
-                        
-                                <button
+                                {/* <button
                                     className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
                                     onClick={handleExportSplat}
                                 >
                                     Export as .splat
-                                </button>
+                                </button> */}
                         
                                 {currenUser?.is_pro ? (
-                                    <button
+                                         <button
                                     className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-                                    onClick={handleExportPLY}
-                                    >
-                                    Export as .ply
+                                    onClick={handleExportColmap}
+                                >
+                                    Export colmap .zip (includes images)
                                     </button>
                                 ) : (
                                     <Link to={RouterPath.SUBSCRIPTION}
@@ -335,7 +328,7 @@ export default function ModelView() {
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                         <path d="M10 2a6 6 0 00-6 6v2a2 2 0 00-2 2v5a2 2 0 002 2h12a2 2 0 002-2v-5a2 2 0 00-2-2V8a6 6 0 00-6-6zM8 8a2 2 0 114 0v2H8V8z" />
                                     </svg>
-                                    <span>Unlock .ply export – Upgrade to Pro</span>
+                                    <span>Unlock colmap export – Upgrade to Pro</span>
                                     </Link>
                                 )}
                             </div>

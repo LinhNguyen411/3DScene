@@ -771,12 +771,11 @@ async def get_splat_metadata(
         )
 
     # Lấy đường dẫn thư mục từ model_url
-    splat_file_path = splat.model_url
-    if not splat_file_path or not os.path.exists(splat_file_path):
-        raise HTTPException(status_code=404, detail="Input .splat file not found")
-
-    # Lấy thư mục chứa splat file
-    dir_path = os.path.dirname(splat_file_path)
+    user_id = splat.owner_id
+    dir_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(user_id), splat.id)
+    
+    if not os.path.exists(dir_path):
+        raise HTTPException(status_code=404, detail="COLMAP directory not found")
     
     # Đường dẫn đến các file metadata
     cameras_json_path = os.path.join(dir_path, 'cameras.json')

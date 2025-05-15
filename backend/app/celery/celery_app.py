@@ -203,47 +203,47 @@ def process_video(self: Task,
         
 
         # 11. Run opensplat
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Running OpenSplat"})
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running OpenSplat"})
 
         output_model = f"{task_id}_model.splat"
-        cmd = [
-            "opensplat",
-            os.path.join(dataset_path, "to_opensplat"),
-            "-n", str(num_iterations),
-            "-o", os.path.join(dataset_path, "outputs", output_model)
-        ]
+        # cmd = [
+        #     "opensplat",
+        #     os.path.join(dataset_path, "to_opensplat"),
+        #     "-n", str(num_iterations),
+        #     "-o", os.path.join(dataset_path, "outputs", output_model)
+        # ]
 
         # Change to dataset path for opensplat execution
         current_dir = os.getcwd()
-        print(current_dir)
-        run_command(cmd)
-        os.chdir(current_dir)
+        # run_command(cmd)
+        # os.chdir(current_dir)
 
         # 12. Copy the result to output directory
 
         src_path = os.path.join(dataset_path, "outputs", output_model)
         dst_path = os.path.join(workspace_path, output_model)
 
-        if os.path.exists(src_path):
-            shutil.copy(src_path, dst_path)
-            celery_log.info(f"Model saved to {dst_path}")
-        else:
-            raise Exception(f"Expected output file {src_path} not found")
+        # if os.path.exists(src_path):
+        #     shutil.copy(src_path, dst_path)
+        #     celery_log.info(f"Model saved to {dst_path}")
+        # else:
+        #     raise Exception(f"Expected output file {src_path} not found")
         
         # Check if compression was successful
-        if os.path.exists(dst_path):
-            celery_log.info(f"Compressed model saved to {dst_path}")
+        # if os.path.exists(dst_path):
+        #     celery_log.info(f"Compressed model saved to {dst_path}")
             
-            # Calculate the size of the compressed model in MB
-            size = round(os.path.getsize(dst_path) / (1024 * 1024), 2)
+        #     # Calculate the size of the compressed model in MB
+        #     size = round(os.path.getsize(dst_path) / (1024 * 1024), 2)
             
-            # Update the model_url to point to the compressed file and include model_size
-            splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=dst_path, model_size=size)
-            splat = crud.splat.get(db, id=task_id)
-            crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
-        else:
-            raise Exception(f"Compression failed: {dst_path} not found")
+        #     # Update the model_url to point to the compressed file and include model_size
+
+        # else:
+        #     raise Exception(f"Compression failed: {dst_path} not found")
+        splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=dst_path)
+        splat = crud.splat.get(db, id=task_id)
+        crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
 
         # Return the result
         return {

@@ -161,33 +161,33 @@ function AdminSplat() {
     }
   };
 
-  const handleDownloadSplat = async () => {
-    try {
-      setIsExporting(true);
-      await DataService.downloadSplat(editingItem.id, editingItem.title);
-      showSnackbar('Exported .splat file successfully!', 'success');
-    } catch (error) {
-      console.error("Error exporting .splat:", error);
-      showSnackbar("Failed to export .splat file", "error");
-    } finally {
-      setIsExporting(false);
-      setOpenExportModal(false);
-    }
-  };
+  // const handleDownloadSplat = async () => {
+  //   try {
+  //     setIsExporting(true);
+  //     await DataService.downloadSplat(editingItem.id, editingItem.title);
+  //     showSnackbar('Exported .splat file successfully!', 'success');
+  //   } catch (error) {
+  //     console.error("Error exporting .splat:", error);
+  //     showSnackbar("Failed to export .splat file", "error");
+  //   } finally {
+  //     setIsExporting(false);
+  //     setOpenExportModal(false);
+  //   }
+  // };
 
-  const handleDownloadPLY = async () => {
-    try {
-      setIsExporting(true);
-      await DataService.downloadPLY(editingItem.id, editingItem.title);
-      showSnackbar('Exported .ply file successfully!', 'success');
-    } catch (error) {
-      console.error("Error exporting .ply:", error);
-      showSnackbar("Failed to export .ply file", "error");
-    } finally {
-      setIsExporting(false);
-      setOpenExportModal(false);
-    }
-  };
+  // const handleDownloadPLY = async () => {
+  //   try {
+  //     setIsExporting(true);
+  //     await DataService.downloadPLY(editingItem.id, editingItem.title);
+  //     showSnackbar('Exported .ply file successfully!', 'success');
+  //   } catch (error) {
+  //     console.error("Error exporting .ply:", error);
+  //     showSnackbar("Failed to export .ply file", "error");
+  //   } finally {
+  //     setIsExporting(false);
+  //     setOpenExportModal(false);
+  //   }
+  // };
 
   const handleDownloadColmap = async () => {
     try {
@@ -218,7 +218,7 @@ function AdminSplat() {
       <h1 className="text-2xl font-bold">{MODEL_NAME} Management</h1>
     </div>
     
-    <button onClick={() => {
+    {/* <button onClick={() => {
                   setEditingItem(initItem);
                   setImageFile(null);
                   setModelFile(null);
@@ -227,7 +227,7 @@ function AdminSplat() {
             className="w-fit bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded flex items-center gap-2 mb-6"
     >
       <Upload /> Upload {MODEL_NAME}
-    </button>
+    </button> */}
     
     <div className="flex-1">
       <table className="w-full">
@@ -553,7 +553,7 @@ function AdminSplat() {
                 >
                   Export colmap .zip (includes images)
                 </button>
-                <button
+                {/* <button
                   className="w-full py-3 bg-teal-500 text-white rounded-md font-medium"
                   onClick={handleDownloadSplat}
                 >
@@ -564,7 +564,7 @@ function AdminSplat() {
                   onClick={handleDownloadPLY}
                 >
                   Export as .ply
-                </button>
+                </button> */}
               </div>
             )}
           </DialogPanel>

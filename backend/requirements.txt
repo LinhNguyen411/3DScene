@@ -97,4 +97,26 @@ websockets==10.1
 wrapt==1.13.3
 zipp==3.7.0
 payos==0.1.8
-numpy==2.2.5
+
+torch==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+torchvision --index-url https://download.pytorch.org/whl/cu121
+
+fvcore
+iopath
+hydra-core
+omegaconf
+opencv-python
+einops
+visdom
+tqdm
+scipy
+plotly
+scikit-learn
+imageio[ffmpeg]
+gradio
+trimesh
+huggingface_hub
+numpy==1.26.3
+pycolmap==3.10.0
+pyceres==2.3
+poselib==2.0.2

@@ -1,6 +1,5 @@
 # syntax = docker/dockerfile:experimental
-
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.1.0-devel-ubuntu22.04
 
 # This prevents Python from writing out pyc files
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -8,99 +7,36 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies and Python
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    wget \
-    python3 \
-    python3-pip \
-    ffmpeg \
     git \
     build-essential \
-    libboost-program-options-dev \
-    libboost-graph-dev \
-    libboost-system-dev \
-    libeigen3-dev \
-    libflann-dev \
-    libfreeimage-dev \
-    libmetis-dev \
-    libgoogle-glog-dev \
-    libgtest-dev \
-    libgmock-dev \
-    libsqlite3-dev \
-    libglew-dev \
-    qtbase5-dev \
-    libqt5opengl5-dev \
-    libcgal-dev \
-    libatlas-base-dev \
-    libsuitesparse-dev \
-    libopencv-dev \
-    unzip \
-    gcc-10 \
-    g++-10 \
-    ninja-build \
     curl \
+    unzip \
+    python3.10 \
+    python3.10-dev \
+    python3.10-distutils \
+    ffmpeg \
+    libopencv-dev \
+    libpq-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Download and install newer CMake version
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.sh \
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+    && python3.10 get-pip.py \
+    && rm get-pip.py \
+    && ln -s /usr/bin/python3.10 /usr/bin/python \
+    && ln -sf $(which pip3.10) /usr/bin/pip
+
+RUN curl -L -o cmake-3.28.3-linux-x86_64.sh https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-linux-x86_64.sh \
     && chmod +x cmake-3.28.3-linux-x86_64.sh \
     && ./cmake-3.28.3-linux-x86_64.sh --skip-license --prefix=/usr/local \
     && rm cmake-3.28.3-linux-x86_64.sh
-
+    
 ENV PATH=/usr/local/bin:$PATH
 
-# Install CUDSS
-RUN wget https://developer.download.nvidia.com/compute/cudss/0.5.0/local_installers/cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb \
-    && dpkg -i cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb \
-    && cp /var/cudss-local-repo-ubuntu2204-0.5.0/cudss-*-keyring.gpg /usr/share/keyrings/ \
-    && apt-get update \
-    && apt-get -y install cudss \
-    && rm cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb
-
-# Set environment variables
-ENV CUDSS_DIR=/usr/local/cudss \
-    PATH=/usr/local/cudss/bin:$PATH \
-    LD_LIBRARY_PATH=/usr/local/cudss/lib:$LD_LIBRARY_PATH \
-    CC=/usr/bin/gcc-10 \
-    CXX=/usr/bin/g++-10 \
-    CUDAHOSTCXX=/usr/bin/g++-10
-
-# Fix C++ header includes
-RUN sed -i 's/#include_next /#include /g' /usr/include/c++/10/cmath \
-    && sed -i 's/#include_next /#include /g' /usr/include/c++/10/cstdlib \
-    && find /usr/include/c++/10/bits -type f -exec sed -i 's/#include_next /#include /g' {} +
-
-# Install Ceres solver with CUDA support
-RUN git clone --recursive https://github.com/ceres-solver/ceres-solver.git \
-    && cd ceres-solver \
-    && mkdir build && cd build \
-    && cmake -DBUILD_TESTING=OFF -DBUILD_EXAMPLES=OFF -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. -GNinja \
-    && ninja && ninja install \
-    && cd ../.. \
-    && rm -rf ceres-solver
-
-# Install COLMAP with CUDA support
-RUN git clone https://github.com/colmap/colmap.git \
-    && cd colmap \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. -GNinja \
-    && ninja && ninja install \
-    && cd ../.. \
-    && rm -rf colmap
-
-# Install GloMap
-RUN git clone https://github.com/colmap/glomap.git \
-    && cd glomap \
-    && mkdir build && cd build \
-    && cmake -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. -GNinja \
-    && ninja && ninja install \
-    && cd ../.. \
-    && rm -rf glomap
-
 # Install PyTorch with CUDA
-RUN curl -o libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip https://download.pytorch.org/libtorch/cu124/libtorch-cxx11-abi-shared-with-deps-2.6.0%2Bcu124.zip \
-    && unzip libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip -d /usr/local/ \
-    && rm libtorch-cxx11-abi-shared-with-deps-2.6.0+cu124.zip
+RUN curl -o libtorch-cxx11-abi-shared-with-deps-2.5.1+cu121.zip https://download.pytorch.org/libtorch/cu121/libtorch-cxx11-abi-shared-with-deps-2.5.1%2Bcu121.zip \
+    && unzip libtorch-cxx11-abi-shared-with-deps-2.5.1+cu121.zip -d /usr/local/ \
+    && rm libtorch-cxx11-abi-shared-with-deps-2.5.1+cu121.zip
 
 ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:$LD_LIBRARY_PATH
 
@@ -108,17 +44,14 @@ ENV LD_LIBRARY_PATH=/usr/local/libtorch/lib:$LD_LIBRARY_PATH
 RUN git clone https://github.com/pierotofy/OpenSplat OpenSplat \
     && cd OpenSplat \
     && mkdir build && cd build \
-    && cmake -DUSE_CUDSS=ON -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. \
+    && cmake -DCMAKE_PREFIX_PATH=/usr/local/libtorch/ -DCMAKE_CUDA_ARCHITECTURES="75;86;89" .. \
     && make -j$(nproc) \
     && make install \
     && cd ../.. \
     && rm -rf OpenSplat
 
-# Create Python symlink
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
 # Install Go
-RUN wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz \
+RUN curl -L -o go1.24.2.linux-amd64.tar.gz https://go.dev/dl/go1.24.2.linux-amd64.tar.gz \
     && rm -rf /usr/local/go \
     && tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz \
     && rm go1.24.2.linux-amd64.tar.gz
@@ -135,18 +68,33 @@ RUN git clone https://github.com/gotoeasy/gsbox.git gsbox \
     && cd .. \
     && rm -rf gsbox
 
+RUN git clone https://github.com/facebookresearch/vggsfm.git vggsfm \
+    && sed -i 's/max_points_num=163840/max_points_num=16384/' vggsfm/vggsfm/runners/runner.py \
+    && sed -i 's/max_tri_points_num=819200/max_tri_points_num=65536/' vggsfm/vggsfm/utils/triangulation.py
+
 WORKDIR /code/app
 
 COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
+RUN cd /vggsfm \
+    && cd /vggsfm \
+    && git clone https://github.com/jytime/LightGlue.git dependency/LightGlue \
+    && cd dependency/LightGlue/ \
+    && python -m pip install -e . \
+    && cd ../.. \
+    && python -m pip install -e . \
+    && cd /code/app \
+    && pip install pytorch3d==0.7.5 --no-index --no-cache-dir -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu121_pyt210/download.html
+
+
 COPY ./app /code/app
 ARG PYTHONPATH=/code/app/
 
 ENV PYTHONPATH "${PYTHONPATH}:/code"
 
-RUN rm -rf /ceres-solver /colmap /glomap /OpenSplat /gsbox \
+RUN rm -rf /ceres-solver /OpenSplat /gsbox \
     && rm -rf /go1.24.2.linux-amd64.tar.gz \
     && rm -rf /cudss-local-repo-ubuntu2204-0.5.0_0.5.0-1_amd64.deb
 

@@ -118,68 +118,81 @@ def process_video(self: Task,
             # If dataset_dir is already the images directory, use it directly
             img_dir = dataset_dir
 
-        # 3. Run COLMAP feature extraction
+        # # 3. Run COLMAP feature extraction
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP feature extraction"})
+        
+        # splat_in = schemas.SplatUpdate(status = "PROGRESS")
+        # splat = crud.splat.get(db, id= task_id)
+        # crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+
+        # cmd = [
+        #     "colmap", "feature_extractor",
+        #     "--database_path", os.path.join(dataset_path, "database.db"),
+        #     "--image_path", img_dir,
+        #     "--SiftExtraction.use_gpu", "1",
+        # ]
+        # run_command(cmd)
+
+        # # 4. Run COLMAP sequential matcher
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP matcher"})
+
+        # cmd = [
+        #     "colmap", "exhaustive_matcher",
+        #     "--database_path", os.path.join(dataset_path, "database.db"),
+        #     "--SiftMatching.use_gpu", "1"
+        # ]
+        # run_command(cmd)
+        # sparse_dir = os.path.join(dataset_path, "sparse")
+        # os.makedirs(sparse_dir, exist_ok=True)
+
+        # # 6. Run COLMAP mapper
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP mapper"})
+        # num_images = len([f for f in os.listdir(img_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+        # max_num_tracks = num_images * 1000
+        # cmd = [
+        #     "glomap", "mapper",
+        #     "--database_path", os.path.join(dataset_path, "database.db"),
+        #     "--image_path", img_dir,
+        #     "--output_path", sparse_dir,
+        #     "--GlobalPositioning.use_gpu", "1",
+        #     "--BundleAdjustment.use_gpu", "1",
+        #     "--TrackEstablishment.max_num_tracks", str(max_num_tracks)
+        # ]
+        # run_command(cmd)
+
+
+        # # 7. Create dense directory
+        # dense_dir = os.path.join(dataset_path, "dense")
+        # os.makedirs(dense_dir, exist_ok=True)
+
+        # # 8. Run COLMAP image undistorter
+        # self.update_state(state="PROGRESS",
+        #                   meta={"status": "Running COLMAP image undistorter"})
+
+        # cmd = [
+        #     "colmap", "image_undistorter",
+        #     "--image_path", img_dir,
+        #     "--input_path", os.path.join(sparse_dir, "0"),
+        #     "--output_path", dense_dir,
+        #     "--output_type", "COLMAP"
+        # ]
+        # run_command(cmd)
+
         self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP feature extraction"})
+                          meta={"status": "Running VGGSFM"})
         
         splat_in = schemas.SplatUpdate(status = "PROGRESS")
         splat = crud.splat.get(db, id= task_id)
         crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         cmd = [
-            "colmap", "feature_extractor",
-            "--database_path", os.path.join(dataset_path, "database.db"),
-            "--image_path", img_dir,
-            "--SiftExtraction.use_gpu", "1",
+            "python" , "app/utils/vggsfm.py",
+            "SCENE_DIR" , img_dir
         ]
-        run_command(cmd)
 
-        # 4. Run COLMAP sequential matcher
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP matcher"})
-
-        cmd = [
-            "colmap", "exhaustive_matcher",
-            "--database_path", os.path.join(dataset_path, "database.db"),
-            "--SiftMatching.use_gpu", "1"
-        ]
-        run_command(cmd)
-        sparse_dir = os.path.join(dataset_path, "sparse")
-        os.makedirs(sparse_dir, exist_ok=True)
-
-        # 6. Run COLMAP mapper
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP mapper"})
-        num_images = len([f for f in os.listdir(img_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
-        max_num_tracks = num_images * 1000
-        cmd = [
-            "glomap", "mapper",
-            "--database_path", os.path.join(dataset_path, "database.db"),
-            "--image_path", img_dir,
-            "--output_path", sparse_dir,
-            "--GlobalPositioning.use_gpu", "1",
-            "--BundleAdjustment.use_gpu", "1",
-            "--TrackEstablishment.max_num_tracks", str(max_num_tracks)
-        ]
-        run_command(cmd)
-
-
-        # 7. Create dense directory
-        dense_dir = os.path.join(dataset_path, "dense")
-        os.makedirs(dense_dir, exist_ok=True)
-
-        # 8. Run COLMAP image undistorter
-        self.update_state(state="PROGRESS",
-                          meta={"status": "Running COLMAP image undistorter"})
-
-        cmd = [
-            "colmap", "image_undistorter",
-            "--image_path", img_dir,
-            "--input_path", os.path.join(sparse_dir, "0"),
-            "--output_path", dense_dir,
-            "--output_type", "COLMAP"
-        ]
-        run_command(cmd)
 
         # 9. Create to_opensplat directory
         opensplat_dir = os.path.join(dataset_path, "to_opensplat")
@@ -190,18 +203,18 @@ def process_video(self: Task,
         # 10. Create symbolic links
 
         # Copy directory (images)
-        shutil.copytree(os.path.join(dense_dir, "images"),
+        shutil.copytree(os.path.join(dataset_path, "images"),
                         os.path.join(opensplat_dir, "images"),
                         dirs_exist_ok=True)  # Only in Python 3.8+
 
         # Copy individual .bin files
-        shutil.copy(os.path.join(dense_dir, "sparse", "cameras.bin"),
+        shutil.copy(os.path.join(dataset_path, "sparse", "cameras.bin"),
                     os.path.join(opensplat_dir, "cameras.bin"))
 
-        shutil.copy(os.path.join(dense_dir, "sparse", "images.bin"),
+        shutil.copy(os.path.join(dataset_path, "sparse", "images.bin"),
                     os.path.join(opensplat_dir, "images.bin"))
 
-        shutil.copy(os.path.join(dense_dir, "sparse", "points3D.bin"),
+        shutil.copy(os.path.join(dataset_path, "sparse", "points3D.bin"),
                     os.path.join(opensplat_dir, "points3D.bin"))
 
         #Save colmap metadata to JSON

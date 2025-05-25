@@ -189,10 +189,10 @@ def process_video(self: Task,
         crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
 
         cmd = [
-            "python" , "app/utils/vggsfm.py",
-            "SCENE_DIR" , img_dir
+            "python" , "/vggsfm/demo.py",
+            "SCENE_DIR"+img_dir
         ]
-
+        run_command(cmd)
 
         # 9. Create to_opensplat directory
         opensplat_dir = os.path.join(dataset_path, "to_opensplat")

@@ -180,6 +180,24 @@ def process_video(self: Task,
         #     "--output_type", "COLMAP"
         # ]
         # run_command(cmd)
+        vggsfm_dir = "/vggsfm/examples/workspace"
+        target_dir = vggsfm_dir + "/images"
+        os.makedirs(target_dir, exist_ok=True)
+        
+        # Clear target_dir first if it exists (optional, if you want to ensure clean dir)
+        for f in os.listdir(target_dir):
+            f_path = os.path.join(target_dir, f)
+            if os.path.isfile(f_path):
+                os.remove(f_path)
+            elif os.path.isdir(f_path):
+                shutil.rmtree(f_path)
+
+        # Copy the images to target_dir
+        for f in os.listdir(img_dir):
+            src_path = os.path.join(img_dir, f)
+            dst_path = os.path.join(target_dir, f)
+            if os.path.isfile(src_path):
+                shutil.copy2(src_path, dst_path)
 
         self.update_state(state="PROGRESS",
                           meta={"status": "Running VGGSFM"})
@@ -190,7 +208,7 @@ def process_video(self: Task,
 
         cmd = [
             "python" , "/vggsfm/demo.py",
-            "SCENE_DIR"+img_dir
+            "SCENE_DIR="+target_dir
         ]
         run_command(cmd)
 
@@ -203,18 +221,18 @@ def process_video(self: Task,
         # 10. Create symbolic links
 
         # Copy directory (images)
-        shutil.copytree(os.path.join(dataset_path, "images"),
+        shutil.copytree(os.path.join(vggsfm_dir, "images"),
                         os.path.join(opensplat_dir, "images"),
                         dirs_exist_ok=True)  # Only in Python 3.8+
 
         # Copy individual .bin files
-        shutil.copy(os.path.join(dataset_path, "sparse", "cameras.bin"),
+        shutil.copy(os.path.join(vggsfm_dir, "sparse", "cameras.bin"),
                     os.path.join(opensplat_dir, "cameras.bin"))
 
-        shutil.copy(os.path.join(dataset_path, "sparse", "images.bin"),
+        shutil.copy(os.path.join(vggsfm_dir, "sparse", "images.bin"),
                     os.path.join(opensplat_dir, "images.bin"))
 
-        shutil.copy(os.path.join(dataset_path, "sparse", "points3D.bin"),
+        shutil.copy(os.path.join(vggsfm_dir, "sparse", "points3D.bin"),
                     os.path.join(opensplat_dir, "points3D.bin"))
 
         #Save colmap metadata to JSON
@@ -330,6 +348,10 @@ def process_video(self: Task,
             if os.path.exists(dataset_path):
                 shutil.rmtree(dataset_path)
                 celery_log.info(f"Cleaned up workspace at {dataset_path}")
+            vggsfm_dir = "/vggsfm/examples/workspace"
+            if os.path.exists(vggsfm_dir):
+                shutil.rmtree(vggsfm_dir)
+                celery_log.info(f"Cleaned up VGG-SfM workspace at {vggsfm_dir}")
         except Exception as cleanup_error:
             celery_log.warning(f"Failed to remove workspace: {str(cleanup_error)}")
 

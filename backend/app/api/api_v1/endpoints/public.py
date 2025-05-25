@@ -2,6 +2,7 @@ from typing import Any,List
 from app.api import deps
 from app import schemas
 from app.core.config import Config
+from pydantic import BaseModel
 
 from fastapi import (APIRouter,  Depends)
 
@@ -58,3 +59,36 @@ async def get_public_environment_variables(
                 })
     
     return env_vars
+
+
+class ProjectInfoResponse(BaseModel):
+    project_name: str | None
+    project_icon: str | None
+
+@router.get("/project-info", response_model=ProjectInfoResponse)
+async def get_project_info(
+    *,
+    config: Config = Depends(deps.get_config),
+) -> Any:
+    """
+    Get project name and icon from configuration.
+
+    **Request Headers:**
+    - None
+
+    **Request Body:**
+    - No input data required.
+
+    **Response:**
+    - 200 OK: Returns the project name and icon.
+    - 403 Forbidden: If user lacks access permissions.
+
+    **Description:**
+    - Retrieves only PROJECT_NAME and PROJECT_ICON from system configuration.
+    - Returns values as strings or None if not set.
+    - Values are considered non-sensitive.
+    """
+    return {
+        "project_name": str(getattr(config, "PROJECT_NAME", None)),
+        "project_icon": str(getattr(config, "PROJECT_ICON", None))
+    }

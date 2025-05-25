@@ -25,7 +25,12 @@ export default function ModelView() {
     const [currenUser, setCurrentUser] = useState(null);
     const [modelNotFound, setModelNotFound] = useState(false);
     const [colmapData, setColmapData] = useState(null);
-    const [viewMode, setViewMode] = useState('colmap'); // 'colmap' or 'splat'
+    const [hasColmapData, setHasColmapData] = useState(false);
+    const [viewMode, setViewMode] = useState('splat'); // Always start with splat
+    const [colmapDataLoading, setColmapDataLoading] = useState(false);
+    const [colmapDataChecked, setColmapDataChecked] = useState(false);
+    const [projectName, setProjectName] = useState(null);
+    const [projectIcon, setProjectIcon] = useState(null);
     
     // Create a unique key for each model to reset Leva controls
     const canvasKey = `model-${id}`;
@@ -87,24 +92,9 @@ export default function ModelView() {
     };
 
     const handleBack = () => {
-    if (window.history.length > 1) {
-        // Check if previous page is from the same domain
-        try {
-        const previousUrl = document.referrer;
-        const currentDomain = window.location.hostname;
-        
-        if (previousUrl && previousUrl.includes(currentDomain)) {
+        if (window.history.length > 1) {
             navigate(-1);
-        } else {
-            navigate(RouterPath.HOME);
         }
-        } catch (error) {
-        // In case of any issues with checking the domain, fallback to home
-        navigate(RouterPath.HOME);
-        }
-    } else {
-        navigate(RouterPath.HOME);
-    }
     };
 
     const formatDate = (dateString) => {
@@ -121,8 +111,53 @@ export default function ModelView() {
         return `${size.toFixed(2)} MB`;
     };
 
-    const toggleViewMode = () => {
-        setViewMode(viewMode === 'colmap' ? 'splat' : 'colmap');
+    // Function to check if colmap data is available
+    const checkColmapAvailability = async () => {
+        if (colmapDataChecked) return;
+        
+        try {
+            const colmap = await DataService.getColmapData(id, viewer);
+            if (colmap && colmap.cameras && colmap.points && colmap.images) {
+                setHasColmapData(true);
+            } else {
+                setHasColmapData(false);
+            }
+        } catch (error) {
+            console.error('Error checking colmap availability:', error);
+            setHasColmapData(false);
+        } finally {
+            setColmapDataChecked(true);
+        }
+    };
+
+    // Function to load colmap data when user clicks colmap button
+    const loadColmapData = async () => {
+        if (colmapData) return; // Already loaded
+        
+        setColmapDataLoading(true);
+        try {
+            const colmap = await DataService.getColmapData(id, viewer);
+            if (colmap && colmap.cameras && colmap.points && colmap.images) {
+                console.log('colmap data:', colmap.images);
+                setColmapData(colmap);
+            } else {
+                showSnackbar("Colmap data not available", "error");
+                setHasColmapData(false);
+            }
+        } catch (error) {
+            console.error('Error loading colmap data:', error);
+            showSnackbar("Failed to load colmap data", "error");
+            setHasColmapData(false);
+        } finally {
+            setColmapDataLoading(false);
+        }
+    };
+
+    const handleViewModeToggle = async (mode) => {
+        if (mode === 'colmap' && !colmapData) {
+            await loadColmapData();
+        }
+        setViewMode(mode);
     };
 
     let objectUrl;
@@ -147,21 +182,8 @@ export default function ModelView() {
                 return;
             }
             
-            try {
-                const colmap = await DataService.getColmapData(id, viewer);
-                if (!colmap) {
-                    setModelNotFound(true);
-                    hideLoader();
-                    return;
-                }
-                console.log('colmap data:', colmap.images);
-                setColmapData(colmap);
-            } catch (error) {
-                console.error('Error fetching colmap data:', error);
-                setModelNotFound(true);
-                hideLoader();
-                return;
-            }
+            // Check if colmap data is available (but don't load it yet)
+            await checkColmapAvailability();
             
             try {
                 const response = await DataService.getModel(id, viewer);
@@ -184,9 +206,25 @@ export default function ModelView() {
             hideLoader();
         }
     };
-
+    const fetchProjectInfo = async () => {
+                try {
+            const response = await DataService.getProjectInfo();
+            if (response) {
+                setProjectName(response.project_name);
+                setProjectIcon(myAppConfig.api.ENDPOINT + response.project_icon);
+                console.log('Project info:', response);
+            } else {
+                console.error('Failed to fetch project info');
+            }
+        }
+        catch (error) {
+            console.error('Error fetching project info:', error);
+        }
+    }
     useEffect(() => {
         fetchAndProcess();
+        fetchProjectInfo();
+
 
         return () => {
             if (objectUrl) {
@@ -214,27 +252,51 @@ export default function ModelView() {
                     <button className={`h-8 w-8 flex items-center justify-center rounded-full ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'} border mr-4`} onClick={handleBack}>
                         <ChevronLeft size={16} /> 
                     </button>
-                </div>
-                
-                {/* Center section - View Toggle */}
-                <div className="flex items-center">
-                    <div className={`flex items-center p-1 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                        <button 
-                            onClick={() => setViewMode('colmap')} 
-                            className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
-                        >
-                            <Grid3X3 size={16} className="mr-2" />
-                            <span>Colmap</span>
-                        </button>
-                        <button 
-                            onClick={() => setViewMode('splat')} 
-                            className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
-                        >
-                            <EyeIcon size={16} className="mr-2" />
-                            <span>Splat</span>
-                        </button>
+                    <div className="flex items-center">
+                        <Link to={RouterPath.HOME} className="flex justify-between items-center">
+                            <img className="w-10" src={projectIcon} alt={`${projectName} logo`} />
+                            <h2 className={`brand-text text-xl ml-2 ${isDarkMode ? 'text-white-400' : 'text-sky-400'}`}>{projectName}</h2>
+                        </Link>
                     </div>
                 </div>
+
+                
+                {/* Center section - View Toggle - Only show if colmap data is available */}
+                {hasColmapData && (
+                    <div className="flex items-center">
+                        <div className={`flex items-center p-1 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                            <button 
+                                onClick={() => setViewMode('splat')} 
+                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
+                            >
+                                <EyeIcon size={16} className="mr-2" />
+                                <span>Splat</span>
+                            </button>
+                            <button 
+                                onClick={() => handleViewModeToggle('colmap')} 
+                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
+                                disabled={colmapDataLoading}
+                            >
+                                {colmapDataLoading ? (
+                                    <Loader size={16} className="mr-2 animate-spin" />
+                                ) : (
+                                    <Grid3X3 size={16} className="mr-2" />
+                                )}
+                                <span>Colmap</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* Show current view mode when toggle is not available */}
+                {!hasColmapData && (
+                    <div className="flex items-center">
+                        <div className={`flex items-center px-4 py-1.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                            <EyeIcon size={16} className="mr-2" />
+                            <span>Splat View</span>
+                        </div>
+                    </div>
+                )}
                 
                 {/* Right section */}
                 <div className="flex items-center space-x-3">
@@ -307,12 +369,15 @@ export default function ModelView() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                <button
-                                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-                                    onClick={handleExportColmap}
-                                >
-                                    Export colmap .zip (includes images)
-                                </button>
+                                {/* Only show colmap export if colmap data is loaded */}
+                                {colmapData && (
+                                    <button
+                                        className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
+                                        onClick={handleExportColmap}
+                                    >
+                                        Export colmap .zip (includes images)
+                                    </button>
+                                )}
                         
                                 <button
                                     className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
@@ -432,6 +497,14 @@ export default function ModelView() {
                                 
                                 <div className="text-gray-500">Visibility</div>
                                 <div>{model.is_public ? 'Public' : 'Private'}</div>
+                                
+                                <div className="text-gray-500">Available Views</div>
+                                <div>
+                                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">Splat</span>
+                                    {hasColmapData && (
+                                        <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Colmap</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

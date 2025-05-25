@@ -153,6 +153,14 @@ const downloadColmap = async (id, viewer) => {
     throw new Error('Failed to download COLMAP files');
   }
 };
+const getProjectInfo = async () =>{
+  try {
+    const response = await axios.get(myAppConfig.api.ENDPOINT + "/public/project-info");
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to get project info');
+  }
+}
 
 const DataService = {
   getAuth,
@@ -162,6 +170,7 @@ const DataService = {
   getModel,
   getColmapData,
   downloadColmap,
+  getProjectInfo,
 };
 
 

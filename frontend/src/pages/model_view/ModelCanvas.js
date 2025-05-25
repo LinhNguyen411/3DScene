@@ -36,6 +36,18 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
     const prevFovRef = useRef(DEFAULT_CAMERA_FOV);
     const cameraRef = useRef();
     
+    // Check if colmap data is valid and complete
+    const hasValidColmapData = useMemo(() => {
+        return colmapData && 
+               colmapData.cameras && 
+               colmapData.points && 
+               colmapData.images &&
+               Array.isArray(colmapData.cameras) &&
+               Array.isArray(colmapData.points) &&
+               colmapData.cameras.length > 0 &&
+               colmapData.points.length > 0;
+    }, [colmapData]);
+    
     // Reset view handler
     const handleResetView = useCallback(() => {
         if (!cameraRef.current || !orbitControlsRef.current) return;
@@ -104,9 +116,10 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
         animateReset();
     }, []);
 
-    // Use the separated Leva controls
-    const position = usePositionControls(viewMode !== 'splat');
-    const rotate = useRotationControls(viewMode !== 'splat');
+    // Use the separated Leva controls - only disable when in colmap mode with valid data
+    const shouldDisableControls = viewMode === 'colmap' && hasValidColmapData;
+    const position = usePositionControls(!shouldDisableControls);
+    const rotate = useRotationControls(!shouldDisableControls);
     const camera = useCameraControls(handleResetView);
     const grid = useGridControls();
     const flyControls = useFlyControls(camera.mode === 'Fly');
@@ -260,9 +273,31 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
         }
     }, [camera.mode, flyControls.movementSpeed, flyControls.lookSpeed]);
 
+    // Determine canvas background color based on view mode and data availability
+    const canvasBackgroundColor = useMemo(() => {
+        if (viewMode === 'colmap' && hasValidColmapData) {
+            return "bg-black";
+        }
+        return "bg-white";
+    }, [viewMode, hasValidColmapData]);
+
+    // Determine grid colors based on view mode and data availability
+    const gridColors = useMemo(() => {
+        if (viewMode === 'colmap' && hasValidColmapData) {
+            return {
+                sectionColor: "#ffffff",
+                cellColor: "#ffffff"
+            };
+        }
+        return {
+            sectionColor: "#3B82F6",
+            cellColor: "#3B82F6"
+        };
+    }, [viewMode, hasValidColmapData]);
+
     return (
         <div className="relative w-full h-full">
-              <Canvas className={viewMode === 'colmap' ? "bg-black" : "bg-white"} >
+              <Canvas className={canvasBackgroundColor} >
                 <PerspectiveCamera 
                     ref={cameraRef}
                     makeDefault 
@@ -270,6 +305,8 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                     fov={camera.fov} 
                 />
                 <StatsGl trackGPU={true} className="stats absolute bottom-[60px]" />
+                
+                {/* Splat Viewer - Always render when splatUrl is available and in splat mode */}
                 {viewMode === 'splat' && splatUrl && (
                     <SplatViewer
                         splatUrl={splatUrl}
@@ -278,7 +315,9 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                         scale={rotate.scale + 5}
                     />
                 )}
-                {viewMode === 'colmap' && colmapData && (
+                
+                {/* Colmap Viewer - Only render when in colmap mode AND valid colmap data exists */}
+                {viewMode === 'colmap' && hasValidColmapData && (
                     <>
                         <ambientLight intensity={1} />
                         <group 
@@ -296,25 +335,55 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                         <Axes />
                     </>
                 )}
+                
+                {/* Fallback message when in colmap mode but no valid data */}
+                {viewMode === 'colmap' && !hasValidColmapData && (
+                    <mesh position={[0, 0, 0]}>
+                        <planeGeometry args={[4, 2]} />
+                        <meshBasicMaterial color="#666666" transparent opacity={0.8} />
+                        <mesh position={[0, 0, 0.01]}>
+                            <planeGeometry args={[3.8, 1.8]} />
+                            <meshBasicMaterial color="#333333" />
+                        </mesh>
+                    </mesh>
+                )}
+                
                 {Controls}
                 <Grid
                   position={[0, -1.5, 0]}
                   args={[50, 50]}
                   fadeDistance={25}
-                  sectionColor={viewMode === 'colmap'? "#ffffff" : "#3B82F6"}
-                  cellColor={viewMode === 'colmap'? "#ffffff" : "#3B82F6"}
+                  sectionColor={gridColors.sectionColor}
+                  cellColor={gridColors.cellColor}
                   visible={grid.visible}
                 />
               </Canvas>
             <Loader />
-            {/* Popup component outside of Canvas */}
-            {viewMode === 'colmap' && (
+            
+            {/* Popup component outside of Canvas - Only show when in colmap mode with valid data */}
+            {viewMode === 'colmap' && hasValidColmapData && (
                 <ImagePopup 
                     isOpen={popupState.isOpen}
                     imageUrl={popupState.imageUrl}
                     imageName={popupState.imageName}
                     onClose={closePopup}
                 />
+            )}
+            
+            {/* Error message overlay when in colmap mode but no valid data */}
+            {viewMode === 'colmap' && !hasValidColmapData && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
+                    <div className="text-center p-8 bg-gray-800 rounded-lg">
+                        <div className="text-6xl mb-4">📷</div>
+                        <h3 className="text-xl font-semibold mb-2">Colmap Data Not Available</h3>
+                        <p className="text-gray-300 mb-4">
+                            This model doesn't have colmap reconstruction data available.
+                        </p>
+                        <p className="text-sm text-gray-400">
+                            Switch to Splat view to see the 3D model.
+                        </p>
+                    </div>
+                </div>
             )}
         </div>
     );

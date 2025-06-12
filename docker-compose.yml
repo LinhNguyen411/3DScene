@@ -68,6 +68,7 @@ services:
       - 3dscene-frontend
     ports:
       - ${REVERSE_PROXY_PORT}:80
+      - 443:443
     environment:
       <<: *common-linux-container-environment-variables
       API_PORT_INTERNAL: ${API_PORT_INTERNAL}

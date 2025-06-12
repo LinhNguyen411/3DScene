@@ -1,12 +1,4 @@
-# The docker-compose.override.yml file is automatically interpreted by docker-compose program along with docker-compose.yml
-#
-# The docker-compose.override.yml file is NOT interpreted if you specify the docker-compose file explicitly with -f flag like
-# docker-compose up -f docker-compose.yml --> docker-compose.override.yml is NOT going to be processed.
-#
-# override file used on developer workstations to bind volumes for direct code modifications.
-# version: '3.8'
 services:
-  # react application
   3dscene-frontend:
     # build:
     #   context: ./frontend
@@ -14,7 +6,6 @@ services:
     volumes:
       - ./frontend:/app
 
-  # FastApi application
   3dscene-api:
     # build:
     #   context: ./backend
@@ -30,12 +21,10 @@ services:
     volumes:
       - ./backend/:/code
 
-  # reverse proxy for frontend/backend (fixes problems with CORS and simpler to deploy)
   3dscene-reverse-proxy:
+    volumes:
+      - ./reverse-proxy/certs/:/etc/nginx/certs/
     build:
       context: ./reverse-proxy
       dockerfile: Dockerfile
 
-
-  # 3dscene-flower:
-  #   image: mher/flower:0.9.4

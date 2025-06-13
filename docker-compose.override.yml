@@ -22,8 +22,8 @@ services:
       - ./backend/:/code
 
   3dscene-reverse-proxy:
-    volumes:
-      - ./reverse-proxy/certs/:/etc/nginx/certs/
+    # volumes:
+    #   - ./reverse-proxy/certs/:/etc/nginx/certs/
     build:
       context: ./reverse-proxy
       dockerfile: Dockerfile

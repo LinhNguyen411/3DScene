@@ -1,22 +1,30 @@
 # syntax = docker/dockerfile:experimental
 FROM nginx:1.19.2-alpine
 
-# tzdata = to be able to set the correct timezone
-ARG rundeps="tzdata"
+# tzdata for timezone, openssl for certificate generation
+ARG rundeps="tzdata openssl"
 
 # Install apk dependencies
 RUN --mount=type=cache,target=/var/cache/apk \
     apk update \
     && apk --progress add $rundeps
 
-# Copy nginx config to expose frontend and api
-# this is a template file that is processed upon startup via envsubst
+# Create directory for certificates
+RUN mkdir -p /etc/nginx/certs
+
+# Copy nginx config template
 COPY nginx/nginx.conf.template /etc/nginx/nginx.conf.template
 
+# Copy entrypoint script
 COPY docker-entrypoint.sh /
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+# Make entrypoint executable
+RUN chmod +x /docker-entrypoint.sh
 
-EXPOSE 80
+# Expose ports for HTTP and HTTPS
+EXPOSE 80 443
+
+# Entrypoint to handle certificate generation and Nginx startup
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["nginx", "-g", "daemon off;"]

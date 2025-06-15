@@ -11,4 +11,5 @@ __pycache__/
 /frontend/build
 *.log
 .mypy_cache
+/reverse-proxy/certs/*.pem
 backend/app/core/.backend.env

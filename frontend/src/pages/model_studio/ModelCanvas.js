@@ -301,7 +301,7 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                 <PerspectiveCamera 
                     ref={cameraRef}
                     makeDefault 
-                    position={[5,2,6]} 
+                    position={[0,0,0]} 
                     fov={camera.fov} 
                 />
                 <StatsGl trackGPU={true} className="stats absolute bottom-[60px]" />

@@ -6,20 +6,6 @@ import PyramidOutlineComponent from './PyramidOutline';
 // TextureCache to prevent redundant loading
 const textureCache = new Map();
 
-// Helper function to calculate optimal texture size based on distance and view
-const calculateOptimalTextureSize = (camera, viewerPosition, maxSize = 1024, minSize = 128) => {
-  // Calculate distance from camera to viewer
-  const distance = new THREE.Vector3(...camera.position).distanceTo(
-    new THREE.Vector3(viewerPosition.x, viewerPosition.y, viewerPosition.z)
-  );
-  
-  // Scale size inversely with distance (closer = higher resolution)
-  const optimalSize = Math.max(minSize, Math.min(maxSize, Math.floor(maxSize / (distance * 0.1 + 1))));
-  
-  // Return power of 2 for better GPU performance
-  return Math.pow(2, Math.floor(Math.log2(optimalSize)));
-};
-
 // CameraInstance component with optimized texture loading
 const CameraInstance = ({ 
   item, 
@@ -60,19 +46,13 @@ const CameraInstance = ({
   const pyramidColor = isHovered ? 0xffff00 : 0xffffff;
   const baseOpacity = isHovered ? 0.1 : 0;
   
-  // Calculate optimal texture size based on distance - moved outside of texture loading
-  const optimalSize = useMemo(() => {
-    return viewerPosition ? calculateOptimalTextureSize(item, viewerPosition) : 256;
-  }, [item, viewerPosition]);
-  
   // Create a texture loader with caching
   const texture = useMemo(() => {
     if (!item.name) return null;
     
     const imagePath = `${imageBasePath}/${item.name}`;
-    const cacheKey = `${imagePath}_${optimalSize}`;
     
-    if (textureCache.has(cacheKey)) {
+    if (textureCache.has(imagePath)) {
       if (!textureLoadedRef.current) {
         textureLoadedRef.current = true;
         // Use requestAnimationFrame to avoid state update during rendering
@@ -80,7 +60,7 @@ const CameraInstance = ({
           setTextureVisible(true);
         });
       }
-      return textureCache.get(cacheKey);
+      return textureCache.get(imagePath);
     }
     
     const loader = new THREE.TextureLoader();
@@ -89,25 +69,9 @@ const CameraInstance = ({
     const newTexture = loader.load(
       imagePath,
       (loadedTexture) => {
-        // Resize texture for performance
+        // Set texture filters for better quality
         loadedTexture.minFilter = THREE.LinearFilter;
         loadedTexture.magFilter = THREE.LinearFilter;
-        
-        // Create downsized version for better performance
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Size canvas to optimal dimensions (maintaining aspect ratio)
-        const scaleFactor = optimalSize / Math.max(loadedTexture.image.width, loadedTexture.image.height);
-        canvas.width = Math.round(loadedTexture.image.width * scaleFactor);
-        canvas.height = Math.round(loadedTexture.image.height * scaleFactor);
-        
-        // Draw and resize the image
-        ctx.drawImage(loadedTexture.image, 0, 0, canvas.width, canvas.height);
-        
-        // Apply the resized image to the texture
-        loadedTexture.image = canvas;
-        loadedTexture.needsUpdate = true;
         
         // Update loaded state using ref first, then state
         textureLoadedRef.current = true;
@@ -122,14 +86,15 @@ const CameraInstance = ({
     );
     
     // Store in cache for reuse
-    textureCache.set(cacheKey, newTexture);
+    textureCache.set(imagePath, newTexture);
     return newTexture;
-  }, [item.name, imageBasePath, optimalSize]);
+  }, [item.name, imageBasePath]);
 
   const [w, x, y, z] = item.quaternion;
 
   // Handle camera focus and zoom on click
    const handleClick = (e) => {
+    console.log(item.position)
     e.stopPropagation();
 
     // Get the current world matrix from the mesh to account for all parent transformations
@@ -167,7 +132,7 @@ const CameraInstance = ({
     if (camera.userData.controls) {
       currentTarget.copy(camera.userData.controls.target);
     }
-    
+    console.log(targetPosition)
     // Store initial values
     const initialPositionX = currentPosition.x;
     const initialPositionY = currentPosition.y;
@@ -213,14 +178,9 @@ const CameraInstance = ({
         requestAnimationFrame(animateCamera);
       }
     }
-    
+
     // Start animation
     animateCamera();
-  
-    // Also call the original click handler to show the popup if needed
-    // if (onCameraClick) {
-    //   onCameraClick(item, `${imageBasePath}/${item.name}`);
-    // }
   };
 
   return (

@@ -176,7 +176,7 @@ function MyModel(props){
                     <div className="bg-white rounded-lg shadow">
                       <div className="relative">
                         <Link 
-                          to={RouterPath.MODEL_VIEW + "?id=" + model.id + "&viewer=user"} 
+                          to={RouterPath.MODEL_STUDIO + "?id=" + model.id + "&viewer=user"} 
                           key={model.id} 
                           style={model.status !== 'SUCCESS' ? { pointerEvents: 'none', opacity: 0.5 } : {}}
                           className={model.status !== 'SUCCESS' ? 'cursor-not-allowed' : ''}

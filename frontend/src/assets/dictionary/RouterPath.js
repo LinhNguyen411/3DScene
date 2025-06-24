@@ -28,6 +28,7 @@ export const RouterPath = {
   DASHBOARD_PROFILE: "/dashboard/profile",
   
   MODEL_VIEW: "/model/view",
+  MODEL_STUDIO: "/model/studio",
 
   // subscription route
   SUBSCRIPTION: "/subscription",

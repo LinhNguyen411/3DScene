@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from '../../config';
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/splats";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/models";
 const getAuthHeaders = (viewer) => {
   const tokenKey = viewer === 'admin' ? 'supertoken' : 'token';
   const token = localStorage.getItem(tokenKey);
@@ -21,9 +21,22 @@ const getSplat = async (id, viewer) => {
     }
 }
 
+const updateModel = async (id, viewer, data) => {
+    try {
+      console.log(data)
+        const response = await axios.put(`${API_BASE_URL}/${id}`, data, {
+            headers: getAuthHeaders(viewer),
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Failed to update model:', error);
+        throw new Error('Failed to update model');
+    }
+}
+
 const downloadSplat = async (id, title,viewer) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-splat`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/file/splat`, {
       headers: getAuthHeaders(viewer),
       responseType: 'blob',
     });
@@ -55,7 +68,7 @@ const downloadSplat = async (id, title,viewer) => {
 
 const downloadPLY = async (id, title,viewer) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-ply`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/file/ply`, {
       headers: getAuthHeaders(viewer),
       responseType: 'blob',
     });
@@ -88,7 +101,7 @@ const downloadPLY = async (id, title,viewer) => {
 const getModel = async (id, viewer) => {
   try {
 
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-splat`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/file/splat`, {
       headers: getAuthHeaders(viewer),
       responseType: 'blob',
     });
@@ -116,7 +129,7 @@ const getAuth = async (viewer) => {
 
 const getColmapData = async (id, viewer) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/${id}/metadata`, {
+      const response = await axios.get(`${API_BASE_URL}/${id}/colmap/json`, {
         headers: getAuthHeaders(viewer),
       });
       return response.data;
@@ -127,7 +140,7 @@ const getColmapData = async (id, viewer) => {
 
 const downloadColmap = async (id, viewer) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-colmap`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/colmap/zip`, {
       headers: getAuthHeaders(viewer),
       responseType: 'blob',
     });
@@ -171,6 +184,7 @@ const DataService = {
   getColmapData,
   downloadColmap,
   getProjectInfo,
+  updateModel,
 };
 
 

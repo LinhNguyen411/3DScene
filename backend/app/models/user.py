@@ -13,6 +13,6 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean(), default=False)
     is_superuser = Column(Boolean(), default=False)
-    splats = relationship("Splat", back_populates="owner")
+    models = relationship("Model", back_populates="owner")
     payments = relationship("Payment", back_populates="payer")
     orders = relationship("Order", back_populates="orderer")

@@ -31,7 +31,7 @@ function Upload(props) {
 
   useEffect(() => {
     setIsPro(user?.is_pro ?? false);
-    setMaxVideoDuration(user?.is_pro ? 7 * 60 : 3 * 60)
+    setMaxVideoDuration(user?.is_pro ? 5 * 60 : 3 * 60)
     
   }, [user]);
   // Update video duration when files are loaded
@@ -327,9 +327,9 @@ function Upload(props) {
   };
 
   return (
-    <div className="flex-1">
-      <main className="p-6">
-        <div>
+    <div className="flex-1 min-h-screen">
+      <main className="p-3 sm:p-4 md:p-6">
+        <div className="max-w-7xl mx-auto">
           {/* Hidden file input for adding more files */}
           <input 
             ref={fileInputRef}
@@ -341,35 +341,35 @@ function Upload(props) {
           />
         
           {/* Upload Type Selector */}
-          <div className="flex space-x-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
             <button 
-              className={`flex-1 p-4 rounded text-center flex items-center justify-center ${uploadType === 'video' ? 'bg-sky-400 text-white' : 'bg-gray-200'}`}
+              className={`flex-1 p-3 sm:p-4 rounded text-center flex items-center justify-center text-sm sm:text-base ${uploadType === 'video' ? 'bg-sky-400 text-white' : 'bg-gray-200'}`}
               onClick={() => toggleUploadType('video')}
             >
-              <Video size={20} className="mr-2" />
-              Videos Upload
+              <Video size={16} className="mr-2 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Videos Upload</span>
             </button>
             <button 
-              className={`flex-1 p-4 rounded text-center flex items-center justify-center 
+              className={`flex-1 p-3 sm:p-4 rounded text-center flex items-center justify-center text-sm sm:text-base
                 ${uploadType === 'image' ? 'bg-sky-400 text-white' : 'bg-gray-200'}
                 ${!isPro ? 'opacity-50 cursor-not-allowed' : ''}`}
               onClick={() => toggleUploadType('image')}
               disabled={!isPro}
             >
-              <Image size={20} className="mr-2" />
-              Images Upload
-              {!isPro && <span className="ml-2 text-xs bg-yellow-400 text-black px-2 py-1 rounded">PRO</span>}
+              <Image size={16} className="mr-2 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Images Upload</span>
+              {!isPro && <span className="ml-1 sm:ml-2 text-xs bg-yellow-400 text-black px-1 sm:px-2 py-1 rounded flex-shrink-0">PRO</span>}
             </button>
           </div>
           
           {!isPro && uploadType === 'video' && (
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-3 sm:p-4 mb-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <AlertTriangle className="h-5 w-5 text-blue-400" />
+                  <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
                 </div>
-                <div className="ml-3">
-                  <p className="text-sm text-blue-700">
+                <div className="ml-2 sm:ml-3">
+                  <p className="text-xs sm:text-sm text-blue-700">
                     Free accounts are limited to 3 minutes of total video duration. 
                     <Link 
                       className="ml-1 font-medium text-blue-700 underline"
@@ -386,58 +386,63 @@ function Upload(props) {
           {selectedFiles.length === 0 ? (
             <div 
               ref={dropAreaRef}
-              className={`border-2 border-dashed ${isDragging ? 'border-sky-400 bg-sky-50' : 'border-gray-300'} rounded-lg p-12 text-center`}
+              className={`border-2 border-dashed ${isDragging ? 'border-sky-400 bg-sky-50' : 'border-gray-300'} rounded-lg p-6 sm:p-8 md:p-12 text-center`}
               onDragEnter={handleDragEnter}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
               <div className="flex flex-col items-center justify-center">
-                <div className={`${isDragging ? 'bg-sky-100' : 'bg-gray-100'} p-4 rounded-full mb-4`}>
-                  <UploadCloud size={48} className={`${isDragging ? 'text-sky-500' : 'text-gray-400'}`} />
+                <div className={`${isDragging ? 'bg-sky-100' : 'bg-gray-100'} p-3 sm:p-4 rounded-full mb-3 sm:mb-4`}>
+                  <UploadCloud size={32} className={`sm:w-12 sm:h-12 ${isDragging ? 'text-sky-500' : 'text-gray-400'}`} />
                 </div>
-                <p className="text-lg font-medium mb-2">
+                <p className="text-base sm:text-lg font-medium mb-2 px-2">
                   {isDragging 
                     ? `Drop your ${uploadType} file(s) here` 
                     : `Click to upload or drag ${uploadType} file(s) into this area`}
                 </p>
-                <p className="text-gray-500 mb-6">
-                  Photogrammetry for professional 3D model quality,<br />
-                  works for featureful objects or scenes
+                <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 px-2 text-center">
+                  Photogrammetry for professional 3D model quality,<br className="hidden sm:block" />
+                  <span className="sm:hidden"> </span>works for featureful objects or scenes
                 </p>
                 <button 
                   onClick={() => fileInputRef.current.click()}
-                  className="cursor-pointer bg-sky-400 hover:bg-sky-500 text-white px-6 py-2 rounded"
+                  className="cursor-pointer bg-sky-400 hover:bg-sky-500 text-white px-4 sm:px-6 py-2 rounded text-sm sm:text-base"
                 >
                   Select {uploadType === 'video' ? 'Videos' : 'Images'}
                 </button>
               </div>
               
-              <div className="mt-12 text-sm text-gray-500">
+              <div className="mt-8 sm:mt-12 text-xs sm:text-sm text-gray-500">
                 {uploadType === 'video' ? (
-                  <div className="flex justify-center items-center gap-4">
-                    <span>Video upload:</span>
-                    <span>Supported formats: mp4, mov</span>
-                    <span>Video limit: {isPro ? '5' : '3'} minutes</span>
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+                    <span className="font-medium">Video upload:</span>
+                    <span>mp4, mov</span>
+                    <span>{isPro ? '5' : '3'} min limit</span>
                   </div>
                 ) : (
-                  <div className="flex justify-center items-center gap-4">
-                    <span>Photo upload:</span>
-                    <span>Supported formats: jpg, png, jpeg</span>
-                    <span>Photo limit: up to {maxImagesCount} photos</span>
+                  <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+                    <span className="font-medium">Photo upload:</span>
+                    <span>jpg, png, jpeg</span>
+                    <span>up to {maxImagesCount} photos</span>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{uploadType === 'video' ? 'Videos' : 'Images'} Preview ({selectedFiles.length}{uploadType === 'video' ? '' : '/'+ maxImagesCount} files)</h2>
-                <div className="flex space-x-2">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+                <h2 className="text-lg sm:text-xl font-bold">
+                  {uploadType === 'video' ? 'Videos' : 'Images'} Preview 
+                  <span className="text-base sm:text-lg font-normal text-gray-600">
+                    ({selectedFiles.length}{uploadType === 'video' ? '' : '/'+ maxImagesCount} files)
+                  </span>
+                </h2>
+                <div className="flex flex-col sm:flex-row gap-2">
                   {/* Add More Button */}
                   <button 
                     onClick={handleAddMoreFiles}
-                    className={`flex items-center bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm
+                    className={`flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm
                       ${((uploadType === 'video' && totalVideoDuration >= maxVideoDuration) || 
                          (uploadType === 'image' && selectedFiles.length >= maxImagesCount)) ? 
                         'opacity-50 cursor-not-allowed' : ''}`}
@@ -451,7 +456,7 @@ function Upload(props) {
                   {/* Clear Button */}
                   <button 
                     onClick={handleClearFiles}
-                    className="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-sm"
+                    className="flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded text-sm"
                   >
                     <X size={16} className="mr-1" />
                     Clear All
@@ -467,7 +472,7 @@ function Upload(props) {
                 </div>
               )}
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {filePreviewUrls.map((url, index) => (
                   <div key={index} className="relative">
                     {uploadType === 'video' ? (
@@ -475,59 +480,64 @@ function Upload(props) {
                         ref={el => videoRefs.current[index] = el}
                         src={url} 
                         controls 
-                        className="w-full h-40 bg-gray-100 rounded object-contain"
+                        className="w-full h-32 sm:h-40 bg-gray-100 rounded object-contain"
                         onLoadedMetadata={() => calculateTotalVideoDuration()}
                       />
                     ) : (
                       <img 
                         src={url} 
                         alt={`Preview ${index + 1}`}
-                        className="w-full h-40 bg-gray-100 rounded object-contain" 
+                        className="w-full h-32 sm:h-40 bg-gray-100 rounded object-contain" 
                       />
                     )}
                     <button 
                       onClick={() => handleRemoveFile(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+                      className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-red-500 text-white rounded-full p-1"
                     >
-                      <X size={16} />
+                      <X size={14} className="sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 ))}
               </div>
               
-              <div className="flex items-center mb-6">
-                <div className="text-gray-700 mr-2">Title:</div>
-                {isEditingTitle ? (
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onBlur={() => setIsEditingTitle(false)}
-                    onKeyPress={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
-                    className="border border-gray-300 rounded px-2 py-1 mr-2"
-                    autoFocus
-                  />
-                ) : (
-                  <h3 className="font-medium mr-2">{title}</h3>
-                )}
+              <div className="flex flex-col sm:flex-row sm:items-center mb-4 sm:mb-6 gap-2">
+                <div className="text-gray-700 font-medium">Title:</div>
+                <div className="flex items-center flex-1">
+                  {isEditingTitle ? (
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      onBlur={() => setIsEditingTitle(false)}
+                      onKeyPress={(e) => e.key === 'Enter' && setIsEditingTitle(false)}
+                      className="border border-gray-300 rounded px-2 py-1 mr-2 flex-1 text-sm sm:text-base"
+                      autoFocus
+                      placeholder="Enter model title..."
+                    />
+                  ) : (
+                    <h3 className="font-medium mr-2 flex-1 text-sm sm:text-base break-words">{title}</h3>
+                  )}
+                  <button 
+                    onClick={() => setIsEditingTitle(true)}
+                    className="text-gray-500 hover:text-gray-700 p-1 flex-shrink-0"
+                  >
+                    <Edit size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button 
-                  onClick={() => setIsEditingTitle(true)}
-                  className="text-gray-500 hover:text-gray-700"
+                  onClick={handleProcessFiles}
+                  disabled={isProcessing || selectedFiles.length === 0 || (uploadType === 'video' && totalVideoDuration > maxVideoDuration)}
+                  className={`bg-sky-500 hover:bg-sky-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded text-sm sm:text-base font-medium ${(isProcessing || selectedFiles.length === 0 || (uploadType === 'video' && totalVideoDuration > maxVideoDuration)) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  <Edit size={16} />
+                  {isProcessing ? 'Processing...' : `Process ${selectedFiles.length} ${uploadType}${selectedFiles.length !== 1 ? 's' : ''}`}
                 </button>
               </div>
               
-              <button 
-                onClick={handleProcessFiles}
-                disabled={isProcessing || selectedFiles.length === 0 || (uploadType === 'video' && totalVideoDuration > maxVideoDuration)}
-                className={`bg-sky-500 hover:bg-sky-600 text-white px-6 py-2 rounded ${(isProcessing || selectedFiles.length === 0 || (uploadType === 'video' && totalVideoDuration > maxVideoDuration)) ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isProcessing ? 'Processing...' : `Process ${selectedFiles.length} ${uploadType}${selectedFiles.length !== 1 ? 's' : ''}`}
-              </button>
-              
               {error && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm mt-4">
+                <div className="bg-red-100 border border-red-400 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded text-xs sm:text-sm mt-4">
                   <p>{error}</p>
                 </div>
               )}

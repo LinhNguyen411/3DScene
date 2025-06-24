@@ -1,5 +1,5 @@
 from .user import User
-from .splat import Splat
+from .model import Model
 from .feedback import Feedback
 from .payment import Payment
 from .order import Order

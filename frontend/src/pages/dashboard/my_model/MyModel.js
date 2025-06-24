@@ -3,7 +3,7 @@ import { Search, GlobeLock, Globe,Loader } from 'lucide-react';
 import DataService from './MyModelServices';
 import myAppConfig from "../../../config";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { MoreHorizontal, Pencil, Download, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Download, Trash, ChevronDown } from "lucide-react";
 import { useSnackbar } from '../../../provider/SnackbarProvider';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import { Link, useOutletContext } from "react-router-dom";
@@ -14,6 +14,7 @@ function MyModel(props){
   const { showSnackbar } = useSnackbar();
   const {user} = useOutletContext();
   const [models, setModels] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -146,27 +147,69 @@ function MyModel(props){
     <div className="flex-1">
         <main className="p-6">
             <div>
-                <div className="flex mb-6 border-b align-items-center">
-                {['All', 'Queuing', 'Processing', 'Succeeded', 'Failed'].map((tab) => (
-                    <button
-                    key={tab}
-                    className={`px-8 py-3 ${activeTab === tab ? 'text-sky-500 border-b-2 border-sky-500' : 'text-gray-500'}`}
-                    onClick={() => setActiveTab(tab)}
-                    >
-                    {tab}
-                    </button>
-                ))}
-                  <div className="relative ml-auto">
-                      <input
-                      type="text"
-                      placeholder="Search your 3D Models"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-gray-100 pl-10 pr-4 py-2 rounded-lg w-64"
-                      />
-                      <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
-                  </div>
-                </div>
+                <div className="flex flex-col sm:flex-row mb-6 border-b gap-4 sm:gap-0 sm:items-center">
+  {/* Tab buttons - dropdown on mobile, row on desktop */}
+  <div className="w-full sm:w-auto">
+    {/* Mobile dropdown */}
+    <div className="sm:hidden relative">
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-50"
+      >
+        <span className="text-gray-900">{activeTab}</span>
+        <ChevronDown size={16} className={`text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {dropdownOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+          {['All', 'Queuing', 'Processing', 'Succeeded', 'Failed'].map((tab) => (
+            <button
+              key={tab}
+              className={`w-full px-4 py-3 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                activeTab === tab ? 'bg-sky-50 text-sky-600' : 'text-gray-700'
+              }`}
+              onClick={() => {
+                setActiveTab(tab);
+                setDropdownOpen(false);
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+    
+    {/* Desktop tabs */}
+    <div className="hidden sm:flex">
+      {['All', 'Queuing', 'Processing', 'Succeeded', 'Failed'].map((tab) => (
+        <button
+          key={tab}
+          className={`px-8 py-3 text-base ${
+            activeTab === tab 
+              ? 'text-sky-500 border-b-2 border-sky-500' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab(tab)}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  </div>
+  
+  {/* Search input - full width on mobile, auto width on desktop */}
+  <div className="relative sm:ml-auto w-full sm:w-auto">
+    <input
+      type="text"
+      placeholder="Search your 3D Models"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="bg-gray-100 pl-10 pr-4 py-2 rounded-lg w-full sm:w-64 text-sm sm:text-base"
+    />
+    <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
+  </div>
+</div>
                 
                
                 

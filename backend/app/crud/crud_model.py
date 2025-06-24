@@ -72,7 +72,7 @@ class CRUDModel(CRUDBase[Model, ModelCreate, ModelUpdate]):
         db.delete(obj)
         db.commit()
         return obj
-    def get_Models_last_24_hours(self, db: Session) -> List[Model]:
+    def get_models_last_24_hours(self, db: Session) -> List[Model]:
         time_threshold = datetime.now() - timedelta(hours=24)
         return (
             db.query(self.model)

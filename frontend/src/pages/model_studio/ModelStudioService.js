@@ -2,18 +2,14 @@ import axios from 'axios';
 import myAppConfig from '../../config';
 
 const API_BASE_URL = myAppConfig.api.ENDPOINT + "/models";
-const getAuthHeaders = (viewer) => {
-  const tokenKey = viewer === 'admin' ? 'supertoken' : 'token';
-  const token = localStorage.getItem(tokenKey);
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-};
+const getAuthHeaders = () => ({
+    Authorization: `Bearer ${localStorage.getItem('token')}`,
+  });
 
-const getSplat = async (id, viewer) => {
+const getSplat = async (id) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/${id}`, {
-        headers: getAuthHeaders(viewer),
+        headers: getAuthHeaders(),
       });
       return response.data;
     } catch (error) {
@@ -21,11 +17,11 @@ const getSplat = async (id, viewer) => {
     }
 }
 
-const updateModel = async (id, viewer, data) => {
+const updateModel = async (id, data) => {
     try {
       console.log(data)
         const response = await axios.put(`${API_BASE_URL}/${id}`, data, {
-            headers: getAuthHeaders(viewer),
+            headers: getAuthHeaders(),
         });
         return response.data;
     } catch (error) {
@@ -34,10 +30,10 @@ const updateModel = async (id, viewer, data) => {
     }
 }
 
-const downloadSplat = async (id, title,viewer) => {
+const downloadSplat = async (id, title) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/${id}/file/splat`, {
-      headers: getAuthHeaders(viewer),
+      headers: getAuthHeaders(),
       responseType: 'blob',
     });
 
@@ -66,10 +62,10 @@ const downloadSplat = async (id, title,viewer) => {
   }
 };
 
-const downloadPLY = async (id, title,viewer) => {
+const downloadPLY = async (id, title) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/${id}/file/ply`, {
-      headers: getAuthHeaders(viewer),
+      headers: getAuthHeaders(),
       responseType: 'blob',
     });
 
@@ -98,11 +94,11 @@ const downloadPLY = async (id, title,viewer) => {
   }
 };
 
-const getModel = async (id, viewer) => {
+const getModel = async (id) => {
   try {
 
     const response = await axios.get(`${API_BASE_URL}/${id}/file/splat`, {
-      headers: getAuthHeaders(viewer),
+      headers: getAuthHeaders(),
       responseType: 'blob',
     });
     
@@ -112,13 +108,13 @@ const getModel = async (id, viewer) => {
     alert('Failed to get model');
   }
 };
-const getAuth = async (viewer) => {
+const getAuth = async () => {
   try { 
     const response = await axios.post(
       myAppConfig.api.ENDPOINT + "/login/get-my-info",
       {},
       {
-        headers: getAuthHeaders(viewer),
+        headers: getAuthHeaders(),
       }
     );
     return response.data;
@@ -127,10 +123,10 @@ const getAuth = async (viewer) => {
   }
 };
 
-const getColmapData = async (id, viewer) => {
+const getColmapData = async (id) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/${id}/colmap/json`, {
-        headers: getAuthHeaders(viewer),
+        headers: getAuthHeaders(),
       });
       return response.data;
     } catch (error) {
@@ -138,10 +134,10 @@ const getColmapData = async (id, viewer) => {
     }
 }
 
-const downloadColmap = async (id, viewer) => {
+const downloadColmap = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/${id}/colmap/zip`, {
-      headers: getAuthHeaders(viewer),
+      headers: getAuthHeaders(),
       responseType: 'blob',
     });
 

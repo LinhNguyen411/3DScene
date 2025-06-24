@@ -43,20 +43,19 @@ export default function HomePage() {
       <div className="relative h-96 md:h-[600px] overflow-hidden">
         {/* Hero Background Video */}
         <div className="absolute inset-0 z-0 bg-black">
-          <video
+          {/* <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
             autoPlay
             muted
             loop
-            playsInline
-            poster="/api/placeholder/1600/900"
+            playsinline
+            poster="heroposter.png"
           >
-            {/* Note: In a real implementation, you would use the actual video URL */}
-            <source src="videoplayback.mp4" type="video/mp4" />
-            {/* Fallback for browsers that don't support video */}
+            <source src="output.mp4" type="video/mp4" />
             Your browser does not support the video tag.
-          </video>
+          </video> */}
+          <video className="absolute inset-0 w-full h-full object-cover" loop muted autoPlay playsInline controls="false" width='100%' height='100%' src='herovideo.mp4' type='video/mp4' poster="heroposter.png"></video>
           <div className="absolute inset-0 bg-black opacity-40"></div>
         </div>
 
@@ -209,9 +208,10 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-8">
-            <h4 className="text-lg font-medium text-center mb-4">Example Video</h4>
+            <h4 className="text-lg font-medium text-center mb-4">Example</h4>
               <div className="aspect-w-16 aspect-h-9">
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/2ZX_5bOdKjo?si=Z26tIpGZfkoZlNDQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>              
+                {/* <iframe src="https://3dscene.com/model/view?id=8c52eccd-6efe-445f-8f5a-b68f849084ec&embed=true" width="600" height="400" frameBorder="0" allowFullScreen></iframe> */}
+              <iframe width="560" height="315" src="https://www.youtube.com/embed/2ZX_5bOdKjo?si=Z26tIpGZfkoZlNDQ" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>              
               </div>
             </div>
         </div>

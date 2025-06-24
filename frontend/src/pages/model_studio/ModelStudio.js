@@ -15,7 +15,6 @@ export default function ModelStudio() {
     let navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const id = searchParams.get('id');
-    const viewer = searchParams.get('viewer');
     const [splatUrl, setSplatUrl] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -27,7 +26,6 @@ export default function ModelStudio() {
     const [colmapData, setColmapData] = useState(null);
     const [viewMode, setViewMode] = useState('splat'); // Always start with splat
     const [colmapDataLoading, setColmapDataLoading] = useState(false);
-    const [colmapDataChecked, setColmapDataChecked] = useState(false);
     const [projectName, setProjectName] = useState(null);
     const [projectIcon, setProjectIcon] = useState(null);
     
@@ -67,7 +65,7 @@ export default function ModelStudio() {
     const handleExportColmap = async () => {
         try {
           setLoading(true);
-          await DataService.downloadColmap(model.id, viewer);
+          await DataService.downloadColmap(model.id);
           setIsExportModalOpen(false);
           showSnackbar("Exported COLMAP files successfully!", "success");
         } catch (error) {
@@ -95,7 +93,7 @@ export default function ModelStudio() {
                     rotation: { ...viewData.model_transform.rotation }
                 }
             };
-            await DataService.updateModel(id, viewer, payload);
+            await DataService.updateModel(id, payload);
 
             // Optimistically update the model state to reflect the change immediately
             setModel(prevModel => ({...prevModel, ...payload}));
@@ -110,7 +108,7 @@ export default function ModelStudio() {
     };
 
     const handleCopyLink = () => {
-        const url = `${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}`;
+        const url = `${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}`;
         navigator.clipboard.writeText(url)
             .then(() => {
                 showSnackbar("Link copied to clipboard!", "success");
@@ -148,7 +146,7 @@ export default function ModelStudio() {
         
         setColmapDataLoading(true);
         try {
-            const colmap = await DataService.getColmapData(id, viewer);
+            const colmap = await DataService.getColmapData(id);
             if (colmap && colmap.cameras && colmap.points && colmap.images) {
                 console.log('colmap data:', colmap.images);
                 setColmapData(colmap);
@@ -174,11 +172,11 @@ export default function ModelStudio() {
     const fetchAndProcess = async () => {
         try {
             showLoader();
-            const user = await DataService.getAuth(viewer);
+            const user = await DataService.getAuth();
             setCurrentUser(user);
             
             try {
-                const splat = await DataService.getSplat(id, viewer);
+                const splat = await DataService.getSplat(id);
                 if (!splat) {
                     setModelNotFound(true);
                     hideLoader();
@@ -194,7 +192,7 @@ export default function ModelStudio() {
             
             
             try {
-                const response = await DataService.getModel(id, viewer);
+                const response = await DataService.getModel(id);
                 if (!response || response.status !== 200) {
                     throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
                 }
@@ -229,6 +227,23 @@ export default function ModelStudio() {
             console.error('Error fetching project info:', error);
         }
     }
+
+    const handleTogglePublic = async () => {
+        if (!model) return;
+        const newPublicStatus = !model.is_public;
+        try {
+            showLoader();
+            await DataService.updateModel(id, { is_public: newPublicStatus });
+            setModel(prevModel => ({ ...prevModel, is_public: newPublicStatus }));
+            showSnackbar(`Model visibility set to ${newPublicStatus ? 'Public' : 'Private'}`, "success");
+        } catch (error) {
+            console.error("Error updating model visibility:", error);
+            showSnackbar("Failed to update model visibility", "error");
+        } finally {
+            hideLoader();
+        }
+    };
+
     useEffect(() => {
         fetchAndProcess();
         fetchProjectInfo();
@@ -381,7 +396,7 @@ export default function ModelStudio() {
                         ) : (
                             <div className="space-y-3">
                                 {/* Only show colmap export if colmap data is loaded */}
-                                {colmapData && (
+                                {model?.colmap_url && (
                                     <button
                                         className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
                                         onClick={handleExportColmap}
@@ -432,94 +447,116 @@ export default function ModelStudio() {
                     </svg>
                 </button>
             </div>
+            <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-medium text-gray-700">
+                                {model.is_public ? 'Public Model' : 'Private Model'}
+                            </span>
+                            <label htmlFor="toggle-public" className="flex items-center cursor-pointer">
+                                <div className="relative">
+                                    <input
+                                        type="checkbox"
+                                        id="toggle-public"
+                                        className="sr-only"
+                                        checked={model.is_public}
+                                        onChange={handleTogglePublic}
+                                    />
+                                    <div className={`block ${model.is_public ? 'bg-green-300' :'bg-gray-300'} w-14 h-8 rounded-full`}></div>
+                                    <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${model.is_public ? 'translate-x-full bg-blue-600' : ''}`}></div>
+                                </div>
+                            </label>
+                        </div>
             
-            <div className="space-y-6">
-                {/* Direct Link Section */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Direct Link
-                    </label>
-                    <p className="text-sm text-gray-500 mb-2">Share this 3D model with others:</p>
-                    <div className="flex">
-                        <input 
-                            type="text" 
-                            value={`${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}`} 
-                            readOnly 
-                            className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                        />
-                        <button 
-                            className="bg-sky-500 text-white px-4 py-2 rounded-r-md hover:bg-sky-600 flex items-center"
-                            onClick={handleCopyLink}
-                        >
-                            <Copy size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Embed Section */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Embed Code
-                    </label>
-                    <p className="text-sm text-gray-500 mb-2">Copy this code to embed the 3D model in your website:</p>
-                    
-                    {/* Embed Size Options */}
-                    <div className="mb-3">
-                        <p className="text-xs text-gray-500 mb-1">Size:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {[
-                                { label: 'Small', width: 400, height: 300 },
-                                { label: 'Medium', width: 600, height: 400 },
-                                { label: 'Large', width: 800, height: 600 },
-                                { label: 'Full Width', width: '100%', height: 500 }
-                            ].map((size) => (
-                                <button
-                                    key={size.label}
-                                    className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
-                                    onClick={() => {
-                                        const embedCode = `<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}&embed=true" width="${size.width}" height="${size.height}" frameborder="0" allowfullscreen></iframe>`;
-                                        navigator.clipboard.writeText(embedCode).then(() => {
-                                            showSnackbar("Embed code copied to clipboard!", "success");
-                                        }).catch(() => {
-                                            showSnackbar("Failed to copy embed code", "error");
-                                        });
-                                    }}
-                                >
-                                    {size.label} ({size.width}×{size.height})
-                                </button>
-                            ))}
+            {model.is_public && (
+                <div className="space-y-6">
+                    {/* Direct Link Section */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Direct Link
+                        </label>
+                        <p className="text-sm text-gray-500 mb-2">Share this 3D model with others:</p>
+                        <div className="flex">
+                            <input 
+                                type="text" 
+                                value={`${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}`} 
+                                readOnly 
+                                className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+                            <button 
+                                className="bg-sky-500 text-white px-4 py-2 rounded-r-md hover:bg-sky-600 flex items-center"
+                                onClick={handleCopyLink}
+                            >
+                                <Copy size={16} />
+                            </button>
                         </div>
                     </div>
 
-                    {/* Default embed code display */}
-                    <div className="relative">
-                        <textarea 
-                            value={`<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}&embed=true" width="600" height="400" frameborder="0" allowfullscreen></iframe>`}
-                            readOnly 
-                            rows={3}
-                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
-                        />
-                        <button 
-                            className="absolute top-2 right-2 bg-sky-500 text-white px-3 py-1 rounded hover:bg-sky-600 flex items-center text-xs"
-                            onClick={() => {
-                                const embedCode = `<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}&embed=true" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
-                                navigator.clipboard.writeText(embedCode).then(() => {
-                                    showSnackbar("Embed code copied to clipboard!", "success");
-                                }).catch(() => {
-                                    showSnackbar("Failed to copy embed code", "error");
-                                });
-                            }}
-                        >
-                            <Copy size={12} className="mr-1" />
-                            Copy
-                        </button>
+                    {/* Embed Section */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Embed Code
+                        </label>
+                        <p className="text-sm text-gray-500 mb-2">Copy this code to embed the 3D model in your website:</p>
+                        
+                        {/* Embed Size Options */}
+                        <div className="mb-3">
+                            <p className="text-xs text-gray-500 mb-1">Size:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { label: 'Small', width: 400, height: 300 },
+                                    { label: 'Medium', width: 600, height: 400 },
+                                    { label: 'Large', width: 800, height: 600 },
+                                    { label: 'Full Width', width: '100%', height: 500 }
+                                ].map((size) => (
+                                    <button
+                                        key={size.label}
+                                        className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                                        onClick={() => {
+                                            const embedCode = `<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&embed=true" width="${size.width}" height="${size.height}" frameborder="0" allowfullscreen></iframe>`;
+                                            navigator.clipboard.writeText(embedCode).then(() => {
+                                                showSnackbar("Embed code copied to clipboard!", "success");
+                                            }).catch(() => {
+                                                showSnackbar("Failed to copy embed code", "error");
+                                            });
+                                        }}
+                                    >
+                                        {size.label} ({size.width}×{size.height})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Default embed code display */}
+                        <div className="relative">
+                            <textarea 
+                                value={`<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&embed=true" width="600" height="400" frameborder="0" allowfullscreen></iframe>`}
+                                readOnly 
+                                rows={3}
+                                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
+                            />
+                            <button 
+                                className="absolute top-2 right-2 bg-sky-500 text-white px-3 py-1 rounded hover:bg-sky-600 flex items-center text-xs"
+                                onClick={() => {
+                                    const embedCode = `<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&embed=true" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
+                                    navigator.clipboard.writeText(embedCode).then(() => {
+                                        showSnackbar("Embed code copied to clipboard!", "success");
+                                    }).catch(() => {
+                                        showSnackbar("Failed to copy embed code", "error");
+                                    });
+                                }}
+                            >
+                                <Copy size={12} className="mr-1" />
+                                Copy
+                            </button>
+                        </div>
+                        
+                        <p className="text-xs text-gray-400 mt-2">
+                            Note: The embed parameter ensures optimal display for embedded content.
+                        </p>
                     </div>
-                    
-                    <p className="text-xs text-gray-400 mt-2">
-                        Note: The embed parameter ensures optimal display for embedded content.
-                    </p>
+
                 </div>
-            </div>
+
+            )}
         </div>
     </div>
 )}

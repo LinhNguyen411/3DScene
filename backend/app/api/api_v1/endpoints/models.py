@@ -358,10 +358,10 @@ async def upload_model(
             raise HTTPException(status_code=413, detail="File too large (max 5GB)")
 
         # Convert the .ply to .splat using Go tool
-        model_path = os.path.join(modeling_task_dir, f"{model_id}.splat")
+        splat_path = os.path.join(modeling_task_dir, f"{title}.splat")
         try:
             subprocess.run(
-                ['gsbox', 'p2s', '-i', model_path, '-o', model_path],
+                ['gsbox', 'p2s', '-i', model_path, '-o', splat_path],
                 check=True
             )
         except subprocess.CalledProcessError:
@@ -370,6 +370,8 @@ async def upload_model(
 
         # Cleanup the temporary .ply file
         os.remove(model_path)
+
+        model_size = round(os.path.getsize(splat_path) / (1024 * 1024), 2)
 
     # --- For .splat File: Directly Save ---
     elif model.filename.endswith(".splat"):
@@ -384,10 +386,10 @@ async def upload_model(
             raise HTTPException(status_code=413, detail="File too large (max 5GB)")
             
         model_path = model_path
+        model_size = round(os.path.getsize(model_path) / (1024 * 1024), 2)
 
     # --- Create Database Entry ---
     # Calculate model file size (in MB)
-    model_size = round(os.path.getsize(model_path) / (1024 * 1024), 2)
     thumbnail_url = f"/thumbnails/{thumbnail_filename}"
     # Create the Model entry in the database
     model_url = "models/" + model_id + "/file"
@@ -441,7 +443,6 @@ def patch_model(
     - Nếu người dùng là superuser hoặc là chủ sở hữu của model, việc cập nhật sẽ được thực hiện.
     - Cập nhật sẽ chỉ thay đổi các trường trong `model_in`.
     """
-    print(model_in)
     model = crud.model.get(db=db, id=id)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")

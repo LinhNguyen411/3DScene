@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChevronLeft, Info } from 'lucide-react';
+import { ChevronLeft, Info, Maximize2, Minimize2, Download } from 'lucide-react';
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import DataService from './ModelViewService';
 import { useLoader } from '../../provider/LoaderProvider';
@@ -24,8 +24,7 @@ export default function SplatViewerPage() {
     const [splatUrl, setSplatUrl] = useState(null);
     const [model, setModel] = useState(null);
     const [modelNotFound, setModelNotFound] = useState(false);
-    const [projectName, setProjectName] = useState(null);
-    const [projectIcon, setProjectIcon] = useState(null);
+    const [showActionMenu, setShowActionMenu] = useState(false);
 
     // ModelCanvas Hooks and State
     const FALLBACK_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
@@ -95,6 +94,36 @@ export default function SplatViewerPage() {
     }, [model?.model_transform?.rotation]);
 
     // Full screen logic
+    const handleFullScreen = async () => {
+        const container = document.getElementById('model-canvas-container');
+        try {
+            if (!document.fullscreenElement) {
+                await container.requestFullscreen();
+                setIsFullScreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullScreen(false);
+            }
+        } catch (error) {
+            console.error('Error toggling fullscreen:', error);
+            showSnackbar('Unable to toggle fullscreen mode', 'error');
+        }
+    };
+
+    // Download splat logic
+    const handleDownloadSplat = async () => {
+        try {
+            showLoader();
+            await DataService.downloadSplat(id, model?.title, viewer);
+            showSnackbar('Splat file downloaded successfully', 'success');
+        } catch (error) {
+            console.error('Error downloading splat:', error);
+            showSnackbar('Failed to download splat file', 'error');
+        } finally {
+            hideLoader();
+        }
+    };
+
     useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === 'Escape' && isFullScreen) {
@@ -104,8 +133,45 @@ export default function SplatViewerPage() {
         };
 
         const handleFullScreenChange = () => {
-            if (!document.fullscreenElement) {
-                setIsFullScreen(false);
+            const wasFullScreen = isFullScreen;
+            const isCurrentlyFullScreen = !!document.fullscreenElement;
+            
+            setIsFullScreen(isCurrentlyFullScreen);
+            
+            // Fix scrollbar and height issues when exiting fullscreen
+            if (wasFullScreen && !isCurrentlyFullScreen) {
+                const container = document.getElementById('model-canvas-container');
+                const mainDiv = document.querySelector('.h-screen');
+                
+                // Reset all height-related styles
+                document.body.style.overflow = '';
+                document.body.style.height = '';
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.height = '';
+                
+                if (container) {
+                    container.style.height = '';
+                    container.style.maxHeight = '';
+                }
+                
+                if (mainDiv) {
+                    mainDiv.style.height = '';
+                    mainDiv.style.maxHeight = '';
+                }
+                
+                // Force multiple reflows to ensure proper height recalculation
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                    // Second reflow for stubborn cases
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('resize'));
+                        // Force recalculation of viewport height
+                        document.body.style.height = '100vh';
+                        setTimeout(() => {
+                            document.body.style.height = '';
+                        }, 50);
+                    }, 100);
+                }, 50);
             }
         };
 
@@ -117,21 +183,6 @@ export default function SplatViewerPage() {
             document.removeEventListener('fullscreenchange', handleFullScreenChange);
         };
     }, [isFullScreen]);
-
-    const toggleFullScreen = () => {
-        const element = document.getElementById('model-canvas-container');
-        if (element) {
-            if (!document.fullscreenElement) {
-                element.requestFullscreen().then(() => setIsFullScreen(true)).catch(err => {
-                    console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-                });
-            } else {
-                document.exitFullscreen().then(() => setIsFullScreen(false)).catch(err => {
-                    console.error(`Error attempting to exit full-screen mode: ${err.message} (${err.name})`);
-                });
-            }
-        }
-    };
 
     // Data fetching logic
     const handleBack = () => {
@@ -181,24 +232,8 @@ export default function SplatViewerPage() {
         }
     };
 
-    const fetchProjectInfo = async () => {
-        try {
-            const response = await DataService.getProjectInfo();
-            if (response) {
-                setProjectName(response.project_name);
-                setProjectIcon(myAppConfig.api.ENDPOINT + response.project_icon);
-            } else {
-                console.error('Failed to fetch project info');
-            }
-        }
-        catch (error) {
-            console.error('Error fetching project info:', error);
-        }
-    }
-
     useEffect(() => {
         fetchAndProcess();
-        fetchProjectInfo();
 
         return () => {
             if (objectUrl) {
@@ -207,19 +242,31 @@ export default function SplatViewerPage() {
         };
     }, [id]);
 
-    // if (modelNotFound) {
-    //     return (
-    //         <>
-    //             <LinkNotValid />
-    //         </>
-    //     )
-    // }
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showActionMenu && !event.target.closest('.action-buttons-container')) {
+                setShowActionMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showActionMenu]);
+
+    if (modelNotFound) {
+        return (
+            <>
+                <LinkNotValid />
+            </>
+        )
+    }
     const position = useMemo(() => model?.model_transform?.position || { x: 0, y: 0, z: 0 }, [model]);
     const rotate = useMemo(() => model?.model_transform?.rotation || { x: 0, y: 0, z: 0, scale: 1 }, [model]);
     console.log(DEFAULT_CAMERA_POSITION)
 
     return (
-        <div className='h-screen flex flex-col'>
+        <div className={`flex flex-col overflow-hidden ${isFullScreen ? 'h-full' : 'h-screen'}`}>
             {model && (
                 <div id="model-canvas-container" className='flex-1 relative'>
                     <Canvas className="bg-white">
@@ -248,21 +295,46 @@ export default function SplatViewerPage() {
                         )}
                     </Canvas>
                     <Loader />
-                    <button
-                        onClick={toggleFullScreen}
-                        className="absolute bottom-4 right-4 bg-gray-800 text-white p-2 rounded-full shadow-lg hover:bg-gray-700"
-                        title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                    >
-                        {isFullScreen ? (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 16.5l-4-4m0 0l4-4m-4 4h14m-5 4v5m0-5V4" />
-                            </svg>
-                        ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-5v4m0 0h-4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m0 4l-5-5" />
-                            </svg>
-                        )}
-                    </button>
+                    
+                    {/* Floating Action Buttons */}
+                    <div className="action-buttons-container fixed bottom-4 right-4 z-50 flex gap-2">
+                        {/* Fullscreen Button */}
+                        <button
+                            onClick={handleFullScreen}
+                            className="w-12 h-12 bg-gray-600 bg-opacity-60 hover:bg-opacity-80 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+                            aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                            title={isFullScreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                        >
+                            {isFullScreen ? (
+                                <Minimize2 
+                                    size={20} 
+                                    className="transition-transform duration-200 group-hover:scale-110" 
+                                />
+                            ) : (
+                                <Maximize2 
+                                    size={20} 
+                                    className="transition-transform duration-200 group-hover:scale-110" 
+                                />
+                            )}
+                        </button>
+                        
+                        {/* Download Button */}
+                    </div>
+
+                    <div className="action-buttons-container fixed bottom-4 left-4 z-50 flex gap-2">
+                        <button
+                            onClick={handleDownloadSplat}
+                            className="w-12 h-12 bg-gray-600 bg-opacity-60 hover:bg-opacity-80 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+                            aria-label="Download splat file"
+                            title="Download Splat"
+                        >
+                            <Download 
+                                size={20} 
+                                className="transition-transform duration-200 group-hover:scale-110" 
+                            />
+                        </button>
+                        
+                    </div>
                 </div>
             )}
         </div>

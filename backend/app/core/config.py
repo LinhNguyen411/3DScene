@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     USERS_OPEN_REGISTRATION: bool = True
     EMAIL_RESET_TOKEN_EXPIRE_HOURS: int = 48
     EMAIL_TEMPLATES_DIR: str = "email-templates"
-    REACT_APP_DOMAIN: str = Field(..., env="REACT_APP_DOMAIN")
+    APP_DOMAIN: str = Field(..., env="APP_DOMAIN")
 
 
 class Config(BaseSettings):

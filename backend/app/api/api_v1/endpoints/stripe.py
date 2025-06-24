@@ -45,8 +45,8 @@ async def create_checkout_session(
     if crud.payment.check_is_last_payment_not_expired(db = db, payer_id=current_user.id):
         raise HTTPException(status_code=400, detail="This user already subscripted!")
     checkout_session = stripe.checkout.Session.create(
-        success_url=settings.REACT_APP_DOMAIN + "/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url=settings.REACT_APP_DOMAIN + "/cancel",
+        success_url=settings.APP_DOMAIN + "/success?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url=settings.APP_DOMAIN + "/cancel",
         payment_method_types=["card"],
         mode="subscription",
         line_items=[{

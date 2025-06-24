@@ -67,8 +67,8 @@ async def create_checkout_session(
                                   items=[item],
                                   amount=price, 
                                   description="demo",
-                                  cancelUrl=settings.REACT_APP_DOMAIN + "/cancel",
-                                  returnUrl=settings.REACT_APP_DOMAIN + "/success",
+                                  cancelUrl=settings.APP_DOMAIN + "/cancel",
+                                  returnUrl=settings.APP_DOMAIN + "/success",
                                   )
         payosCreatePayment = payOS.createPaymentLink(paymentData)
 

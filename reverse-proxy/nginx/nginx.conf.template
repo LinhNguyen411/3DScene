@@ -2,30 +2,18 @@ events {
 }
 
 http {
-    sendfile           on;
-
+    sendfile            on;
     sendfile_max_chunk 1m;
-
     client_max_body_size 5120M;
-
     tcp_nopush on;
-
     tcp_nodelay on;
-
     keepalive_timeout 65;
-
     types_hash_max_size 2048;
-
     include /etc/nginx/mime.types;
-
     default_type application/octet-stream;
-
     access_log /dev/stdout;
-
     error_log /dev/stdout;
-
     gzip on;
-
     gzip_disable "msie6";
 
     map $http_x_forwarded_proto $proxy_x_forwarded_proto {
@@ -50,69 +38,48 @@ http {
 
     server {
         listen 80;
+        listen 443 ssl; # Listen on 443 as well for Certbot validation
+        server_name ${DOMAIN_NAME};
 
-        server_name _ default_server;
+        # Certbot validation location
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+            allow all;
+        }
 
-        return 301 https://$host$request_uri;
+        # Redirect HTTP to HTTPS
+        if ($scheme = http) {
+            return 301 https://$host$request_uri;
+        }
 
-    }
-
-    server{
-        listen 443 ssl;
-
-        server_name _ default_server;
-        
         ssl_certificate /etc/nginx/certs/cert.pem;
-
         ssl_certificate_key /etc/nginx/certs/key.pem;
 
         location / {
             proxy_pass http://3dscene-frontend:${FRONTEND_PORT_INTERNAL}/;
-
             proxy_pass_header Server;
-
             proxy_set_header Host $http_host;
-
             proxy_set_header X-Real-IP $remote_addr;
-
             proxy_set_header X-Scheme $scheme;
-
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
             proxy_redirect off;
-
             proxy_connect_timeout 60;
-
             proxy_read_timeout 60;
         }
 
         location /api/ {
             proxy_pass http://3dscene-api:${API_PORT_INTERNAL}/;
-
-
             proxy_set_header Host $http_host;
-
             proxy_set_header X-Real-IP $remote_addr;
-
             proxy_set_header X-Scheme $scheme;
-
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
             proxy_set_header X-Forwarded-Proto $proxy_x_forwarded_proto;
-
             proxy_set_header X-Forwarded-Prefix /api/;
-
             proxy_redirect off;
-
             proxy_connect_timeout 600;
-
             proxy_send_timeout 600;
-
             proxy_read_timeout 600;
-
             send_timeout 600;
         }
-        
     }
 }
-

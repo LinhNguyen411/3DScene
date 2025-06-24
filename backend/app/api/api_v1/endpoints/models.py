@@ -139,11 +139,7 @@ async def create_model(
     current_user: models.User = Depends(deps.get_current_active_user),
     title: str = Form(...),
     files: List[UploadFile] = File(...),
-<<<<<<< HEAD:backend/app/api/api_v1/endpoints/splats.py
     num_iterations: int = Form(10000, description="Number of iterations for the opensplat command")
-=======
-    num_iterations: int = Form(10, description="Number of iterations for the openmodel command")
->>>>>>> cpu:backend/app/api/api_v1/endpoints/models.py
 ) -> Any:
     """
     Tạo một model mới từ các tệp tải lên (có thể là video hoặc hình ảnh, không thể tải lên cả hai).

@@ -241,8 +241,7 @@ def process_video(self: Task,
             "opensplat",
             os.path.join(dataset_path, "to_opensplat"),
             "-n", str(num_iterations),
-            "-o", os.path.join(dataset_path, "outputs", output_model),
-            "--downscale-factor", str(downscale_factor)
+            "-o", os.path.join(dataset_path, "outputs", output_model)
         ]
 
         # Change to dataset path for opensplat execution
@@ -316,9 +315,9 @@ def process_video(self: Task,
             state=states.FAILURE,
             meta={"status": "Failed", "error": str(e)}
         )
-        splat_in = schemas.SplatUpdate(status = "FAILURE")
-        splat = crud.splat.get(db, id= task_id)
-        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        splat_in = schemas.ModelUpdate(status = "FAILURE")
+        splat = crud.model.get(db, id= task_id)
+        crud.model.update(db = db, db_obj=splat, obj_in=splat_in)
         
         images_path = os.path.join(settings.MODEL_IMAGES_DIR, splat.id)    
         try:

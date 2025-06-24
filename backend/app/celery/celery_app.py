@@ -155,13 +155,12 @@ def process_video(self: Task,
         num_images = len([f for f in os.listdir(img_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
         max_num_tracks = num_images * 1000
         cmd = [
-            "glomap", "mapper",
+            "colmap", "mapper",
             "--database_path", os.path.join(dataset_path, "database.db"),
-            "--image_path", img_dir,
-            "--output_path", sparse_dir,
-            "--GlobalPositioning.use_gpu", "1",
-            "--BundleAdjustment.use_gpu", "1",
-            "--TrackEstablishment.max_num_tracks", str(max_num_tracks)
+            "--image_path", os.path.join(dataset_path, "images"),
+            "--output_path", os.path.join(dataset_path, "sparse"),
+            "--Mapper.ba_global_function_tolerance", "0.000001",
+            "--Mapper.ba_use_gpu", "1"
         ]
         run_command(cmd)
 

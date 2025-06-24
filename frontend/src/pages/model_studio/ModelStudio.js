@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Share, Download, Loader, Copy, Info, EyeIcon, Grid3X3 } from 'lucide-react';
+import { ChevronLeft, Share, Download, Loader, Copy, Info, EyeIcon, Grid3X3, Save } from 'lucide-react';
 import { useNavigate, useOutletContext, useSearchParams, Link } from "react-router-dom";
 import DataService from './ModelStudioService';
 import { useLoader } from '../../provider/LoaderProvider';
@@ -25,7 +25,6 @@ export default function ModelStudio() {
     const [currenUser, setCurrentUser] = useState(null);
     const [modelNotFound, setModelNotFound] = useState(false);
     const [colmapData, setColmapData] = useState(null);
-    const [hasColmapData, setHasColmapData] = useState(false);
     const [viewMode, setViewMode] = useState('splat'); // Always start with splat
     const [colmapDataLoading, setColmapDataLoading] = useState(false);
     const [colmapDataChecked, setColmapDataChecked] = useState(false);
@@ -64,6 +63,7 @@ export default function ModelStudio() {
           setLoading(false);
         }
     };
+
     const handleExportColmap = async () => {
         try {
           setLoading(true);
@@ -79,8 +79,38 @@ export default function ModelStudio() {
         }
     };
 
+    const handleSaveView = async (viewData) => {
+        if (!model) return;
+        try {
+            showLoader();
+            // Convert THREE.js objects to plain objects for JSON serialization
+            const payload = {
+                camera_init: {
+                    position: { ...viewData.camera_init.position },
+                    quaternion: { ...viewData.camera_init.quaternion },
+                    target: { ...viewData.camera_init.target }
+                },
+                model_transform: {
+                    position: { ...viewData.model_transform.position },
+                    rotation: { ...viewData.model_transform.rotation }
+                }
+            };
+            await DataService.updateModel(id, viewer, payload);
+
+            // Optimistically update the model state to reflect the change immediately
+            setModel(prevModel => ({...prevModel, ...payload}));
+
+            showSnackbar("View saved successfully!", "success");
+        } catch (error) {
+            console.error("Error saving view:", error);
+            showSnackbar("Failed to save view", "error");
+        } finally {
+            hideLoader();
+        }
+    };
+
     const handleCopyLink = () => {
-        const url = window.location.href;
+        const url = `${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}`;
         navigator.clipboard.writeText(url)
             .then(() => {
                 showSnackbar("Link copied to clipboard!", "success");
@@ -111,24 +141,6 @@ export default function ModelStudio() {
         return `${size.toFixed(2)} MB`;
     };
 
-    // Function to check if colmap data is available
-    const checkColmapAvailability = async () => {
-        if (colmapDataChecked) return;
-        
-        try {
-            const colmap = await DataService.getColmapData(id, viewer);
-            if (colmap && colmap.cameras && colmap.points && colmap.images) {
-                setHasColmapData(true);
-            } else {
-                setHasColmapData(false);
-            }
-        } catch (error) {
-            console.error('Error checking colmap availability:', error);
-            setHasColmapData(false);
-        } finally {
-            setColmapDataChecked(true);
-        }
-    };
 
     // Function to load colmap data when user clicks colmap button
     const loadColmapData = async () => {
@@ -142,12 +154,10 @@ export default function ModelStudio() {
                 setColmapData(colmap);
             } else {
                 showSnackbar("Colmap data not available", "error");
-                setHasColmapData(false);
             }
         } catch (error) {
             console.error('Error loading colmap data:', error);
             showSnackbar("Failed to load colmap data", "error");
-            setHasColmapData(false);
         } finally {
             setColmapDataLoading(false);
         }
@@ -182,8 +192,6 @@ export default function ModelStudio() {
                 return;
             }
             
-            // Check if colmap data is available (but don't load it yet)
-            await checkColmapAvailability();
             
             try {
                 const response = await DataService.getModel(id, viewer);
@@ -233,7 +241,6 @@ export default function ModelStudio() {
         };
     }, [id]);
 
-    // If model not found, display LinkNotValid component
     if (modelNotFound) {
         return (
             <>
@@ -242,39 +249,38 @@ export default function ModelStudio() {
         )
     }
 
-    const isDarkMode = viewMode === 'colmap';
 
     return (
         <div className='h-screen flex flex-col'>
-            <nav className={`${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-200'} border-b px-4 py-2 flex items-center justify-between`}>
+            <nav className={`${viewMode === 'colmap' ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-200'} border-b px-4 py-2 flex items-center justify-between`}>
                 {/* Left section */}
                 <div className="flex items-center">
-                    <button className={`h-8 w-8 flex items-center justify-center rounded-full ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'} border mr-4`} onClick={handleBack}>
+                    <button className={`h-8 w-8 flex items-center justify-center rounded-full border mr-4 ${viewMode === 'colmap' ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'}`} onClick={handleBack}>
                         <ChevronLeft size={16} /> 
                     </button>
                     <div className="flex items-center">
                         <Link to={RouterPath.HOME} className="flex justify-between items-center">
                             <img className="w-10" src={projectIcon} alt={`${projectName} logo`} />
-                            <h2 className={`brand-text text-xl ml-2 ${isDarkMode ? 'text-white-400' : 'text-sky-400'}`}>{projectName}</h2>
+                            <h2 className={`brand-text text-xl ml-2 ${viewMode === 'colmap' ? 'text-white-400' : 'text-sky-400'}`}>{projectName}</h2>
                         </Link>
                     </div>
                 </div>
 
                 
                 {/* Center section - View Toggle - Only show if colmap data is available */}
-                {hasColmapData && (
+                {model?.colmap_url && (
                     <div className="flex items-center">
-                        <div className={`flex items-center p-1 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+                        <div className={`flex items-center p-1 rounded-lg ${viewMode === 'colmap' ? 'bg-gray-800' : 'bg-gray-100'}`}>
                             <button 
                                 onClick={() => setViewMode('splat')} 
-                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
+                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (viewMode === 'colmap' ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (viewMode === 'colmap' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
                             >
                                 <EyeIcon size={16} className="mr-2" />
                                 <span>Splat</span>
                             </button>
                             <button 
                                 onClick={() => handleViewModeToggle('colmap')} 
-                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
+                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? (viewMode === 'colmap' ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (viewMode === 'colmap' ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
                                 disabled={colmapDataLoading}
                             >
                                 {colmapDataLoading ? (
@@ -289,9 +295,9 @@ export default function ModelStudio() {
                 )}
                 
                 {/* Show current view mode when toggle is not available */}
-                {!hasColmapData && (
+                {!model?.colmap_url && (
                     <div className="flex items-center">
-                        <div className={`flex items-center px-4 py-1.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                        <div className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}`}>
                             <EyeIcon size={16} className="mr-2" />
                             <span>Splat View</span>
                         </div>
@@ -301,7 +307,7 @@ export default function ModelStudio() {
                 {/* Right section */}
                 <div className="flex items-center space-x-3">
                      <button 
-                        className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}                        
+                        className={`flex items-center px-3 py-1 rounded-md ${viewMode === 'colmap' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}                        
                         onClick={() => {
                             setIsShareModalOpen(false);
                             setIsDetailModalOpen(true);
@@ -311,7 +317,7 @@ export default function ModelStudio() {
                         <span>View Details</span>
                     </button>
                     <button 
-                        className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                        className={`flex items-center px-3 py-1 rounded-md ${viewMode === 'colmap' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
                         onClick={() => setIsShareModalOpen(true)}
                     >
                         <Share size={16} className="mr-2" />
@@ -321,7 +327,7 @@ export default function ModelStudio() {
                     {currenUser ? (
                         <button 
                             onClick={() => setIsExportModalOpen(true)} 
-                            className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                            className={`flex items-center px-3 py-1 rounded-md ${viewMode === 'colmap' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
                         >
                             <Download size={16} className="mr-2" />
                             <span>Download</span>
@@ -329,7 +335,7 @@ export default function ModelStudio() {
                     ) : (
                         <Link 
                             to={RouterPath.LOGIN} 
-                            className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
+                            className={`flex items-center px-3 py-1 rounded-md ${viewMode === 'colmap' ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
                         >
                             <span>Login to Download</span>
                         </Link>
@@ -341,14 +347,19 @@ export default function ModelStudio() {
                     )}
                 </div>
             </nav>
-            <div className='flex-1 relative'>
-               <ModelCanvas
-                    key={canvasKey}
-                    viewMode={viewMode}
-                    splatUrl={splatUrl}
-                    colmapData={colmapData}
-                />
-            </div>
+            {model && (
+                <div className='flex-1 relative'>
+                <ModelCanvas
+                        model={model}
+                        key={canvasKey}
+                        viewMode={viewMode}
+                        splatUrl={splatUrl}
+                        colmapData={colmapData}
+                        onSaveView={handleSaveView}
+                    />
+                </div>
+
+            )}
             
             {/* Export Modal */}
             {isExportModalOpen && (
@@ -411,40 +422,107 @@ export default function ModelStudio() {
 
             {/* Share Modal */}
             {isShareModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-96">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-medium">Share</h3>
-                            <button onClick={() => setIsShareModalOpen(false)} className="text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <p className="text-sm text-gray-500 mb-2">Share this 3D model with others:</p>
-                                <div className="flex">
-                                    <input 
-                                        type="text" 
-                                        value={window.location.href} 
-                                        readOnly 
-                                        className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                    />
-                                    <button 
-                                        className="bg-sky-500 text-white px-4 py-2 rounded-r-md hover:bg-sky-600 flex items-center"
-                                        onClick={handleCopyLink}
-                                    >
-                                        <Copy size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                            
-                        </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-[500px]">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">Share</h3>
+                <button onClick={() => setIsShareModalOpen(false)} className="text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+            
+            <div className="space-y-6">
+                {/* Direct Link Section */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Direct Link
+                    </label>
+                    <p className="text-sm text-gray-500 mb-2">Share this 3D model with others:</p>
+                    <div className="flex">
+                        <input 
+                            type="text" 
+                            value={`${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}`} 
+                            readOnly 
+                            className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                        <button 
+                            className="bg-sky-500 text-white px-4 py-2 rounded-r-md hover:bg-sky-600 flex items-center"
+                            onClick={handleCopyLink}
+                        >
+                            <Copy size={16} />
+                        </button>
                     </div>
                 </div>
-            )}
+
+                {/* Embed Section */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Embed Code
+                    </label>
+                    <p className="text-sm text-gray-500 mb-2">Copy this code to embed the 3D model in your website:</p>
+                    
+                    {/* Embed Size Options */}
+                    <div className="mb-3">
+                        <p className="text-xs text-gray-500 mb-1">Size:</p>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { label: 'Small', width: 400, height: 300 },
+                                { label: 'Medium', width: 600, height: 400 },
+                                { label: 'Large', width: 800, height: 600 },
+                                { label: 'Full Width', width: '100%', height: 500 }
+                            ].map((size) => (
+                                <button
+                                    key={size.label}
+                                    className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                                    onClick={() => {
+                                        const embedCode = `<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}&embed=true" width="${size.width}" height="${size.height}" frameborder="0" allowfullscreen></iframe>`;
+                                        navigator.clipboard.writeText(embedCode).then(() => {
+                                            showSnackbar("Embed code copied to clipboard!", "success");
+                                        }).catch(() => {
+                                            showSnackbar("Failed to copy embed code", "error");
+                                        });
+                                    }}
+                                >
+                                    {size.label} ({size.width}×{size.height})
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Default embed code display */}
+                    <div className="relative">
+                        <textarea 
+                            value={`<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}&embed=true" width="600" height="400" frameborder="0" allowfullscreen></iframe>`}
+                            readOnly 
+                            rows={3}
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"
+                        />
+                        <button 
+                            className="absolute top-2 right-2 bg-sky-500 text-white px-3 py-1 rounded hover:bg-sky-600 flex items-center text-xs"
+                            onClick={() => {
+                                const embedCode = `<iframe src="${myAppConfig.frontend.FRONTEND_DOMAIN}${RouterPath.MODEL_VIEW}?id=${id}&viewer=${viewer}&embed=true" width="600" height="400" frameborder="0" allowfullscreen></iframe>`;
+                                navigator.clipboard.writeText(embedCode).then(() => {
+                                    showSnackbar("Embed code copied to clipboard!", "success");
+                                }).catch(() => {
+                                    showSnackbar("Failed to copy embed code", "error");
+                                });
+                            }}
+                        >
+                            <Copy size={12} className="mr-1" />
+                            Copy
+                        </button>
+                    </div>
+                    
+                    <p className="text-xs text-gray-400 mt-2">
+                        Note: The embed parameter ensures optimal display for embedded content.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+)}
 
             {/* Details Modal */}
             {isDetailModalOpen && model && (
@@ -501,7 +579,7 @@ export default function ModelStudio() {
                                 <div className="text-gray-500">Available Views</div>
                                 <div>
                                     <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">Splat</span>
-                                    {hasColmapData && (
+                                    {model?.colmap_url && (
                                         <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Colmap</span>
                                     )}
                                 </div>
@@ -510,6 +588,7 @@ export default function ModelStudio() {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

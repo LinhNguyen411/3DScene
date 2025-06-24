@@ -63,6 +63,10 @@ root.render(
               path={RouterPath.MODEL_STUDIO}
               element={<ModelStudio />}
             />
+            <Route
+              path={RouterPath.MODEL_VIEW}
+              element={<ModelView />}
+            />
           <Route path={RouterPath.HOME} element={<App />}>
             <Route index element={<HomePage />} />
             <Route path={RouterPath.TERMS} element={<Terms />} />

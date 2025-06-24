@@ -64,11 +64,11 @@ def read_user_me(
     user_response["is_pro"] = is_pro
     
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    user_splats_today = db.query(models.Splat).filter(
-        models.Splat.owner_id == current_user.id,
-        models.Splat.date_created >= today_start
+    user_models_today = db.query(models.Model).filter(
+        models.Model.owner_id == current_user.id,
+        models.Model.date_created >= today_start
     ).count()
-    user_response["num_splat_today"] = user_splats_today
+    user_response["num_model_today"] = user_models_today
     return user_response
 
 

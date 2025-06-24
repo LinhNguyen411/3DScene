@@ -7,8 +7,7 @@ import { MoreHorizontal, Pencil, Download, Trash } from "lucide-react";
 import { useSnackbar } from '../../../provider/SnackbarProvider';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import { Link, useOutletContext } from "react-router-dom";
-import { format } from 'date-fns';
-
+import { format, parseISO, differenceInSeconds, formatDuration, intervalToDuration } from 'date-fns';
 
 // Main App Component
 function MyModel(props){
@@ -254,6 +253,19 @@ function MyModel(props){
                           <div className="mt-2 flex items-center">
                           {model.is_public ? <span className="flex text-xs px-2 py-1 bg-teal-100 text-teal-800 rounded mr-2"><Globe size={16} className='mr-1'/> Published</span> : <span className="flex text-xs px-2 py-1 bg-sky-100 text-sky-800 rounded mr-2"><GlobeLock className='mr-1' size={16}/> Unpublish</span>}
                           <span className="text-xs text-gray-500">{format(new Date(model.date_created), 'HH:mm:ss dd/MM/yyyy')}</span>
+                           {model.time_finished && (
+                              <span className="text-xs text-gray-500 ml-4">
+                                ⏱ {
+                                  formatDuration(
+                                    intervalToDuration({
+                                      start: new Date(model.date_created),
+                                      end: new Date(model.time_finished),
+                                    }),
+                                    { format: ['hours', 'minutes', 'seconds'] }
+                                  )
+                                }
+                              </span>
+                            )}
                           {model.model_size && <span className="text-md ml-auto">{model.model_size} MB</span>}
                           </div>
                       </div>

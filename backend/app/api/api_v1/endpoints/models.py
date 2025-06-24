@@ -35,16 +35,16 @@ def delete_file(path: str):
 router = APIRouter()
 
 
-@router.get("", response_model=Page[schemas.Splat], responses={
+@router.get("", response_model=Page[schemas.Model], responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def read_splats(
+def read_models(
     params: Params = Depends(),
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
 ) -> Any:
     """
-    Lấy danh sách splat (mô hình 3D) từ hệ thống.
+    Lấy danh sách model (mô hình 3D) từ hệ thống.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
@@ -54,33 +54,33 @@ def read_splats(
     - **current_user**: Người dùng hiện tại (dựa trên JWT token, xác thực qua `deps.get_current_active_user`).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về danh sách các splat dưới dạng phân trang (page).
+    - 200 OK: Trả về danh sách các model dưới dạng phân trang (page).
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng lấy danh sách các mô hình splat (3D objects). Người dùng có thể lấy tất cả các splats nếu là superuser, hoặc chỉ lấy các splat thuộc sở hữu của họ nếu là người dùng bình thường.
-    - Danh sách các splats sẽ được phân trang, giúp dễ dàng quản lý dữ liệu lớn.
+    - Endpoint này cho phép người dùng lấy danh sách các mô hình model (3D objects). Người dùng có thể lấy tất cả các models nếu là superuser, hoặc chỉ lấy các model thuộc sở hữu của họ nếu là người dùng bình thường.
+    - Danh sách các models sẽ được phân trang, giúp dễ dàng quản lý dữ liệu lớn.
 
     **Chi tiết về các hành động:**
-    - Kiểm tra quyền hạn của người dùng, nếu là superuser, sẽ lấy tất cả các splat. Nếu là người dùng bình thường, sẽ chỉ lấy các splat của họ.
-    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Splat]`.
+    - Kiểm tra quyền hạn của người dùng, nếu là superuser, sẽ lấy tất cả các model. Nếu là người dùng bình thường, sẽ chỉ lấy các model của họ.
+    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Model]`.
     """
 
     if current_user.is_superuser:
-        splats = crud.splat.get_multi(db=db)
+        models = crud.model.get_multi(db=db)
     else:
-        splats = crud.splat.query_get_multi_by_owner(
+        models = crud.model.query_get_multi_by_owner(
             db=db, owner_id=current_user.id)
 
-    return paginate(splats, params)
+    return paginate(models, params)
 
-@router.get("/public", response_model=Page[schemas.Splat])
-def read_public_splats(
+@router.get("/public", response_model=Page[schemas.Model])
+def read_public_models(
     params: Params = Depends(),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
-    Lấy danh sách các splat công khai có thể truy cập mà không cần xác thực.
+    Lấy danh sách các model công khai có thể truy cập mà không cần xác thực.
 
     **Yêu cầu Header:**
     - Không yêu cầu header đặc biệt, có thể truy cập mà không cần xác thực người dùng.
@@ -89,26 +89,26 @@ def read_public_splats(
     - **params**: Các tham số phân trang (page size, page number).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về danh sách các splat công khai dưới dạng phân trang (page).
+    - 200 OK: Trả về danh sách các model công khai dưới dạng phân trang (page).
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng truy cập vào các mô hình splat (3D objects) công khai mà không cần phải đăng nhập hoặc cung cấp thông tin xác thực.
-    - Danh sách các splat công khai sẽ được phân trang để dễ dàng quản lý và truy xuất dữ liệu lớn.
+    - Endpoint này cho phép người dùng truy cập vào các mô hình model (3D objects) công khai mà không cần phải đăng nhập hoặc cung cấp thông tin xác thực.
+    - Danh sách các model công khai sẽ được phân trang để dễ dàng quản lý và truy xuất dữ liệu lớn.
 
     **Chi tiết về các hành động:**
-    - Lấy tất cả các splat có thuộc tính `is_public=True`.
-    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Splat]`.
+    - Lấy tất cả các model có thuộc tính `is_public=True`.
+    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Model]`.
     """
-    public_splats = crud.splat.get_multi_by_public(db=db)
-    return paginate(public_splats, params)
+    public_models = crud.model.get_multi_by_public(db=db)
+    return paginate(public_models, params)
 
-@router.get("/gallery", response_model=Page[schemas.Splat])
-def read_gallery_splats(
+@router.get("/gallery", response_model=Page[schemas.Model])
+def read_gallery_models(
     params: Params = Depends(),
     db: Session = Depends(deps.get_db),
 ) -> Any:
     """
-    Lấy danh sách các splat trong gallery có thể truy cập mà không cần xác thực.
+    Lấy danh sách các model trong gallery có thể truy cập mà không cần xác thực.
 
     **Yêu cầu Header:**
     - Không yêu cầu header đặc biệt, có thể truy cập mà không cần xác thực người dùng.
@@ -117,49 +117,49 @@ def read_gallery_splats(
     - **params**: Các tham số phân trang (page size, page number).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về danh sách các splat trong gallery dưới dạng phân trang (page).
+    - 200 OK: Trả về danh sách các model trong gallery dưới dạng phân trang (page).
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng truy cập vào các mô hình splat (3D objects) được lưu trong gallery mà không cần phải đăng nhập hoặc cung cấp thông tin xác thực.
-    - Danh sách các splat trong gallery sẽ được phân trang để dễ dàng quản lý và truy xuất dữ liệu lớn.
+    - Endpoint này cho phép người dùng truy cập vào các mô hình model (3D objects) được lưu trong gallery mà không cần phải đăng nhập hoặc cung cấp thông tin xác thực.
+    - Danh sách các model trong gallery sẽ được phân trang để dễ dàng quản lý và truy xuất dữ liệu lớn.
 
     **Chi tiết về các hành động:**
-    - Lấy tất cả các splat có thuộc tính `is_gallery=True`.
-    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Splat]`.
+    - Lấy tất cả các model có thuộc tính `is_gallery=True`.
+    - Dữ liệu sẽ được phân trang và trả về cho người dùng dưới dạng `Page[schemas.Model]`.
     """
-    gallery_splats = crud.splat.get_multi_by_gallery(db=db)
-    return paginate(gallery_splats, params)
+    gallery_models = crud.model.get_multi_by_gallery(db=db)
+    return paginate(gallery_models, params)
 
-@router.post("", response_model=schemas.Splat, responses={
+@router.post("", response_model=schemas.Model, responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
-async def create_splat(
+async def create_model(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     title: str = Form(...),
     files: List[UploadFile] = File(...),
-    num_iterations: int = Form(10, description="Number of iterations for the opensplat command")
+    num_iterations: int = Form(10, description="Number of iterations for the openmodel command")
 ) -> Any:
     """
-    Tạo một splat mới từ các tệp tải lên (có thể là video hoặc hình ảnh, không thể tải lên cả hai).
+    Tạo một model mới từ các tệp tải lên (có thể là video hoặc hình ảnh, không thể tải lên cả hai).
     Nếu video được tải lên, hệ thống sẽ trích xuất các khung hình với tốc độ 2fps.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **title**: Tiêu đề cho splat mới (dưới dạng form data).
+    - **title**: Tiêu đề cho model mới (dưới dạng form data).
     - **files**: Danh sách các tệp video hoặc hình ảnh tải lên (dưới dạng form data).
-    - **num_iterations**: Số vòng lặp cho lệnh opensplat (dưới dạng form data, mặc định là 10).
+    - **num_iterations**: Số vòng lặp cho lệnh openmodel (dưới dạng form data, mặc định là 10).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về đối tượng splat mới sau khi tạo thành công.
+    - 200 OK: Trả về đối tượng model mới sau khi tạo thành công.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
     - 400 Bad Request: Nếu các tệp tải lên có kiểu không hợp lệ hoặc cả video và hình ảnh đều được tải lên cùng lúc.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng tạo một splat mới bằng cách tải lên các tệp video hoặc hình ảnh.
+    - Endpoint này cho phép người dùng tạo một model mới bằng cách tải lên các tệp video hoặc hình ảnh.
     - Nếu video được tải lên, hệ thống sẽ trích xuất các khung hình với tốc độ 2fps và lưu chúng vào thư mục làm việc.
     - Nếu hình ảnh được tải lên, hệ thống sẽ di chuyển các tệp hình ảnh vào thư mục làm việc.
     - Sau khi các tệp được xử lý, một thumbnail sẽ được tạo từ hình ảnh đầu tiên (nếu có) và được lưu vào thư mục thumbnail.
@@ -170,12 +170,12 @@ async def create_splat(
     - Nếu video được tải lên, trích xuất khung hình với tốc độ 2fps và lưu vào thư mục làm việc.
     - Nếu hình ảnh được tải lên, di chuyển chúng vào thư mục làm việc.
     - Tạo thumbnail từ hình ảnh đầu tiên (nếu có) và lưu vào thư mục thumbnail.
-    - Tạo một đối tượng splat mới và lưu vào cơ sở dữ liệu.
+    - Tạo một đối tượng model mới và lưu vào cơ sở dữ liệu.
     - Gửi tác vụ xử lý video hoặc hình ảnh vào hàng đợi Celery.
     """
     print(files)
-    splat_id = str(uuid.uuid4())
-    task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat_id)
+    model_id = str(uuid.uuid4())
+    task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), model_id)
     os.makedirs(task_dir, exist_ok=True)
 
     video_dir = os.path.join(task_dir, "workspace", "videos")
@@ -213,7 +213,7 @@ async def create_splat(
 
     # Determine dataset_dir and generate thumbnail
     thumbnail_url = None
-    thumbnail_filename = f"{splat_id}_thumbnail.jpg"
+    thumbnail_filename = f"{model_id}_thumbnail.jpg"
     os.makedirs(settings.MODEL_THUMBNAILS_DIR, exist_ok=True)
     thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
 
@@ -265,35 +265,35 @@ async def create_splat(
         raise HTTPException(status_code=400, detail="No valid files uploaded.")
 
     # Save to DB
-    splat_in = schemas.SplatCreate(
-        id=splat_id,
+    model_in = schemas.ModelCreate(
+        id=model_id,
         title=title,
         image_url=thumbnail_url
     )
 
-    splat: models.Splat = crud.splat.create_with_owner(
-        db, obj_in=splat_in, owner_id=current_user.id)
+    model: models.Model = crud.model.create_with_owner(
+        db, obj_in=model_in, owner_id=current_user.id)
 
     # Start Celery Task
     celery_app.process_video.delay(
-        task_id=splat.id,
+        task_id=model.id,
         workspace_path=task_dir,
         dataset_dir=dataset_dir,
         num_iterations=num_iterations
     )
 
-    return splat
+    return model
 
 
 
-@router.post("/model-upload", response_model=schemas.Splat, responses={
+@router.post("/model-upload", response_model=schemas.Model, responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"},
     400: {"model": schemas.Detail, "description": "Invalid file type (must be .ply or .splat)"},
     413: {"model": schemas.Detail, "description": "File too large (max 5GB)"},
     500: {"model": schemas.Detail, "description": "Internal server error during upload or compression"}
 })
 
-async def upload_splat(
+async def upload_model(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
@@ -303,7 +303,7 @@ async def upload_splat(
     thumbnail: UploadFile = File(...),
 ) -> Any:
     """
-    Tải lên một mô hình và thumbnail của mô hình, và tạo một mục Splat trong cơ sở dữ liệu.
+    Tải lên một mô hình và thumbnail của mô hình, và tạo một mục Model trong cơ sở dữ liệu.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header Authorization.
@@ -315,7 +315,7 @@ async def upload_splat(
     - **thumbnail**: File thumbnail cho mô hình.
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về đối tượng Splat vừa được tạo trong cơ sở dữ liệu.
+    - 200 OK: Trả về đối tượng Model vừa được tạo trong cơ sở dữ liệu.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
     - 400 Bad Request: Nếu file không phải định dạng .ply hoặc .splat.
     - 413 Payload Too Large: Nếu kích thước file vượt quá giới hạn 5GB.
@@ -332,13 +332,13 @@ async def upload_splat(
     if not (model.filename.endswith(".ply") or model.filename.endswith(".splat")):
         raise HTTPException(status_code=400, detail="Invalid file type (must be .ply or .splat)")
 
-    splat_id = str(uuid.uuid4())  # Unique ID for this model
-    modeling_task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat_id)
+    model_id = str(uuid.uuid4())  # Unique ID for this model
+    modeling_task_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), model_id)
     os.makedirs(modeling_task_dir, exist_ok=True)
 
     # Path where the model and thumbnail will be stored
     model_path = os.path.join(modeling_task_dir, model.filename)
-    thumbnail_filename = f"{splat_id}_thumbnail.jpg"
+    thumbnail_filename = f"{model_id}_thumbnail.jpg"
     thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
 
     # Save the thumbnail file
@@ -358,10 +358,10 @@ async def upload_splat(
             raise HTTPException(status_code=413, detail="File too large (max 5GB)")
 
         # Convert the .ply to .splat using Go tool
-        splat_path = os.path.join(modeling_task_dir, f"{splat_id}.splat")
+        model_path = os.path.join(modeling_task_dir, f"{model_id}.splat")
         try:
             subprocess.run(
-                ['gsbox', 'p2s', '-i', model_path, '-o', splat_path],
+                ['gsbox', 'p2s', '-i', model_path, '-o', model_path],
                 check=True
             )
         except subprocess.CalledProcessError:
@@ -383,136 +383,130 @@ async def upload_splat(
             os.remove(model_path)  # Clean up the file
             raise HTTPException(status_code=413, detail="File too large (max 5GB)")
             
-        splat_path = model_path
+        model_path = model_path
 
     # --- Create Database Entry ---
     # Calculate model file size (in MB)
-    model_size = round(os.path.getsize(splat_path) / (1024 * 1024), 2)
+    model_size = round(os.path.getsize(model_path) / (1024 * 1024), 2)
     thumbnail_url = f"/thumbnails/{thumbnail_filename}"
-    # Create the Splat entry in the database
-    splat_in = schemas.SplatCreate(
-        id=splat_id,
+    # Create the Model entry in the database
+    model_url = "models/" + model_id + "/file"
+    model_in = schemas.ModelCreate(
+        id=model_id,
         title=title,
         image_url=thumbnail_url,
-        model_url=splat_path,
+        model_url=model_url,
         is_public=is_public,
         status='SUCCESS',
         model_size=model_size  # Include the calculated size here
     )
 
-    splat: models.Splat = crud.splat.create_with_owner(
-        db, obj_in=splat_in, owner_id=current_user.id
+    model: models.Model = crud.model.create_with_owner(
+        db, obj_in=model_in, owner_id=current_user.id
     )
 
-    # Return the Splat object (now stored in DB)
-    return splat
+    # Return the Model object (now stored in DB)
+    return model
 
 
-@router.put("/{id}", response_model=schemas.Splat, responses={
-    401: {"model": schemas.Detail, "description": "User unathorized"}
+@router.put("/{id}", response_model=schemas.Model, responses={
+    401: {"model": schemas.Detail, "description": "User unathorized"},
+    403: {"model": schemas.Detail, "description": "Not enough permissions"},
+    404: {"model": schemas.Detail, "description": "Model not found"}
 })
-def update_splat(
+def patch_model(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     id: str,
-    title: str = Form(...),
-    is_public: bool = Form(...),
-    thumbnail: Optional[UploadFile] = File(None),
+    model_in: schemas.ModelUpdate, # This will parse the JSON request body
 ) -> Any:
     """
-    Cập nhật thông tin của một splat.
+    Cập nhật thông tin của một model.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần cập nhật (dưới dạng URL parameter).
-    - **splat_in**: Dữ liệu cập nhật cho splat (dưới dạng JSON body).
+    - **id**: ID của model cần cập nhật (dưới dạng URL parameter).
+    - **model_in**: Dữ liệu cập nhật cho model (dưới dạng JSON body).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về đối tượng splat đã được cập nhật.
+    - 200 OK: Trả về đối tượng model đã được cập nhật.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu người dùng không có quyền chỉnh sửa splat hoặc splat không tồn tại.
+    - 400 Bad Request: Nếu người dùng không có quyền chỉnh sửa model hoặc model không tồn tại.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng cập nhật thông tin của một splat.
-    - Nếu người dùng là superuser hoặc là chủ sở hữu của splat, việc cập nhật sẽ được thực hiện.
-    - Cập nhật sẽ chỉ thay đổi các trường trong `splat_in`.
+    - Endpoint này cho phép người dùng cập nhật thông tin của một model.
+    - Nếu người dùng là superuser hoặc là chủ sở hữu của model, việc cập nhật sẽ được thực hiện.
+    - Cập nhật sẽ chỉ thay đổi các trường trong `model_in`.
     """
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
-    if not current_user.is_superuser and (splat.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
+    print(model_in)
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
     
-    if thumbnail is not None:
-        print("update thumbnail")
-        thumbnail_filename = f"{splat.id}_thumbnail.jpg"
-        thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
-        with open(thumbnail_path, "wb") as f:
-            shutil.copyfileobj(thumbnail.file, f)
-            print(f"File {thumbnail_path} has been updated.")
+    # Check for ownership or superuser status
+    if not current_user.is_superuser and (model.owner_id != current_user.id):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
 
+    # The `model_in` Pydantic model contains the data from the request.
+    # The CRUD function will update the `db_obj` with the fields from `obj_in`.
+    model = crud.model.update(db=db, db_obj=model, obj_in=model_in)
+    return model
 
-    splat_in = schemas.SplatUpdate(
-        title=title,
-        is_public=is_public,
-    )
-    splat = crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
-    return splat
 
 
 @router.delete("/{id}", response_model=schemas.Detail, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def delete_splat(
+def delete_model(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user),
     id: str,
 ) -> Any:
     """
-    Cập nhật thông tin của một splat.
+    Cập nhật thông tin của một model.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần cập nhật (dưới dạng URL parameter).
-    - **splat_in**: Dữ liệu cập nhật cho splat (dưới dạng JSON body).
+    - **id**: ID của model cần cập nhật (dưới dạng URL parameter).
+    - **model_in**: Dữ liệu cập nhật cho model (dưới dạng JSON body).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về đối tượng splat đã được cập nhật.
+    - 200 OK: Trả về đối tượng model đã được cập nhật.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu người dùng không có quyền chỉnh sửa splat hoặc splat không tồn tại.
+    - 400 Bad Request: Nếu người dùng không có quyền chỉnh sửa model hoặc model không tồn tại.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng cập nhật thông tin của một splat.
-    - Nếu người dùng là superuser hoặc là chủ sở hữu của splat, việc cập nhật sẽ được thực hiện.
-    - Cập nhật sẽ chỉ thay đổi các trường trong `splat_in`.
+    - Endpoint này cho phép người dùng cập nhật thông tin của một model.
+    - Nếu người dùng là superuser hoặc là chủ sở hữu của model, việc cập nhật sẽ được thực hiện.
+    - Cập nhật sẽ chỉ thay đổi các trường trong `model_in`.
     """
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
-    if not current_user.is_superuser and (splat.owner_id != current_user.id):
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
+    if not current_user.is_superuser and (model.owner_id != current_user.id):
         raise HTTPException(status_code=400, detail="Not enough permissions")
 
-    dir_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), splat.id)
+    dir_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), model.id)
     try:
         shutil.rmtree(dir_path)
         print(f"Directory {dir_path} has been removed.")
     except Exception as e:
         print(f"Error removing directory {dir_path}: {str(e)}")
 
-    images_path = os.path.join(settings.MODEL_IMAGES_DIR, splat.id)
+    images_path = os.path.join(settings.MODEL_IMAGES_DIR, model.id)
     try:
         shutil.rmtree(images_path)
         print(f"Directory {images_path} has been removed.")
     except Exception as e:
         print(f"Error removing directory {images_path}: {str(e)}")
 
-    thumbnail_filename = f"{splat.id}_thumbnail.jpg"
+    thumbnail_filename = f"{model.id}_thumbnail.jpg"
     thumbnail_path = os.path.join(settings.MODEL_THUMBNAILS_DIR, thumbnail_filename)
     if os.path.exists(thumbnail_path):
         try:
@@ -522,57 +516,57 @@ def delete_splat(
             print(f"Error removing file {thumbnail_path}: {str(e)}")
     else:
         print(f"File {thumbnail_path} does not exist.")
-    splat = crud.splat.remove(db=db, id=id)
-    return {"detail": f'Splat deleted successfully {id}'}
+    model = crud.model.remove(db=db, id=id)
+    return {"detail": f'Model deleted successfully {id}'}
 
-@router.get("/{id}", response_model=schemas.Splat, responses={
+@router.get("/{id}", response_model=schemas.Model, responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def get_splat(
+def get_model(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_guess_user),
     id: str,
 ) -> Any:
     """
-    Lấy thông tin chi tiết của một splat theo ID.
+    Lấy thông tin chi tiết của một model theo ID.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần lấy thông tin.
+    - **id**: ID của model cần lấy thông tin.
     - **current_user**: Người dùng hiện tại (dựa trên JWT token, xác thực qua `deps.get_current_active_user`).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
+    - 200 OK: Trả về thông tin chi tiết của model nếu người dùng có quyền truy cập.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 404 Not Found: Nếu không tìm thấy splat với ID đã cho.
-    - 400 Bad Request: Nếu người dùng không có quyền truy cập splat.
+    - 404 Not Found: Nếu không tìm thấy model với ID đã cho.
+    - 400 Bad Request: Nếu người dùng không có quyền truy cập model.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng lấy thông tin chi tiết của một splat cụ thể.
-    - Người dùng cần có quyền truy cập đối với splat này: nếu là superuser, họ có thể truy cập bất kỳ splat nào; nếu là người dùng bình thường, họ chỉ có thể truy cập splat của chính mình.
-    - Nếu splat không tồn tại hoặc người dùng không có quyền truy cập, sẽ trả về lỗi tương ứng.
+    - Endpoint này cho phép người dùng lấy thông tin chi tiết của một model cụ thể.
+    - Người dùng cần có quyền truy cập đối với model này: nếu là superuser, họ có thể truy cập bất kỳ model nào; nếu là người dùng bình thường, họ chỉ có thể truy cập model của chính mình.
+    - Nếu model không tồn tại hoặc người dùng không có quyền truy cập, sẽ trả về lỗi tương ứng.
 
     **Chi tiết về các hành động:**
-    - Kiểm tra xem splat có tồn tại hay không.
-    - Kiểm tra quyền của người dùng (superuser hoặc sở hữu splat).
-    - Trả về thông tin chi tiết của splat nếu người dùng có quyền truy cập.
+    - Kiểm tra xem model có tồn tại hay không.
+    - Kiểm tra quyền của người dùng (superuser hoặc sở hữu model).
+    - Trả về thông tin chi tiết của model nếu người dùng có quyền truy cập.
     """
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
     if not current_user:
-        if not splat.is_public:
+        if not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
     else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
-    return splat
+    return model
 
-@router.get("/{id}/download-splat", responses={
+@router.get("/{id}/file/splat", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
 def download_splat(
@@ -582,45 +576,46 @@ def download_splat(
     id: str,
 ) -> Any:
     """
-    Tải xuống splat đã hoàn thành.
+    Tải xuống model đã hoàn thành.
 
     **Yêu cầu Header:**
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần tải xuống (dưới dạng URL parameter).
+    - **id**: ID của model cần tải xuống (dưới dạng URL parameter).
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về file splat dưới dạng tải xuống.
+    - 200 OK: Trả về file model dưới dạng tải xuống.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu splat không tồn tại, trạng thái không thành công, hoặc không có quyền truy cập.
+    - 400 Bad Request: Nếu model không tồn tại, trạng thái không thành công, hoặc không có quyền truy cập.
     - 404 Not Found: Nếu file không tìm thấy tại đường dẫn đầu ra.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng tải xuống một splat nếu có quyền truy cập.
-    - Nếu người dùng không xác thực và splat không công khai, truy cập sẽ bị từ chối.
-    - Nếu splat chưa hoàn tất hoặc thất bại, yêu cầu tải xuống sẽ không được xử lý.
-    - Trạng thái của splat cần là `SUCCESS` và file phải có sẵn tại đường dẫn output.
+    - Endpoint này cho phép người dùng tải xuống một model nếu có quyền truy cập.
+    - Nếu người dùng không xác thực và model không công khai, truy cập sẽ bị từ chối.
+    - Nếu model chưa hoàn tất hoặc thất bại, yêu cầu tải xuống sẽ không được xử lý.
+    - Trạng thái của model cần là `SUCCESS` và file phải có sẵn tại đường dẫn output.
     """
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
     if not current_user:
-        if not splat.is_public:
+        if not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
     else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
-
-    if splat.status != 'SUCCESS':
+    if model.status != 'SUCCESS':
         raise HTTPException(
             status_code=404,
-            detail=f"Result not ready or task failed. Current state: {splat.status}")
+            detail=f"Result not ready or task failed. Current state: {model.status}")
 
-    output_path = splat.model_url
+    model_name = model.title + ".splat"
+    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), id, model_name)
     if not output_path:
         raise HTTPException(status_code=400, detail="Output path is None")
     if not os.path.exists(output_path):
+        print("hello")
         raise HTTPException(
             status_code=400,
             detail=f"Output file not found at: {output_path}"
@@ -634,7 +629,7 @@ def download_splat(
     )
 
 
-@router.get("/{id}/download-ply", responses={
+@router.get("/{id}/file/ply", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
 async def download_ply(
@@ -651,14 +646,14 @@ async def download_ply(
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần tải xuống (dưới dạng URL parameter).
+    - **id**: ID của model cần tải xuống (dưới dạng URL parameter).
     - **background_tasks**: Được sử dụng để lên lịch dọn dẹp file sau khi tải xuống.
 
     **Đầu ra (Response):**
     - 200 OK: Trả về file PLY dưới dạng tải xuống.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
-    - 404 Not Found: Nếu splat không tồn tại.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái model không thành công.
+    - 404 Not Found: Nếu model không tồn tại.
     - 500 Internal Server Error: Nếu có lỗi trong quá trình chuyển đổi file hoặc trong việc kiểm tra file.
 
     **Giải thích:**
@@ -668,24 +663,25 @@ async def download_ply(
     - Sử dụng lệnh `gsbox` để chuyển đổi từ `.splat` sang `.ply`. Quá trình này diễn ra bất đồng bộ.
     - Sau khi tải xuống, file sẽ được lên lịch dọn dẹp trong nền.
     """
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
 
     if not current_user:
-        if not splat.is_public:
+        if not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
     else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
-    if splat.status != 'SUCCESS':
+    if model.status != 'SUCCESS':
         raise HTTPException(
             status_code=404,
-            detail=f"Result not ready or task failed. Current state: {splat.status}"
+            detail=f"Result not ready or task failed. Current state: {model.status}"
         )
 
-    input_path = splat.model_url
+    model_name = model.title + ".splat"
+    input_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), id, model_name)
     if not input_path or not os.path.exists(input_path):
         raise HTTPException(status_code=400, detail="Input .splat file not found")
 
@@ -719,10 +715,10 @@ async def download_ply(
     )
 
 import json
-@router.get("/{id}/metadata", responses={
+@router.get("/{id}/colmap/json", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
-async def get_splat_metadata(
+async def get_colmap_json(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_guess_user),
@@ -735,48 +731,43 @@ async def get_splat_metadata(
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần lấy metadata (dưới dạng URL parameter).
+    - **id**: ID của model cần lấy metadata (dưới dạng URL parameter).
 
     **Đầu ra (Response):**
     - 200 OK: Trả về JSON chứa dữ liệu từ cameras.json, points.json và danh sách images_url.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
-    - 404 Not Found: Nếu splat không tồn tại.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái model không thành công.
+    - 404 Not Found: Nếu model không tồn tại.
     - 500 Internal Server Error: Nếu có lỗi trong quá trình đọc hoặc xử lý file.
 
     **Giải thích:**
     - Endpoint này cho phép người dùng lấy metadata liên quan đến file `.splat`.
     - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể truy cập metadata.
     - File `.splat` cần có trạng thái `SUCCESS` và tồn tại trên hệ thống.
-    - Endpoint sẽ tìm và đọc file cameras.json, points.json, và liệt kê đường dẫn images trong cùng thư mục với file splat.
+    - Endpoint sẽ tìm và đọc file cameras.json, points.json, và liệt kê đường dẫn images trong cùng thư mục với file model.
     """
-    # Kiểm tra splat có tồn tại
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
+    # Kiểm tra model có tồn tại
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
 
     # Kiểm tra quyền truy cập
     if not current_user:
-        if not splat.is_public:
+        if not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
     else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # Kiểm tra trạng thái
-    if splat.status != 'SUCCESS':
+    if model.status != 'SUCCESS':
         raise HTTPException(
             status_code=404,
-            detail=f"Result not ready or task failed. Current state: {splat.status}"
+            detail=f"Result not ready or task failed. Current state: {model.status}"
         )
 
     # Lấy đường dẫn thư mục từ model_url
-    splat_file_path = splat.model_url
-    if not splat_file_path or not os.path.exists(splat_file_path):
-        raise HTTPException(status_code=404, detail="Input .splat file not found")
-
-    # Lấy thư mục chứa splat file
-    dir_path = os.path.dirname(splat_file_path)
+    dir_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), id)
     
     # Đường dẫn đến các file metadata
     cameras_json_path = os.path.join(dir_path, 'cameras.json')
@@ -816,10 +807,10 @@ async def get_splat_metadata(
         raise HTTPException(status_code=500, detail=f"Error retrieving metadata: {str(e)}")
     
 
-@router.get("/{id}/download-colmap", responses={
+@router.get("/{id}/colmap/zip", responses={
     401: {"model": schemas.Detail, "description": "User unauthorized"}
 })
-async def download_colmap_files(
+async def download_colmap_zip(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_guess_user),
@@ -832,44 +823,44 @@ async def download_colmap_files(
     - Cần xác thực người dùng qua token JWT trong header `Authorization`.
 
     **Đầu vào (Request Parameters):**
-    - **id**: ID của splat cần tải xuống các file COLMAP (dưới dạng URL parameter).
+    - **id**: ID của model cần tải xuống các file COLMAP (dưới dạng URL parameter).
     - **background_tasks**: Được sử dụng để lên lịch dọn dẹp file sau khi tải xuống.
 
     **Đầu ra (Response):**
     - 200 OK: Trả về file ZIP chứa các file COLMAP và thư mục images.
     - 401 Unauthorized: Nếu người dùng chưa xác thực hoặc token không hợp lệ.
-    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái splat không thành công.
-    - 404 Not Found: Nếu splat không tồn tại hoặc thư mục COLMAP không tồn tại.
+    - 400 Bad Request: Nếu không có quyền truy cập, file không tồn tại, hoặc trạng thái model không thành công.
+    - 404 Not Found: Nếu model không tồn tại hoặc thư mục COLMAP không tồn tại.
 
     **Giải thích:**
-    - Endpoint này cho phép người dùng tải xuống các file COLMAP liên quan đến splat dưới dạng file ZIP.
+    - Endpoint này cho phép người dùng tải xuống các file COLMAP liên quan đến model dưới dạng file ZIP.
     - Chỉ người dùng có quyền truy cập (superuser hoặc chủ sở hữu) mới có thể tải xuống.
     - File ZIP sẽ chứa: cameras.bin, images.bin, points3D.bin và thư mục images.
     - File ZIP được tạo trong bộ nhớ và gửi đi mà không lưu trữ tạm thời trên ổ đĩa.
     """
-    # Kiểm tra splat có tồn tại
-    splat = crud.splat.get(db=db, id=id)
-    if not splat:
-        raise HTTPException(status_code=404, detail="Splat not found")
+    # Kiểm tra model có tồn tại
+    model = crud.model.get(db=db, id=id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
 
     # Kiểm tra quyền truy cập
     if not current_user:
-        if not splat.is_public:
+        if not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
     else:
-        if not current_user.is_superuser and current_user.id != splat.owner_id and not splat.is_public:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
             raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # Kiểm tra trạng thái
-    if splat.status != 'SUCCESS':
+    if model.status != 'SUCCESS':
         raise HTTPException(
             status_code=404,
-            detail=f"Result not ready or task failed. Current state: {splat.status}"
+            detail=f"Result not ready or task failed. Current state: {model.status}"
         )
 
     # Tìm thư mục colmap
-    user_id = splat.owner_id
-    colmap_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(user_id), splat.id, "colmap")
+    user_id = model.owner_id
+    colmap_dir = os.path.join(settings.MODEL_WORKSPACES_DIR, str(user_id), model.id, "colmap")
     
     if not os.path.exists(colmap_dir):
         raise HTTPException(status_code=404, detail="COLMAP directory not found")

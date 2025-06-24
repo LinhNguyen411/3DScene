@@ -1,10 +1,10 @@
 import { Canvas, useFrame } from '@react-three/fiber';
-import { StatsGl, Loader, Grid, OrbitControls, FirstPersonControls, PerspectiveCamera } from '@react-three/drei';
+import { StatsGl, Loader, Grid, OrbitControls, FirstPersonControls, PerspectiveCamera, FlyControls } from '@react-three/drei';
+// 1. Import useRef and useEffect
 import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import SplatViewer from './splat_view/SplatViewer';
 import PointCloud from './colmap_view/PointCloud';
 import Cameras from './colmap_view/Cameras';
-import ImagePopup from './colmap_view/ImagePopup';
 import * as THREE from 'three';
 import myAppConfig from '../../config';
 import { 
@@ -25,37 +25,67 @@ const Axes = () => {
   return <primitive object={axesHelper} />;
 };
 
-// Default camera settings
-const DEFAULT_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
-const DEFAULT_CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
-const DEFAULT_CAMERA_FOV = 50;
 
-function ModelCanvas({ viewMode, splatUrl, colmapData }) {
+function ModelCanvas({ model, viewMode, splatUrl, colmapData, onSaveView }) {
     // References
+    const FALLBACK_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
+    const FALLBACK_CAMERA_QUATERNION = new THREE.Quaternion();
+    const DEFAULT_CAMERA_FOV = 50;
+
     const orbitControlsRef = useRef();
     const prevFovRef = useRef(DEFAULT_CAMERA_FOV);
     const cameraRef = useRef();
+
+
+    const DEFAULT_CAMERA_POSITION = useMemo(() => {
+        if (model?.camera_init?.position) {
+            if (Array.isArray(model.camera_init.position)) {
+                const [x, y, z] = model.camera_init.position;
+                return new THREE.Vector3(x, y, z);
+            }
+            return new THREE.Vector3(
+                model.camera_init.position.x || 0,
+                model.camera_init.position.y || 0,
+                model.camera_init.position.z || 0
+            );
+        }
+        return FALLBACK_CAMERA_POSITION;
+    }, [model?.camera_init?.position]);
     
-    // Check if colmap data is valid and complete
-    const hasValidColmapData = useMemo(() => {
-        return colmapData && 
-               colmapData.cameras && 
-               colmapData.points && 
-               colmapData.images &&
-               Array.isArray(colmapData.cameras) &&
-               Array.isArray(colmapData.points) &&
-               colmapData.cameras.length > 0 &&
-               colmapData.points.length > 0;
-    }, [colmapData]);
+    const DEFAULT_CAMERA_QUATERNION = useMemo(() => {
+        if (model?.camera_init?.quaternion) {
+            if (Array.isArray(model.camera_init.quaternion)) {
+                const [x, y, z, w] = model.camera_init.quaternion;
+                return new THREE.Quaternion(x, y, z, w);
+            }
+            return new THREE.Quaternion(
+                model.camera_init.quaternion._x || model.camera_init.quaternion.x || 0,
+                model.camera_init.quaternion._y || model.camera_init.quaternion.y || 0,
+                model.camera_init.quaternion._z || model.camera_init.quaternion.z || 0,
+                model.camera_init.quaternion._w !== undefined ? model.camera_init.quaternion._w : (model.camera_init.quaternion.w !== undefined ? model.camera_init.quaternion.w : 1)
+            );
+        }
+        return FALLBACK_CAMERA_QUATERNION.clone();
+    }, [model?.camera_init?.quaternion]);
     
-    // Reset view handler
+    const DEFAULT_CAMERA_TARGET = useMemo(() => {
+        if (model?.camera_init?.target) {
+            const { x, y, z } = model.camera_init.target;
+            return new THREE.Vector3(x, y, z);
+        }
+        const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(DEFAULT_CAMERA_QUATERNION);
+        const baseDistance = -10;
+        return new THREE.Vector3().copy(DEFAULT_CAMERA_POSITION).add(
+            direction.multiplyScalar(baseDistance)
+        );
+    }, [model?.camera_init?.target, DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_QUATERNION]);
+    
     const handleResetView = useCallback(() => {
         if (!cameraRef.current || !orbitControlsRef.current) return;
         
         const camera = cameraRef.current;
         const controls = orbitControlsRef.current;
         
-        // Store initial values
         const initialPosition = camera.position.clone();
         const initialFov = camera.fov;
         const initialTarget = new THREE.Vector3();
@@ -63,30 +93,24 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
             initialTarget.copy(controls.target);
         }
         
-        // Animation parameters
-        const duration = 1500; // 1.5 seconds, same as the GSAP version
+        const duration = 1500;
         const startTime = Date.now();
         
-        // Animation function
         function animateReset() {
             const elapsedTime = Date.now() - startTime;
             const progress = Math.min(elapsedTime / duration, 1);
             
-            // Easing function for smooth animation (ease-in-out)
             const easeProgress = progress < 0.5 
                 ? 2 * progress * progress 
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
             
-            // Interpolate camera position
             camera.position.x = initialPosition.x + (DEFAULT_CAMERA_POSITION.x - initialPosition.x) * easeProgress;
             camera.position.y = initialPosition.y + (DEFAULT_CAMERA_POSITION.y - initialPosition.y) * easeProgress;
             camera.position.z = initialPosition.z + (DEFAULT_CAMERA_POSITION.z - initialPosition.z) * easeProgress;
             
-            // Interpolate field of view
             camera.fov = initialFov + (DEFAULT_CAMERA_FOV - initialFov) * easeProgress;
             camera.updateProjectionMatrix();
             
-            // Interpolate orbit controls target
             if (controls.target) {
                 controls.target.x = initialTarget.x + (DEFAULT_CAMERA_TARGET.x - initialTarget.x) * easeProgress;
                 controls.target.y = initialTarget.y + (DEFAULT_CAMERA_TARGET.y - initialTarget.y) * easeProgress;
@@ -97,193 +121,128 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                 }
             }
             
-            // Update state references when animation completes
             if (progress >= 1) {
                 prevFovRef.current = DEFAULT_CAMERA_FOV;
-                cameraStateRef.current = {
-                    position: DEFAULT_CAMERA_POSITION.clone(),
-                    quaternion: camera.quaternion.clone(),
-                    target: DEFAULT_CAMERA_TARGET.clone(),
-                    fov: DEFAULT_CAMERA_FOV
-                };
             } else {
-                // Continue animation if not done
                 requestAnimationFrame(animateReset);
             }
         }
         
-        // Start animation
         animateReset();
+    }, [DEFAULT_CAMERA_POSITION, DEFAULT_CAMERA_TARGET]);
+
+    const logCameraInfo = useCallback(() => {
+        if (cameraRef.current) {
+            console.log('Camera Position:', cameraRef.current.position);
+            console.log('Camera Quaternion:', cameraRef.current.quaternion);
+            console.log('Camera FOV:', cameraRef.current.fov);
+        }
+        if (orbitControlsRef.current && orbitControlsRef.current.target) {
+            console.log('Orbit Controls Target:', orbitControlsRef.current.target);
+        }
     }, []);
 
-    // Use the separated Leva controls - only disable when in colmap mode with valid data
-    const shouldDisableControls = viewMode === 'colmap' && hasValidColmapData;
-    const position = usePositionControls(!shouldDisableControls);
-    const rotate = useRotationControls(!shouldDisableControls);
-    const camera = useCameraControls(handleResetView);
-    const grid = useGridControls();
-    const flyControls = useFlyControls(camera.mode === 'Fly');
-    
-    // Store camera state for each mode
-    const cameraStateRef = useRef({
-        position: DEFAULT_CAMERA_POSITION.clone(),
-        quaternion: new THREE.Quaternion(),
-        target: DEFAULT_CAMERA_TARGET.clone(),
-        fov: DEFAULT_CAMERA_FOV
-    });
+    const defaultPosition = useMemo(() => model?.model_transform?.position || { x: 0, y: 0, z: 0 }, [model]);
+    const defaultRotation = useMemo(() => model?.model_transform?.rotation || { x: 0, y: 0, z: 0, scale: 1 }, [model]);
 
-    // Colmap specific state
-    const [popupState, setPopupState] = useState({
-        isOpen: false,
-        imageUrl: "",
-        imageName: ""
-    });
+    const [position, setPosition] = usePositionControls(defaultPosition, true);
+    const [rotate, setRotate] = useRotationControls(defaultRotation, true);
 
-    const handleImageClick = (camera, imageUrl) => {
-        setPopupState({
-            isOpen: true,
-            imageUrl: imageUrl,
-            imageName: camera.name || `Camera ${camera.uniqueId}`
-        });
-    };
+    // **FIX STARTS HERE**
 
-    const closePopup = () => {
-        setPopupState({
-            ...popupState,
-            isOpen: false
-        });
-    };
+    // 2. Create refs to hold the latest state values.
+    const positionRef = useRef(position);
+    const rotateRef = useRef(rotate);
 
-    // Save camera state when switching modes
+    // 3. Keep the refs in sync with the state on every render.
     useEffect(() => {
-        if (!cameraRef.current || !orbitControlsRef.current) return;
+        positionRef.current = position;
+    }, [position]);
 
-        // Save current camera state
-        cameraStateRef.current.position.copy(cameraRef.current.position);
-        cameraStateRef.current.quaternion.copy(cameraRef.current.quaternion);
-        cameraStateRef.current.fov = camera.fov;
-        
-        if (orbitControlsRef.current.target) {
-            cameraStateRef.current.target.copy(orbitControlsRef.current.target);
-        }
-    }, [viewMode]);
-
-    // Restore camera state when canvas is ready
     useEffect(() => {
-        if (!cameraRef.current || !orbitControlsRef.current) return;
+        rotateRef.current = rotate;
+    }, [rotate]);
 
-        // Restore camera state
-        cameraRef.current.position.copy(cameraStateRef.current.position);
-        cameraRef.current.quaternion.copy(cameraStateRef.current.quaternion);
-        cameraRef.current.fov = cameraStateRef.current.fov;
-        
-        if (orbitControlsRef.current.target) {
-            orbitControlsRef.current.target.copy(cameraStateRef.current.target);
+
+    // 4. Update handleSave to read from the refs.
+    const handleSave = useCallback(() => {
+        if (!cameraRef.current || !orbitControlsRef.current) {
+            console.error("Camera or controls ref not available.");
+            return;
         }
-        
-        if (orbitControlsRef.current.update) {
-            orbitControlsRef.current.update();
-        }
-    }, [cameraRef.current, orbitControlsRef.current]);
 
-    // Effect to implement dolly effect in Orbit mode
-    useEffect(() => {
-        if (camera.mode === 'Orbit' && orbitControlsRef.current) {
-            const controls = orbitControlsRef.current;
-            const target = controls.target;
-            const cameraObj = controls.object;
-            const prevFov = prevFovRef.current;
-            const newFov = camera.fov;
+        // Read the LATEST values from the refs' .current property
+        const currentPosition = positionRef.current;
+        const currentRotate = rotateRef.current;
 
-            if (prevFov !== newFov) {
-                const prevTan = Math.tan((prevFov * Math.PI / 180) / 2);
-                const newTan = Math.tan((newFov * Math.PI / 180) / 2);
-                const factor = prevTan / newTan;
-
-                const currentDistance = cameraObj.position.distanceTo(target);
-                const newDistance = currentDistance * factor;
-
-                const direction = new THREE.Vector3()
-                    .subVectors(cameraObj.position, target)
-                    .normalize();
-                const newPosition = target.clone().add(direction.multiplyScalar(newDistance));
-                
-                // Animate to new position for a smoother transition
-                const initialPosition = cameraObj.position.clone();
-                const duration = 500; // 0.5 seconds
-                const startTime = Date.now();
-                
-                function animateDolly() {
-                    const elapsedTime = Date.now() - startTime;
-                    const progress = Math.min(elapsedTime / duration, 1);
-                    
-                    // Simple ease-out function
-                    const easeProgress = 1 - Math.pow(1 - progress, 2);
-                    
-                    // Interpolate position
-                    cameraObj.position.x = initialPosition.x + (newPosition.x - initialPosition.x) * easeProgress;
-                    cameraObj.position.y = initialPosition.y + (newPosition.y - initialPosition.y) * easeProgress;
-                    cameraObj.position.z = initialPosition.z + (newPosition.z - initialPosition.z) * easeProgress;
-                    
-                    controls.update();
-                    
-                    if (progress < 1) {
-                        requestAnimationFrame(animateDolly);
-                    }
-                }
-                
-                animateDolly();
-                prevFovRef.current = newFov;
+        const viewData = {
+            camera_init: {
+                position: cameraRef.current.position.clone(),
+                quaternion: cameraRef.current.quaternion.clone(),
+                target: orbitControlsRef.current.target.clone(),
+            },
+            model_transform: {
+                position: {x: currentPosition.x, y: currentPosition.y, z: currentPosition.z},
+                rotation: {x: currentRotate.x, y: currentRotate.y, z: currentRotate.z, scale: currentRotate.scale}
             }
-        }
-    }, [camera.fov, camera.mode]);
+        };
 
-    // Set up controls based on camera mode
+        if (onSaveView) {
+            onSaveView(viewData);
+        } else {
+            console.log("Save data payload (no callback provided):", viewData);
+        }
+    // The callback now only depends on `onSaveView`, making it much more stable.
+    // It no longer needs `position` or `rotate` as dependencies.
+    }, [onSaveView]); 
+
+    // **FIX ENDS HERE**
+
+    const [camera, setCamera] = useCameraControls(handleResetView, logCameraInfo, handleSave);
+    const [grid, setGrid] = useGridControls(true);
+    const [flyControls, setFly] = useFlyControls({ movementSpeed: 2, lookSpeed: 0.05}, camera.mode != 'Fly');
+
     const Controls = useMemo(() => {
         if (camera.mode === 'Orbit') {
             return (
                    <OrbitControls 
                       ref={orbitControlsRef}
-                      onUpdate={(controls) => {
-                        if (controls.object) {
-                          controls.object.userData.controls = controls;
-                        }
-                      }}
+                      target={DEFAULT_CAMERA_TARGET}
                       enableDamping={true}
                       dampingFactor={0.05}
                       rotateSpeed={0.5}
                       zoomSpeed={0.5}
                       panSpeed={0.5}
-                      momentum={false}
                 />
             );
         } else {
             return (
-                <FirstPersonControls
-                    ref={orbitControlsRef}
-                    lookSpeed={flyControls.lookSpeed}
-                    movementSpeed={flyControls.movementSpeed}
-                    lookVertical={true}
-                    constrainVertical={true}
-                    verticalMin={Math.PI / 4}
-                    verticalMax={Math.PI}
-                    heightSpeed={false}
+                <FlyControls
+                   autoForward={false} 
+                   dragToLook={true} 
+                   movementSpeed={2} 
+                   rollSpeed={Math.PI / 24}
                 />
             );
         }
-    }, [camera.mode, flyControls.movementSpeed, flyControls.lookSpeed]);
-
-    // Determine canvas background color based on view mode and data availability
+    }, [camera.mode, flyControls.movementSpeed, flyControls.lookSpeed, DEFAULT_CAMERA_TARGET]);
+    
+    // ... (rest of your component is unchanged)
     const canvasBackgroundColor = useMemo(() => {
-        if (viewMode === 'colmap' && hasValidColmapData) {
+        if (viewMode === 'colmap') {
             return "bg-black";
         }
         return "bg-white";
-    }, [viewMode, hasValidColmapData]);
+    }, [viewMode]);
 
-    // Determine grid colors based on view mode and data availability
+    useEffect(() => {
+        if (cameraRef.current) {
+            cameraRef.current.quaternion.copy(DEFAULT_CAMERA_QUATERNION);
+        }
+    }, [DEFAULT_CAMERA_QUATERNION]);
+
     const gridColors = useMemo(() => {
-        if (viewMode === 'colmap' && hasValidColmapData) {
+        if (viewMode === 'colmap') {
             return {
                 sectionColor: "#ffffff",
                 cellColor: "#ffffff"
@@ -293,7 +252,14 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
             sectionColor: "#3B82F6",
             cellColor: "#3B82F6"
         };
-    }, [viewMode, hasValidColmapData]);
+    }, [viewMode]);
+
+    const handleSplatTargetChange = useCallback((newTarget) => {
+        console.log(newTarget)
+        if (orbitControlsRef.current && camera.mode === 'Orbit') {
+        }
+    }, [camera.mode]);
+    
 
     return (
         <div className="relative w-full h-full">
@@ -301,23 +267,22 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                 <PerspectiveCamera 
                     ref={cameraRef}
                     makeDefault 
-                    position={[0,0,0]} 
+                    position={DEFAULT_CAMERA_POSITION} 
                     fov={camera.fov} 
                 />
                 <StatsGl trackGPU={true} className="stats absolute bottom-[60px]" />
                 
-                {/* Splat Viewer - Always render when splatUrl is available and in splat mode */}
                 {viewMode === 'splat' && splatUrl && (
                     <SplatViewer
                         splatUrl={splatUrl}
                         position={[position.x, position.y, position.z]}
                         rotation={[rotate.x, -rotate.y, -rotate.z]}
-                        scale={rotate.scale + 5}
+                        scale={rotate.scale + 4.25}
+                        onTargetChange={handleSplatTargetChange}
                     />
                 )}
                 
-                {/* Colmap Viewer - Only render when in colmap mode AND valid colmap data exists */}
-                {viewMode === 'colmap' && hasValidColmapData && (
+                {viewMode === 'colmap' && model.colmap_url && (
                     <>
                         <ambientLight intensity={1} />
                         <group 
@@ -328,7 +293,6 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                           <Cameras 
                             imageBasePath={myAppConfig.api.ENDPOINT + colmapData.images}
                             cameras={colmapData.cameras}
-                            onImageClick={handleImageClick}
                           />
                           <PointCloud points={colmapData.points}/>
                         </group>
@@ -336,8 +300,7 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
                     </>
                 )}
                 
-                {/* Fallback message when in colmap mode but no valid data */}
-                {viewMode === 'colmap' && !hasValidColmapData && (
+                {viewMode === 'colmap' && !model.colmap_url && (
                     <mesh position={[0, 0, 0]}>
                         <planeGeometry args={[4, 2]} />
                         <meshBasicMaterial color="#666666" transparent opacity={0.8} />
@@ -360,18 +323,7 @@ function ModelCanvas({ viewMode, splatUrl, colmapData }) {
               </Canvas>
             <Loader />
             
-            {/* Popup component outside of Canvas - Only show when in colmap mode with valid data */}
-            {viewMode === 'colmap' && hasValidColmapData && (
-                <ImagePopup 
-                    isOpen={popupState.isOpen}
-                    imageUrl={popupState.imageUrl}
-                    imageName={popupState.imageName}
-                    onClose={closePopup}
-                />
-            )}
-            
-            {/* Error message overlay when in colmap mode but no valid data */}
-            {viewMode === 'colmap' && !hasValidColmapData && (
+            {viewMode === 'colmap' && !model.colmap_url && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white">
                     <div className="text-center p-8 bg-gray-800 rounded-lg">
                         <div className="text-6xl mb-4">📷</div>

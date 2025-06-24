@@ -1,5 +1,5 @@
 from .crud_user import user
-from .crud_splat import splat
+from .crud_model import model
 from .crud_feedback import feedback
 from .crud_payment import payment
 from .crud_order import order

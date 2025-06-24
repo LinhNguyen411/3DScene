@@ -25,7 +25,7 @@ const CameraInstance = ({
   
   useEffect(() => {
     if (isHovered) {
-      console.log(`Hovered camera: ${item.name || item.uniqueId}`);
+      console.log(`Hovered camera: ${camera.quaternion}`);
     }
   }, [isHovered, item.name, item.uniqueId]);
 
@@ -94,7 +94,6 @@ const CameraInstance = ({
 
   // Handle camera focus and zoom on click
    const handleClick = (e) => {
-    console.log(item.position)
     e.stopPropagation();
 
     // Get the current world matrix from the mesh to account for all parent transformations
@@ -110,6 +109,7 @@ const CameraInstance = ({
     mesh.getWorldQuaternion(worldQuaternion);
     
     // Create a direction vector based on the camera orientation
+    console.log("quanternion",worldQuaternion)
     const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(worldQuaternion);
     
     // Get the world scale to adjust the viewing distance
@@ -125,14 +125,16 @@ const CameraInstance = ({
     const targetPosition = new THREE.Vector3().copy(worldPosition).add(
       direction.multiplyScalar(adjustedDistance)
     );
-    
+
+    console.log("camera position:", targetPosition)
+    console.log("orbit target:", worldPosition)
     // Create a temporary object to animate to
     const currentPosition = camera.position.clone();
     const currentTarget = new THREE.Vector3(0, 0, 0);
     if (camera.userData.controls) {
       currentTarget.copy(camera.userData.controls.target);
     }
-    console.log(targetPosition)
+
     // Store initial values
     const initialPositionX = currentPosition.x;
     const initialPositionY = currentPosition.y;
@@ -253,7 +255,7 @@ const LODCameraInstance = (props) => {
 };
 
 // Main Cameras component
-const Cameras = ({ cameras, imageBasePath = '/images/', onImageClick }) => {
+const Cameras = ({ cameras, imageBasePath = '/images/' }) => {
   const [cameraData, setCameraData] = useState([]);
   const [hoveredCameraId, setHoveredCameraId] = useState(null);
   const { camera } = useThree();
@@ -287,11 +289,6 @@ const Cameras = ({ cameras, imageBasePath = '/images/', onImageClick }) => {
     processedRef.current = true;
   }, [cameras]);
 
-  const handleCameraClick = (camera, imageUrl) => {
-    if (onImageClick) {
-      onImageClick(camera, imageUrl);
-    }
-  };
 
   // Preload frequently used textures
   useEffect(() => {
@@ -326,7 +323,6 @@ const Cameras = ({ cameras, imageBasePath = '/images/', onImageClick }) => {
                 setHoveredCameraId(null);
                 document.body.style.cursor = 'auto';
               }}
-              onCameraClick={handleCameraClick}
               cameraWidth={cameraWidth}
               cameraHeight={cameraHeight}
             />

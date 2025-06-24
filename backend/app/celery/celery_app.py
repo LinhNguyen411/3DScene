@@ -17,6 +17,8 @@ from app import schemas
 from app.db.session import SessionLocal
 
 from app.utils.export_to_json import process_colmap_model
+from datetime import datetime
+import json
 
 celery_app = Celery('tasks')
 celery_app.conf.broker_url = os.environ.get(
@@ -81,9 +83,9 @@ def process_video(self: Task,
         self.update_state(state=states.STARTED,
                           meta={"status": "Started processing"})
         
-        splat_in = schemas.SplatUpdate(status = "STARTED")
-        splat = crud.splat.get(db, id= task_id)
-        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        model_in = schemas.ModelUpdate(status = "STARTED")
+        model = crud.model.get(db, id= task_id)
+        crud.model.update(db = db, db_obj=model, obj_in=model_in)
 
         # Create workspace directory
         dataset_path = os.path.join(workspace_path, "workspace")
@@ -122,9 +124,9 @@ def process_video(self: Task,
         self.update_state(state="PROGRESS",
                           meta={"status": "Running COLMAP automatic reconstructor"})
         
-        splat_in = schemas.SplatUpdate(status = "PROGRESS")
-        splat = crud.splat.get(db, id= task_id)
-        crud.splat.update(db = db, db_obj=splat, obj_in=splat_in)
+        model_in = schemas.ModelUpdate(status = "PROGRESS")
+        model = crud.model.get(db, id= task_id)
+        crud.model.update(db = db, db_obj=model, obj_in=model_in)
 
         cmd = [
             "colmap", "automatic_reconstructor",
@@ -206,7 +208,8 @@ def process_video(self: Task,
         self.update_state(state="PROGRESS",
                           meta={"status": "Running OpenSplat"})
 
-        output_model = f"{task_id}_model.splat"
+
+        output_model = f"{model.title}.splat"
         cmd = [
             "opensplat",
             os.path.join(dataset_path, "to_opensplat"),
@@ -237,11 +240,37 @@ def process_video(self: Task,
             
             # Calculate the size of the compressed model in MB
             size = round(os.path.getsize(dst_path) / (1024 * 1024), 2)
-            
+
+            model_url = "models/" + task_id + "/file"
+            colmap_url = "models/" + task_id + "/colmap"
+
+            target_name = "video1_0001.png"
+            camera_json_path = os.path.join(workspace_path, "cameras.json")
+            with open(camera_json_path, "r") as f:
+                camera_data = json.load(f)
+
+            first_camera = next((cam for cam in camera_data if cam["name"] == target_name), None)
+
+            if first_camera is None:
+                raise ValueError(f"Camera with name '{target_name}' not found in cameras.json")
+            print([first_camera["position"][0], -first_camera["position"][1], -first_camera["position"][2]])
+            camera_init = {
+                "position": [first_camera["position"][0], -first_camera["position"][1], -first_camera["position"][2]],
+                "quaternion": [-first_camera["quaternion"][1], first_camera["quaternion"][2], first_camera["quaternion"][3], first_camera["quaternion"][0]]
+            }
+
             # Update the model_url to point to the compressed file and include model_size
-            splat_in = schemas.SplatUpdate(status="SUCCESS", model_url=dst_path, model_size=size)
-            splat = crud.splat.get(db, id=task_id)
-            crud.splat.update(db=db, db_obj=splat, obj_in=splat_in)
+            model_in = schemas.ModelUpdate(
+                status="SUCCESS",
+                model_url=model_url,
+                model_size=size,
+                colmap_url=colmap_url,
+                time_finished=datetime.now(),
+                camera_init=camera_init
+            )
+
+            model = crud.model.get(db, id=task_id)
+            crud.model.update(db=db, db_obj=model, obj_in=model_in)
         else:
             raise Exception(f"Compression failed: {dst_path} not found")
 

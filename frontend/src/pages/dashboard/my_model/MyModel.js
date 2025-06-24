@@ -3,18 +3,18 @@ import { Search, GlobeLock, Globe,Loader } from 'lucide-react';
 import DataService from './MyModelServices';
 import myAppConfig from "../../../config";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { MoreHorizontal, Pencil, Download, Trash } from "lucide-react";
+import { MoreHorizontal, Pencil, Download, Trash, ChevronDown } from "lucide-react";
 import { useSnackbar } from '../../../provider/SnackbarProvider';
 import { RouterPath } from '../../../assets/dictionary/RouterPath';
 import { Link, useOutletContext } from "react-router-dom";
-import { format } from 'date-fns';
-
+import { format, parseISO, differenceInSeconds, formatDuration, intervalToDuration } from 'date-fns';
 
 // Main App Component
 function MyModel(props){
   const { showSnackbar } = useSnackbar();
   const {user} = useOutletContext();
   const [models, setModels] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -147,27 +147,69 @@ function MyModel(props){
     <div className="flex-1">
         <main className="p-6">
             <div>
-                <div className="flex mb-6 border-b align-items-center">
-                {['All', 'Queuing', 'Processing', 'Succeeded', 'Failed'].map((tab) => (
-                    <button
-                    key={tab}
-                    className={`px-8 py-3 ${activeTab === tab ? 'text-sky-500 border-b-2 border-sky-500' : 'text-gray-500'}`}
-                    onClick={() => setActiveTab(tab)}
-                    >
-                    {tab}
-                    </button>
-                ))}
-                  <div className="relative ml-auto">
-                      <input
-                      type="text"
-                      placeholder="Search your 3D Models"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-gray-100 pl-10 pr-4 py-2 rounded-lg w-64"
-                      />
-                      <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
-                  </div>
-                </div>
+                <div className="flex flex-col sm:flex-row mb-6 border-b gap-4 sm:gap-0 sm:items-center">
+  {/* Tab buttons - dropdown on mobile, row on desktop */}
+  <div className="w-full sm:w-auto">
+    {/* Mobile dropdown */}
+    <div className="sm:hidden relative">
+      <button
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-left flex items-center justify-between hover:bg-gray-50"
+      >
+        <span className="text-gray-900">{activeTab}</span>
+        <ChevronDown size={16} className={`text-gray-500 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {dropdownOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+          {['All', 'Queuing', 'Processing', 'Succeeded', 'Failed'].map((tab) => (
+            <button
+              key={tab}
+              className={`w-full px-4 py-3 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                activeTab === tab ? 'bg-sky-50 text-sky-600' : 'text-gray-700'
+              }`}
+              onClick={() => {
+                setActiveTab(tab);
+                setDropdownOpen(false);
+              }}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+    
+    {/* Desktop tabs */}
+    <div className="hidden sm:flex">
+      {['All', 'Queuing', 'Processing', 'Succeeded', 'Failed'].map((tab) => (
+        <button
+          key={tab}
+          className={`px-8 py-3 text-base ${
+            activeTab === tab 
+              ? 'text-sky-500 border-b-2 border-sky-500' 
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab(tab)}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  </div>
+  
+  {/* Search input - full width on mobile, auto width on desktop */}
+  <div className="relative sm:ml-auto w-full sm:w-auto">
+    <input
+      type="text"
+      placeholder="Search your 3D Models"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      className="bg-gray-100 pl-10 pr-4 py-2 rounded-lg w-full sm:w-64 text-sm sm:text-base"
+    />
+    <Search size={16} className="absolute left-3 top-2.5 text-gray-500" />
+  </div>
+</div>
                 
                
                 
@@ -176,7 +218,7 @@ function MyModel(props){
                     <div className="bg-white rounded-lg shadow">
                       <div className="relative">
                         <Link 
-                          to={RouterPath.MODEL_VIEW + "?id=" + model.id + "&viewer=user"} 
+                          to={RouterPath.MODEL_STUDIO + "?id=" + model.id + "&viewer=user"} 
                           key={model.id} 
                           style={model.status !== 'SUCCESS' ? { pointerEvents: 'none', opacity: 0.5 } : {}}
                           className={model.status !== 'SUCCESS' ? 'cursor-not-allowed' : ''}
@@ -254,6 +296,19 @@ function MyModel(props){
                           <div className="mt-2 flex items-center">
                           {model.is_public ? <span className="flex text-xs px-2 py-1 bg-teal-100 text-teal-800 rounded mr-2"><Globe size={16} className='mr-1'/> Published</span> : <span className="flex text-xs px-2 py-1 bg-sky-100 text-sky-800 rounded mr-2"><GlobeLock className='mr-1' size={16}/> Unpublish</span>}
                           <span className="text-xs text-gray-500">{format(new Date(model.date_created), 'HH:mm:ss dd/MM/yyyy')}</span>
+                           {model.time_finished && (
+                              <span className="text-xs text-gray-500 ml-4">
+                                ⏱ {
+                                  formatDuration(
+                                    intervalToDuration({
+                                      start: new Date(model.date_created),
+                                      end: new Date(model.time_finished),
+                                    }),
+                                    { format: ['hours', 'minutes', 'seconds'] }
+                                  )
+                                }
+                              </span>
+                            )}
                           {model.model_size && <span className="text-md ml-auto">{model.model_size} MB</span>}
                           </div>
                       </div>

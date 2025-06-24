@@ -1,11 +1,13 @@
 import { RouterPath } from "../../assets/dictionary/RouterPath";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Box, Earth, MessageSquare, UploadCloud, CreditCard, UserCog, ChevronDown } from 'lucide-react';
 
-export default function NavBarTop({ user, setUser, projectName, projectIcon }) {
+export default function NavBarTop({ user, setUser, projectName, projectIcon, supportEmail }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Check window size on mount and resize
@@ -44,6 +46,21 @@ export default function NavBarTop({ user, setUser, projectName, projectIcon }) {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const toggleDashboardDropdown = () => {
+    setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
+  };
+
+  const handleContactUs = () => {
+    // Open Gmail compose with recipient email already filled in
+    window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + supportEmail, '_blank');
+  };
+
+  const handleDashboardNavigation = (path) => {
+    navigate(path);
+    setIsDashboardDropdownOpen(false);
+    setIsMenuOpen(false);
   };
 
   return (
@@ -122,13 +139,85 @@ export default function NavBarTop({ user, setUser, projectName, projectIcon }) {
                     {projectName} Pro
                   </Link>
                 )}
-                <Link 
-                  to={RouterPath.DASHBOARD} 
-                  className={`text-gray-800 font-medium hover:text-sky-500 transition-colors ${isMobile ? 'block text-left' : ''}`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
+                
+                {/* Dashboard Dropdown */}
+                <div className={`relative ${isMobile ? 'w-full' : ''}`}>
+                  <button 
+                    onClick={toggleDashboardDropdown}
+                    className={`text-gray-800 font-medium hover:text-sky-500 transition-colors flex items-center ${isMobile ? 'text-left w-full justify-between' : ''}`}
+                  >
+                    Dashboard
+                    <ChevronDown size={16} className={`ml-1 transition-transform ${isDashboardDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isDashboardDropdownOpen && (
+                    <div className={`${isMobile ? 
+                      'mt-2 bg-gray-50 rounded p-2 space-y-2' : 
+                      'absolute top-full left-0 mt-1 w-48 bg-white shadow-lg rounded-md border z-50'}`}>
+                      
+                      <button
+                        onClick={() => handleDashboardNavigation(RouterPath.DASHBOARD_UPLOAD)}
+                        className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                      >
+                        <UploadCloud size={16} className="mr-2" />
+                        Upload
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDashboardNavigation(RouterPath.DASHBOARD_MY_MODEL)}
+                        className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                      >
+                        <Box size={16} className="mr-2" />
+                        Library
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDashboardNavigation(RouterPath.DASHBOARD_EXPLORE)}
+                        className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                      >
+                        <Earth size={16} className="mr-2" />
+                        Explore
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDashboardNavigation(RouterPath.DASHBOARD_FEEDBACK)}
+                        className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                      >
+                        <MessageSquare size={16} className="mr-2" />
+                        Feedback
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDashboardNavigation(RouterPath.DASHBOARD_BILLING)}
+                        className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                      >
+                        <CreditCard size={16} className="mr-2" />
+                        Billing
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDashboardNavigation(RouterPath.DASHBOARD_PROFILE)}
+                        className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                      >
+                        <UserCog size={16} className="mr-2" />
+                        Profile
+                      </button>
+                      
+                      {supportEmail && (
+                        <div className={`${isMobile ? '' : 'border-t pt-2'}`}>
+                          <button
+                            onClick={handleContactUs}
+                            className={`flex items-center p-2 w-full text-left hover:bg-sky-50 hover:text-sky-500 transition-colors ${isMobile ? 'rounded text-sm' : ''}`}
+                          >
+                            <MessageSquare size={16} className="mr-2" />
+                            Contact Us
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
                 <Link 
                   to={RouterPath.DASHBOARD_PROFILE} 
                   className={`header-link ${isMobile ? 'block text-left' : ''}`}

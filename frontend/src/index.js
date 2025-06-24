@@ -41,6 +41,7 @@ import SubscriptionSuccess from "./pages/subscription/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/subscription/SubscriptionCancel";
 import ModelView from "./pages/model_view/ModelView";
 import AdminPayment from "./admin-pages/admin-payment/AdminPayment";
+import ModelStudio from "./pages/model_studio/ModelStudio";
 
 import {SnackbarProvider} from './provider/SnackbarProvider';
 import {LoaderProvider} from './provider/LoaderProvider';
@@ -59,6 +60,10 @@ root.render(
       <BrowserRouter>
         <Routes>
           <Route
+              path={RouterPath.MODEL_STUDIO}
+              element={<ModelStudio />}
+            />
+            <Route
               path={RouterPath.MODEL_VIEW}
               element={<ModelView />}
             />

@@ -61,7 +61,7 @@ function Feedback(props){
     
 
     return(
-        <div className="flex-1 py-12 px-24">
+        <div className="flex-1 py-6 px-4 sm:py-8 sm:px-8 md:py-10 md:px-16 lg:py-12 lg:px-24">
             <h1 className="text-2xl font-medium mb-2">Feedback</h1>
             <p className="text-gray-500 mb-8">Leave your feedback and suggestions about 3DScene</p>
             

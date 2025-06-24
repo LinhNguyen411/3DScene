@@ -1,15 +1,20 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, Share, Download, Loader, Copy, Info, EyeIcon, Grid3X3 } from 'lucide-react';
-import { useNavigate, useOutletContext, useSearchParams, Link } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { ChevronLeft, Info, Maximize2, Minimize2, Download } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import DataService from './ModelViewService';
 import { useLoader } from '../../provider/LoaderProvider';
 import { useSnackbar } from '../../provider/SnackbarProvider';
 import { RouterPath } from '../../assets/dictionary/RouterPath';
 import myAppConfig from '../../config';
 import LinkNotValid from "../link_not_valid/LinkNotValid";
-import ModelCanvas from './ModelCanvas';
 
-export default function ModelView() {
+import { Canvas } from '@react-three/fiber';
+import { Loader, OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import SplatViewer from './splat_view/SplatViewer';
+import * as THREE from 'three';
+
+export default function SplatViewerPage() {
+    // ModelView Hooks and State
     const { showSnackbar } = useSnackbar();
     const { showLoader, hideLoader } = useLoader();
     let navigate = useNavigate();
@@ -17,156 +22,179 @@ export default function ModelView() {
     const id = searchParams.get('id');
     const viewer = searchParams.get('viewer');
     const [splatUrl, setSplatUrl] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [model, setModel] = useState(null);
-    const [currenUser, setCurrentUser] = useState(null);
     const [modelNotFound, setModelNotFound] = useState(false);
-    const [colmapData, setColmapData] = useState(null);
-    const [hasColmapData, setHasColmapData] = useState(false);
-    const [viewMode, setViewMode] = useState('splat'); // Always start with splat
-    const [colmapDataLoading, setColmapDataLoading] = useState(false);
-    const [colmapDataChecked, setColmapDataChecked] = useState(false);
-    const [projectName, setProjectName] = useState(null);
-    const [projectIcon, setProjectIcon] = useState(null);
-    
-    // Create a unique key for each model to reset Leva controls
-    const canvasKey = `model-${id}`;
+    const [showActionMenu, setShowActionMenu] = useState(false);
 
-    const handleExportSplat = async () => {
+    // ModelCanvas Hooks and State
+    const FALLBACK_CAMERA_POSITION = new THREE.Vector3(5, 2, 6);
+    const FALLBACK_CAMERA_QUATERNION = new THREE.Quaternion();
+    const FALLBACK_MODEL_POSITION = new THREE.Vector3(0,0,0);
+    const FALLBACK_MODEL_ROTATION = new THREE.Vector3(0,0,0);
+    const cameraRef = useRef();
+    const orbitControlsRef = useRef();
+    const [isFullScreen, setIsFullScreen] = useState(false);
+
+    const DEFAULT_CAMERA_POSITION = useMemo(() => {
+        if (model?.camera_init?.position) {
+            if (Array.isArray(model.camera_init.position)) {
+                const [x, y, z] = model.camera_init.position;
+                return new THREE.Vector3(x, y, z);
+            }
+            return new THREE.Vector3(
+                model.camera_init.position.x || 0,
+                model.camera_init.position.y || 0,
+                model.camera_init.position.z || 0
+            );
+        }
+        return FALLBACK_CAMERA_POSITION;
+    }, [model?.camera_init?.position]);
+
+    const DEFAULT_CAMERA_TARGET = useMemo(() => {
+        if (model?.camera_init?.target) {
+            const { x, y, z } = model.camera_init.target;
+            return new THREE.Vector3(x, y, z);
+        }
+        const direction = new THREE.Vector3(0, 0, 1).applyQuaternion(FALLBACK_CAMERA_QUATERNION);
+        const baseDistance = -10;
+        return new THREE.Vector3().copy(DEFAULT_CAMERA_POSITION).add(
+            direction.multiplyScalar(baseDistance)
+        );
+    }, [model?.camera_init?.target, DEFAULT_CAMERA_POSITION]);
+
+    const DEFAULT_MODEL_POSITION = useMemo(() => {
+        console.log(model?.model_transform?.position)
+        if (model?.model_transform?.position) {
+            if (Array.isArray(model.model_transform.position)) {
+                const [x, y, z] = model.model_transform.position;
+                return new THREE.Vector3(x, y, z);
+            }
+            return new THREE.Vector3(
+                model.model_transform.position.x || 0,
+                model.model_transform.position.y || 0,
+                model.model_transform.position.z || 0
+            );
+        }
+        return FALLBACK_MODEL_POSITION;
+    }, [model?.model_transform?.position]);
+
+    const DEFAULT_MODEL_ROTATION = useMemo(() => {
+        if (model?.model_transform?.rotation) {
+            if (Array.isArray(model.model_transform.rotation)) {
+                const [x, y, z, scale] = model.model_transform.rotation;
+                return new THREE.Vector3(x, y, z);
+            }
+            return new THREE.Vector3(
+                model.model_transform.rotation.x || 0,
+                model.model_transform.rotation.y || 0,
+                model.model_transform.rotation.z || 0
+            );
+        }
+        return FALLBACK_MODEL_ROTATION;
+    }, [model?.model_transform?.rotation]);
+
+    // Full screen logic
+    const handleFullScreen = async () => {
+        const container = document.getElementById('model-canvas-container');
         try {
-          setLoading(true);
-          await DataService.downloadSplat(model.id, model.title);
-          setIsExportModalOpen(false);
-          showSnackbar("Exported .splat file successfully!", "success");
+            if (!document.fullscreenElement) {
+                await container.requestFullscreen();
+                setIsFullScreen(true);
+            } else {
+                await document.exitFullscreen();
+                setIsFullScreen(false);
+            }
         } catch (error) {
-          console.error("Error exporting .splat:", error);
-          showSnackbar("Failed to export .splat file", "error");
-        }
-        finally{
-          setLoading(false);
-        }
-    };
-    
-    const handleExportPLY = async () => {
-        try {
-          setLoading(true);
-          await DataService.downloadPLY(model.id, model.title);
-          setIsExportModalOpen(false);
-          showSnackbar("Exported .ply file successfully!", "success");
-        } catch (error) {
-          console.error("Error exporting .ply:", error);
-          showSnackbar("Failed to export .ply file", "error");
-        }
-        finally{
-          setLoading(false);
-        }
-    };
-    const handleExportColmap = async () => {
-        try {
-          setLoading(true);
-          await DataService.downloadColmap(model.id, viewer);
-          setIsExportModalOpen(false);
-          showSnackbar("Exported COLMAP files successfully!", "success");
-        } catch (error) {
-          console.error("Error exporting COLMAP files:", error);
-          showSnackbar("Failed to export COLMAP files", "error");
-        }
-        finally{
-          setLoading(false);
+            console.error('Error toggling fullscreen:', error);
+            showSnackbar('Unable to toggle fullscreen mode', 'error');
         }
     };
 
-    const handleCopyLink = () => {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url)
-            .then(() => {
-                showSnackbar("Link copied to clipboard!", "success");
-            })
-            .catch((error) => {
-                console.error("Error copying link:", error);
-                showSnackbar("Failed to copy link", "error");
-            });
+    // Download splat logic
+    const handleDownloadSplat = async () => {
+        try {
+            showLoader();
+            await DataService.downloadSplat(id, model?.title, viewer);
+            showSnackbar('Splat file downloaded successfully', 'success');
+        } catch (error) {
+            console.error('Error downloading splat:', error);
+            showSnackbar('Failed to download splat file', 'error');
+        } finally {
+            hideLoader();
+        }
     };
 
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape' && isFullScreen) {
+                document.exitFullscreen();
+                setIsFullScreen(false);
+            }
+        };
+
+        const handleFullScreenChange = () => {
+            const wasFullScreen = isFullScreen;
+            const isCurrentlyFullScreen = !!document.fullscreenElement;
+            
+            setIsFullScreen(isCurrentlyFullScreen);
+            
+            // Fix scrollbar and height issues when exiting fullscreen
+            if (wasFullScreen && !isCurrentlyFullScreen) {
+                const container = document.getElementById('model-canvas-container');
+                const mainDiv = document.querySelector('.h-screen');
+                
+                // Reset all height-related styles
+                document.body.style.overflow = '';
+                document.body.style.height = '';
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.height = '';
+                
+                if (container) {
+                    container.style.height = '';
+                    container.style.maxHeight = '';
+                }
+                
+                if (mainDiv) {
+                    mainDiv.style.height = '';
+                    mainDiv.style.maxHeight = '';
+                }
+                
+                // Force multiple reflows to ensure proper height recalculation
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                    // Second reflow for stubborn cases
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event('resize'));
+                        // Force recalculation of viewport height
+                        document.body.style.height = '100vh';
+                        setTimeout(() => {
+                            document.body.style.height = '';
+                        }, 50);
+                    }, 100);
+                }, 50);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('fullscreenchange', handleFullScreenChange);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('fullscreenchange', handleFullScreenChange);
+        };
+    }, [isFullScreen]);
+
+    // Data fetching logic
     const handleBack = () => {
         if (window.history.length > 1) {
             navigate(-1);
         }
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
-
-    const formatFileSize = (size) => {
-        if (size < 1) return `${(size * 1000).toFixed(2)} KB`;
-        return `${size.toFixed(2)} MB`;
-    };
-
-    // Function to check if colmap data is available
-    const checkColmapAvailability = async () => {
-        if (colmapDataChecked) return;
-        
-        try {
-            const colmap = await DataService.getColmapData(id, viewer);
-            if (colmap && colmap.cameras && colmap.points && colmap.images) {
-                setHasColmapData(true);
-            } else {
-                setHasColmapData(false);
-            }
-        } catch (error) {
-            console.error('Error checking colmap availability:', error);
-            setHasColmapData(false);
-        } finally {
-            setColmapDataChecked(true);
-        }
-    };
-
-    // Function to load colmap data when user clicks colmap button
-    const loadColmapData = async () => {
-        if (colmapData) return; // Already loaded
-        
-        setColmapDataLoading(true);
-        try {
-            const colmap = await DataService.getColmapData(id, viewer);
-            if (colmap && colmap.cameras && colmap.points && colmap.images) {
-                console.log('colmap data:', colmap.images);
-                setColmapData(colmap);
-            } else {
-                showSnackbar("Colmap data not available", "error");
-                setHasColmapData(false);
-            }
-        } catch (error) {
-            console.error('Error loading colmap data:', error);
-            showSnackbar("Failed to load colmap data", "error");
-            setHasColmapData(false);
-        } finally {
-            setColmapDataLoading(false);
-        }
-    };
-
-    const handleViewModeToggle = async (mode) => {
-        if (mode === 'colmap' && !colmapData) {
-            await loadColmapData();
-        }
-        setViewMode(mode);
-    };
-
     let objectUrl;
     const fetchAndProcess = async () => {
         try {
             showLoader();
-            const user = await DataService.getAuth(viewer);
-            setCurrentUser(user);
-            
             try {
                 const splat = await DataService.getSplat(id, viewer);
                 if (!splat) {
@@ -182,20 +210,17 @@ export default function ModelView() {
                 return;
             }
             
-            // Check if colmap data is available (but don't load it yet)
-            await checkColmapAvailability();
-            
             try {
                 const response = await DataService.getModel(id, viewer);
                 if (!response || response.status !== 200) {
-                    throw new Error(`Failed to fetch .ply file: ${response?.statusText}`);
+                    throw new Error(`Failed to fetch .splat file: ${response?.statusText}`);
                 }
                 const arrayBuffer = await response.data.arrayBuffer();
                 const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
                 objectUrl = URL.createObjectURL(blob);
                 setSplatUrl(objectUrl);
             } catch (error) {
-                console.error('Error processing .ply file:', error);
+                console.error('Error processing .splat file:', error);
                 setModelNotFound(true);
             }
             
@@ -206,25 +231,9 @@ export default function ModelView() {
             hideLoader();
         }
     };
-    const fetchProjectInfo = async () => {
-                try {
-            const response = await DataService.getProjectInfo();
-            if (response) {
-                setProjectName(response.project_name);
-                setProjectIcon(myAppConfig.api.ENDPOINT + response.project_icon);
-                console.log('Project info:', response);
-            } else {
-                console.error('Failed to fetch project info');
-            }
-        }
-        catch (error) {
-            console.error('Error fetching project info:', error);
-        }
-    }
+
     useEffect(() => {
         fetchAndProcess();
-        fetchProjectInfo();
-
 
         return () => {
             if (objectUrl) {
@@ -233,7 +242,18 @@ export default function ModelView() {
         };
     }, [id]);
 
-    // If model not found, display LinkNotValid component
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (showActionMenu && !event.target.closest('.action-buttons-container')) {
+                setShowActionMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showActionMenu]);
+
     if (modelNotFound) {
         return (
             <>
@@ -241,272 +261,79 @@ export default function ModelView() {
             </>
         )
     }
-
-    const isDarkMode = viewMode === 'colmap';
+    const position = useMemo(() => model?.model_transform?.position || { x: 0, y: 0, z: 0 }, [model]);
+    const rotate = useMemo(() => model?.model_transform?.rotation || { x: 0, y: 0, z: 0, scale: 1 }, [model]);
+    console.log(DEFAULT_CAMERA_POSITION)
 
     return (
-        <div className='h-screen flex flex-col'>
-            <nav className={`${isDarkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-700 border-gray-200'} border-b px-4 py-2 flex items-center justify-between`}>
-                {/* Left section */}
-                <div className="flex items-center">
-                    <button className={`h-8 w-8 flex items-center justify-center rounded-full ${isDarkMode ? 'border-gray-600 text-white' : 'border-gray-300 text-gray-700'} border mr-4`} onClick={handleBack}>
-                        <ChevronLeft size={16} /> 
-                    </button>
-                    <div className="flex items-center">
-                        <Link to={RouterPath.HOME} className="flex justify-between items-center">
-                            <img className="w-10" src={projectIcon} alt={`${projectName} logo`} />
-                            <h2 className={`brand-text text-xl ml-2 ${isDarkMode ? 'text-white-400' : 'text-sky-400'}`}>{projectName}</h2>
-                        </Link>
-                    </div>
-                </div>
-
-                
-                {/* Center section - View Toggle - Only show if colmap data is available */}
-                {hasColmapData && (
-                    <div className="flex items-center">
-                        <div className={`flex items-center p-1 rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
-                            <button 
-                                onClick={() => setViewMode('splat')} 
-                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'splat' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
-                            >
-                                <EyeIcon size={16} className="mr-2" />
-                                <span>Splat</span>
-                            </button>
-                            <button 
-                                onClick={() => handleViewModeToggle('colmap')} 
-                                className={`flex items-center px-4 py-1.5 rounded-md ${viewMode === 'colmap' ? (isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white') : (isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200')}`}
-                                disabled={colmapDataLoading}
-                            >
-                                {colmapDataLoading ? (
-                                    <Loader size={16} className="mr-2 animate-spin" />
-                                ) : (
-                                    <Grid3X3 size={16} className="mr-2" />
-                                )}
-                                <span>Colmap</span>
-                            </button>
-                        </div>
-                    </div>
-                )}
-                
-                {/* Show current view mode when toggle is not available */}
-                {!hasColmapData && (
-                    <div className="flex items-center">
-                        <div className={`flex items-center px-4 py-1.5 rounded-md ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                            <EyeIcon size={16} className="mr-2" />
-                            <span>Splat View</span>
-                        </div>
-                    </div>
-                )}
-                
-                {/* Right section */}
-                <div className="flex items-center space-x-3">
-                     <button 
-                        className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}                        
-                        onClick={() => {
-                            setIsShareModalOpen(false);
-                            setIsDetailModalOpen(true);
-                        }}
-                    >
-                        <Info size={16} className="mr-2" />
-                        <span>View Details</span>
-                    </button>
-                    <button 
-                        className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                        onClick={() => setIsShareModalOpen(true)}
-                    >
-                        <Share size={16} className="mr-2" />
-                        <span>Share</span>
-                    </button>
-                    
-                    {currenUser ? (
-                        <button 
-                            onClick={() => setIsExportModalOpen(true)} 
-                            className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                        >
-                            <Download size={16} className="mr-2" />
-                            <span>Download</span>
-                        </button>
-                    ) : (
-                        <Link 
-                            to={RouterPath.LOGIN} 
-                            className={`flex items-center px-3 py-1 rounded-md ${isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-100'}`}
-                        >
-                            <span>Login to Download</span>
-                        </Link>
-                    )}
-                    {currenUser && !currenUser?.is_pro && (
-                        <Link to={RouterPath.SUBSCRIPTION} className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600">
-                            Go Pro
-                        </Link>
-                    )}
-                </div>
-            </nav>
-            <div className='flex-1 relative'>
-               <ModelCanvas
-                    key={canvasKey}
-                    viewMode={viewMode}
-                    splatUrl={splatUrl}
-                    colmapData={colmapData}
-                />
-            </div>
-            
-            {/* Export Modal */}
-            {isExportModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-96">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-medium">Export</h3>
-                            <button onClick={() => setIsExportModalOpen(false)} className="text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                        {loading ? (
-                            <div className='flex items-center justify-center'>
-                                <Loader className="w-4 h-4 animate-spin mr-2" />
-                                <div>Downloading...</div>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {/* Only show colmap export if colmap data is loaded */}
-                                {colmapData && (
-                                    <button
-                                        className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-                                        onClick={handleExportColmap}
-                                    >
-                                        Export colmap .zip (includes images)
-                                    </button>
-                                )}
-                        
-                                <button
-                                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-                                    onClick={handleExportSplat}
-                                >
-                                    Export as .splat
-                                </button>
-                        
-                                {currenUser?.is_pro ? (
-                                    <button
-                                    className="w-full py-3 bg-sky-500 text-white rounded-md font-medium"
-                                    onClick={handleExportPLY}
-                                    >
-                                    Export as .ply
-                                    </button>
-                                ) : (
-                                    <Link to={RouterPath.SUBSCRIPTION}
-                                    className="w-full py-3 bg-gray-200 text-gray-500 rounded-md font-medium flex items-center justify-center gap-2"
-                                    >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M10 2a6 6 0 00-6 6v2a2 2 0 00-2 2v5a2 2 0 002 2h12a2 2 0 002-2v-5a2 2 0 00-2-2V8a6 6 0 00-6-6zM8 8a2 2 0 114 0v2H8V8z" />
-                                    </svg>
-                                    <span>Unlock .ply export – Upgrade to Pro</span>
-                                    </Link>
-                                )}
-                            </div>
+        <div className={`flex flex-col overflow-hidden ${isFullScreen ? 'h-full' : 'h-screen'}`}>
+            {model && (
+                <div id="model-canvas-container" className='flex-1 relative'>
+                    <Canvas className="bg-white">
+                        <PerspectiveCamera 
+                            ref={cameraRef}
+                            makeDefault 
+                            position={DEFAULT_CAMERA_POSITION} 
+                            fov={50} 
+                        />
+                        <OrbitControls 
+                            ref={orbitControlsRef}
+                            target={DEFAULT_CAMERA_TARGET}
+                            enableDamping={true}
+                            dampingFactor={0.05}
+                            rotateSpeed={0.5}
+                            zoomSpeed={0.5}
+                            panSpeed={0.5}
+                        />
+                        {splatUrl && (
+                            <SplatViewer
+                                splatUrl={splatUrl}
+                                position={[position.x, position.y, position.z]}
+                                rotation={[rotate.x, -rotate.y, -rotate.z]}
+                                scale={rotate.scale + 4.25}
+                            />
                         )}
-                    </div>
-                </div>
-            )}
-
-            {/* Share Modal */}
-            {isShareModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-96">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-medium">Share</h3>
-                            <button onClick={() => setIsShareModalOpen(false)} className="text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            <div>
-                                <p className="text-sm text-gray-500 mb-2">Share this 3D model with others:</p>
-                                <div className="flex">
-                                    <input 
-                                        type="text" 
-                                        value={window.location.href} 
-                                        readOnly 
-                                        className="flex-1 border border-gray-300 rounded-l-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
-                                    />
-                                    <button 
-                                        className="bg-sky-500 text-white px-4 py-2 rounded-r-md hover:bg-sky-600 flex items-center"
-                                        onClick={handleCopyLink}
-                                    >
-                                        <Copy size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Details Modal */}
-            {isDetailModalOpen && model && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-medium">Model Details</h3>
-                            <button onClick={() => setIsDetailModalOpen(false)} className="text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {model.image_url && (
-                                <div className="rounded-lg overflow-hidden h-48 bg-gray-100">
-                                    <img 
-                                        src={myAppConfig.api.ENDPOINT + model.image_url} 
-                                        alt={model.title} 
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = "/api/placeholder/400/320";
-                                        }}
-                                    />
-                                </div>
+                    </Canvas>
+                    <Loader />
+                    
+                    {/* Floating Action Buttons */}
+                    <div className="action-buttons-container fixed bottom-4 right-4 z-50 flex gap-2">
+                        {/* Fullscreen Button */}
+                        <button
+                            onClick={handleFullScreen}
+                            className="w-12 h-12 bg-gray-600 bg-opacity-60 hover:bg-opacity-80 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+                            aria-label={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                            title={isFullScreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                        >
+                            {isFullScreen ? (
+                                <Minimize2 
+                                    size={20} 
+                                    className="transition-transform duration-200 group-hover:scale-110" 
+                                />
+                            ) : (
+                                <Maximize2 
+                                    size={20} 
+                                    className="transition-transform duration-200 group-hover:scale-110" 
+                                />
                             )}
-                            
-                            <div>
-                                <h4 className="font-semibold text-xl">{model.title}</h4>
-                                <p className="text-gray-500">ID: {model.id}</p>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-y-2">
-                                <div className="text-gray-500">Creator</div>
-                                <div>{model.owner ? `${model.owner.first_name} ${model.owner.last_name}` : 'Unknown'}</div>
-                                
-                                <div className="text-gray-500">Creation Date</div>
-                                <div>{formatDate(model.date_created)}</div>
-                                
-                                <div className="text-gray-500">File Size</div>
-                                <div>{formatFileSize(model.model_size)}</div>
-                                
-                                <div className="text-gray-500">Status</div>
-                                <div className="flex items-center">
-                                    <span className={`w-2 h-2 rounded-full mr-2 ${model.status === 'SUCCESS' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                                    {model.status}
-                                </div>
-                                
-                                <div className="text-gray-500">Visibility</div>
-                                <div>{model.is_public ? 'Public' : 'Private'}</div>
-                                
-                                <div className="text-gray-500">Available Views</div>
-                                <div>
-                                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1">Splat</span>
-                                    {hasColmapData && (
-                                        <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Colmap</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+                        </button>
+                        
+                        {/* Download Button */}
+                    </div>
+
+                    <div className="action-buttons-container fixed bottom-4 left-4 z-50 flex gap-2">
+                        <button
+                            onClick={handleDownloadSplat}
+                            className="w-12 h-12 bg-gray-600 bg-opacity-60 hover:bg-opacity-80 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+                            aria-label="Download splat file"
+                            title="Download Splat"
+                        >
+                            <Download 
+                                size={20} 
+                                className="transition-transform duration-200 group-hover:scale-110" 
+                            />
+                        </button>
+                        
                     </div>
                 </div>
             )}

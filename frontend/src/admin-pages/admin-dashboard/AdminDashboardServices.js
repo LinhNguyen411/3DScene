@@ -48,7 +48,7 @@ const getTotalAmount = async () => {
 // Get models (splats) generated in the last 24 hours
 const getModelsLast24Hours = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/admin/statistic/get-splats-last-24hours`, {
+    const response = await axios.get(`${API_BASE_URL}/admin/statistic/get-models-last-24hours`, {
       headers: getAuthHeaders(),
     });
     

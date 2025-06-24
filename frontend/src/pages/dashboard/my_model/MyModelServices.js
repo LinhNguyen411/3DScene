@@ -1,7 +1,7 @@
 import axios from 'axios';
 import myAppConfig from "../../../config";
 
-const API_BASE_URL = myAppConfig.api.ENDPOINT + "/splats";
+const API_BASE_URL = myAppConfig.api.ENDPOINT + "/models";
 const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('token')}`,
   });
@@ -13,6 +13,7 @@ const getSplats = async (page = 1, size = 100) => {
         params: { page, size },
         headers: getAuthHeaders(),
       });
+      console.log(response.data)
       return response.data;
     } catch (error) {
       throw new Error('Failed to fetch splats');
@@ -46,7 +47,7 @@ const deleteSplat = async (id) => {
 }
 const downloadSplat = async (id, title) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-splat`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/file/splat`, {
       headers: getAuthHeaders(),
       responseType: 'blob',
     });
@@ -78,7 +79,7 @@ const downloadSplat = async (id, title) => {
 
 const downloadPLY = async (id, title) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-ply`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/file/ply`, {
       headers: getAuthHeaders(),
       responseType: 'blob',
     });
@@ -110,7 +111,7 @@ const downloadPLY = async (id, title) => {
 
 const downloadColmap = async (id) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/${id}/download-colmap`, {
+    const response = await axios.get(`${API_BASE_URL}/${id}/colmap/zip`, {
       headers: getAuthHeaders(),
       responseType: 'blob',
     });

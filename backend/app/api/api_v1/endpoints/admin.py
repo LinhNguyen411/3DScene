@@ -74,16 +74,16 @@ def get_total_users(
     total = crud.user.get_total_users(db=db)
     return total
 
-@statistic_router.get("/get-splats-last-24hours", responses={
+@statistic_router.get("/get-models-last-24hours", responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}
 })
-def get_splats_last_24hours(
+def get_models_last_24hours(
     *,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_active_user)
 ) -> Any:
     """
-    Lấy dữ liệu splats trong 24 giờ qua.
+    Lấy dữ liệu models trong 24 giờ qua.
 
     **Yêu cầu Header:**
     - `Authorization: Bearer <access_token>`
@@ -92,17 +92,17 @@ def get_splats_last_24hours(
     - Không có dữ liệu đầu vào yêu cầu từ người dùng.
 
     **Đầu ra (Response):**
-    - 200 OK: Trả về danh sách splats trong 24 giờ qua.
+    - 200 OK: Trả về danh sách models trong 24 giờ qua.
     - 400 Bad Request: Nếu người dùng không có quyền truy cập (không phải là superuser).
 
     **Giải thích:**
-    - Hàm này sẽ trả về danh sách splats đã được ghi nhận trong vòng 24 giờ qua, chỉ khi người yêu cầu là superuser.
+    - Hàm này sẽ trả về danh sách models đã được ghi nhận trong vòng 24 giờ qua, chỉ khi người yêu cầu là superuser.
     - Nếu người dùng không phải là superuser, sẽ ném ra lỗi 400 với thông báo "Not enough permissions".
     """
     if not current_user.is_superuser:
         raise HTTPException(status_code=400, detail="Not enough permissions")
-    splats = crud.splat.get_splats_last_24_hours(db=db)
-    return splats
+    models = crud.model.get_models_last_24_hours(db=db)
+    return models
 
 @statistic_router.get("/total-amount", responses={
     401: {"model": schemas.Detail, "description": "User unathorized"}

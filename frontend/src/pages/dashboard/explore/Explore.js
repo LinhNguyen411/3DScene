@@ -46,7 +46,7 @@ const Explore = () => {
   };
 
   return (
-    <section className="py-10 px-4 max-w-6xl mx-auto w-full">
+    <section className="py-10 px-4 mx-auto w-full">
       <div className="bg-gradient-to-r from-sky-400 to-sky-500 text-white text-center py-4 rounded-md mb-8">
         <h2 className="text-2xl font-medium">Explore Our 3D Creations</h2>
       </div>

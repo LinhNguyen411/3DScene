@@ -19,19 +19,22 @@ const getSplats = async (page = 1, size = 100) => {
       throw new Error('Failed to fetch splats');
     }
 }
-const updateSplat=  async (id, data) => {
-    try {
-      const response = await axios.put(
-        `${API_BASE_URL}/${id}`,
-        data,
-        {
-          headers: getAuthHeaders(),
-        }
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error('Failed to update splat');
-    }
+const updateSplat = async (id, data) => {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/${id}`,
+      data, // data is now a plain object, axios will send it as JSON
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json' // Explicitly set content type
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to update splat');
+  }
 }
 
   // Delete a splat

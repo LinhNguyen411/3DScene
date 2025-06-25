@@ -24,20 +24,21 @@ function MyModel(props){
   const [loading, setLoading] = useState(false);
 
   const handleUpdateModel = async () => {
-    try {
-      const formData = new FormData();
-      formData.append('title', model.title);
-      formData.append('is_public', model.is_public);
-      await DataService.updateSplat(model.id, formData);
-      setIsEditModalOpen(false);
-      onRefresh(); // Refresh the model list
-      // onUpdate(model.id, title);
-      showSnackbar("Model updated successfully!", "success")
-    } catch (error) {
-      console.error('Error updating model:', error);
-      showSnackbar("Failed to update model", "error")
-    }
-  };
+  try {
+    // Send JSON instead of FormData
+    const updateData = {
+      title: model.title,
+      is_public: model.is_public
+    };
+    await DataService.updateSplat(model.id, updateData);
+    setIsEditModalOpen(false);
+    onRefresh(); // Refresh the model list
+    showSnackbar("Model updated successfully!", "success")
+  } catch (error) {
+    console.error('Error updating model:', error);
+    showSnackbar("Failed to update model", "error")
+  }
+};
 
   // Handle deleting the model
   const handleDeleteModel = async () => {

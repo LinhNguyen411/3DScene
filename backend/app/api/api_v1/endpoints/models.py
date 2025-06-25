@@ -608,11 +608,10 @@ def download_splat(
             detail=f"Result not ready or task failed. Current state: {model.status}")
 
     model_name = model.title + ".splat"
-    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), id, model_name)
+    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, model.owner_id, id, model_name)
     if not output_path:
         raise HTTPException(status_code=400, detail="Output path is None")
     if not os.path.exists(output_path):
-        print("hello")
         raise HTTPException(
             status_code=400,
             detail=f"Output file not found at: {output_path}"

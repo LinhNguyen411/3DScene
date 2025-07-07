@@ -600,27 +600,34 @@ def download_splat(
     model = crud.model.get(db=db, id=id)
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")
-    if not current_user:
-        if not model.is_public:
-            raise HTTPException(status_code=400, detail="Not enough permissions")
-    else:
-        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
-            raise HTTPException(status_code=400, detail="Not enough permissions")
     if model.status != 'SUCCESS':
         raise HTTPException(
             status_code=404,
             detail=f"Result not ready or task failed. Current state: {model.status}")
 
     model_name = model.title + ".splat"
-    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(current_user.id), id, model_name)
+    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(model.owner_id), id, model_name)    
     if not output_path:
         raise HTTPException(status_code=400, detail="Output path is None")
     if not os.path.exists(output_path):
-        print("hello")
         raise HTTPException(
             status_code=400,
             detail=f"Output file not found at: {output_path}"
         )
+    
+    if model.is_public:
+        return FileResponse(
+        path=output_path,
+        filename=os.path.basename(output_path),
+        media_type="application/octet-stream"
+        )
+    
+    if not current_user:
+        if not model.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
 
     # Return the file as a download response
     return FileResponse(

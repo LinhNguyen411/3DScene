@@ -1,5 +1,63 @@
-redux
-redux toolkit
+  const handleUpdateModel = async () => {
+  try {
+    // Send JSON instead of FormData
+    const updateData = {
+      title: model.title,
+      is_public: model.is_public
+    };
+    await DataService.updateSplat(model.id, updateData);
+    setIsEditModalOpen(false);
+    onRefresh(); // Refresh the model list
+    showSnackbar("Model updated successfully!", "success")
+  } catch (error) {
+    console.error('Error updating model:', error);
+    showSnackbar("Failed to update model", "error")
+  }
+};
 
-axios
+const updateSplat = async (id, data) => {
+  try {
+    const response = await axios.put(
+      `${API_BASE_URL}/${id}`,
+      data, // data is now a plain object, axios will send it as JSON
+      {
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json' // Explicitly set content type
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to update splat');
+  }
+}
+
+    if model.is_public:
+        return FileResponse(
+        path=output_path,
+        filename=os.path.basename(output_path),
+        media_type="application/octet-stream"
+        )
+    
+    if not current_user:
+        if not model.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+    else:
+        if not current_user.is_superuser and current_user.id != model.owner_id and not model.is_public:
+            raise HTTPException(status_code=400, detail="Not enough permissions")
+
+
+    model_name = model.title + ".splat"
+    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, model.owner_id, id, model_name)
+    if not output_path:
+        raise HTTPException(status_code=400, detail="Output path is None")
+    if not os.path.exists(output_path):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Output file not found at: {output_path}"
+        )
+        
+        
+    output_path = os.path.join(settings.MODEL_WORKSPACES_DIR, str(model.owner_id), id, model_name)
 

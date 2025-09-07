@@ -25,7 +25,6 @@ A web application that converts videos to 3D Gaussian Splatting models, built wi
   - React Three Fiber
   - Stripe JS
   - Tailwind CSS
-  - Zustand
 - **3D Processing**:
   - OpenSplat (3D Gaussian Splatting)
   - COLMAP (SfM + MVS)
